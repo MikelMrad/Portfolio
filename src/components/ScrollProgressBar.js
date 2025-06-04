@@ -27,10 +27,9 @@ export default function ScrollProgressBar({ sectionCount, sectionTitles = [] }) 
     return () => observer.disconnect()
   }, [])
 
-  const barHeight = 60 // vh
+  const barHeight = 60
   const barTop = (barHeight / sectionCount) * activeSection + (barHeight / sectionCount) / 2
 
-  // Handler to scroll to section
   const handleBarClick = (idx) => {
     const sections = document.querySelectorAll("section")
     if (sections[idx]) {
@@ -57,7 +56,6 @@ export default function ScrollProgressBar({ sectionCount, sectionTitles = [] }) 
         background: "#fff",
         transition: "height 0.3s",
       }} />
-      {/* Hotspots for each section */}
       {Array.from({ length: sectionCount }).map((_, idx) => (
         <div
           key={idx}
@@ -66,7 +64,7 @@ export default function ScrollProgressBar({ sectionCount, sectionTitles = [] }) 
             position: "absolute",
             left: "-8px",
             width: "22px",
-            height: `calc(60vh / ${sectionCount})`, // Each hotspot = 1 section height
+            height: `calc(60vh / ${sectionCount})`,
             top: `calc((${barHeight} / ${sectionCount}) * ${idx}vh)`,
             cursor: "pointer",
             background: "transparent",
