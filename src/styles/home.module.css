@@ -72,14 +72,3 @@
 .Wrapper:hover .ImgHover {
   opacity: 1;
 }
-
-.Wave {
-  display: inline-block;
-  animation: waveJump 1s linear infinite;
-}
-
-@keyframes waveJump {
-  0%  { transform: translateY(-30px) rotate(40deg);}
-  50%  { transform: translateY(0) rotate(0deg);}
-  100%  { transform: translateY(-30px) rotate(40deg);}
-}
