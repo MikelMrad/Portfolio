@@ -2,7 +2,7 @@ import Image from "next/image"
 import React from "react"
 import styles from "@/styles/project.module.css"
 
-const ProjectContainer = ({ src, header, paragraph, techs }) => (
+const ProjectContainer = ({ src, header, paragraph, techs, dir }) => (
   <div className={styles.container}>
     <div className={styles.chrome}>
       {["#EF4444", "#F59E0B", "#10B981"].map((color, i) => (
@@ -30,7 +30,7 @@ const ProjectContainer = ({ src, header, paragraph, techs }) => (
           </span>
         ))}
       </div>
-      <a href="#" className={styles.learnMore}>
+      <a href={dir} target="_blank" className={styles.learnMore}>
         Learn more
       </a>
     </div>
