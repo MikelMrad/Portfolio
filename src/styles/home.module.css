@@ -72,3 +72,23 @@
 .Wrapper:hover .ImgHover {
   opacity: 1;
 }
+
+.SkillsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+}
+
+.Skills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ProjectsContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
