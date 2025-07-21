@@ -111,10 +111,10 @@
 }
 
 @media (max-width: 600px) {
-  .animatedPhrase , .Title {
+  .Title {
     font-size: 32px;
   }
-  .enjoy {
+  .enjoy , .animatedPhrase  {
     font-size: 28px;
   }
 }
