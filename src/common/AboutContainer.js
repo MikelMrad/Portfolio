@@ -24,7 +24,7 @@ export default function AboutContainer({src , header , paragraph , date}) {
           alignItems:"flex-start",
           gap:"0",
         }}>
-          <h1 style={{fontSize:"24px" , margin: 0}}>
+          <h1 style={{fontSize:"22px" , margin: 0}}>
             {header}
           </h1>
           <p style={{fontSize:"16px",textAlign:"left" , margin: 0}}>

@@ -44,10 +44,10 @@ export default function Welcome() {
   return (
     <section className={styles.Page}>
       <h1 className={styles.Title}>Welcome to My Portfolio</h1>
-      <h4 className={styles.b}>
-        I'm a <span className={styles.animatedPhrase}>{displayedText}</span>
+      <h4 className={styles.textAppearing}>
+        <span className={styles.animatedPhrase}> I'm a {displayedText}</span>
       </h4>
-      <h6 className={styles.b}>Enjoy your stay!</h6>
+      <h6 className={styles.enjoy}>Enjoy your stay!</h6>
       <div>
         <div className={styles.Wrapper} style={{marginRight:"12px"}}>
           <Link href="https://github.com/MikelMrad" target="_blank" rel="noopener noreferrer">
