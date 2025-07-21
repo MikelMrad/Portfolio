@@ -15,7 +15,7 @@ import Css from "/public/css.png"
 import Git from "/public/git.png"
 import Figma from "/public/figma.png"
 import Photoshop from "/public/ps.png"
-import MongoDB from "/public/MongoDb.png"
+import MongoDB from "/public/MongoDB.png"
 
 export default function Skills() {
   return (
