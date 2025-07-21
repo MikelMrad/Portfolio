@@ -22,6 +22,22 @@
   margin-bottom: 0;
 }
 
+@media (max-width: 1300px) {
+  .Container {
+    height: auto;
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+    overflow-y: visible;
+  }
+
+  .Page {
+    min-height: 100vh;
+    height: auto;
+    scroll-snap-align: unset;
+    padding: 60px 20px;
+  }
+}
+
 .Img {
   position: relative;
   overflow: hidden;
@@ -90,5 +106,6 @@
 .ProjectsContainer {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: 20px;
 }

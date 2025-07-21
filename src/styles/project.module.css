@@ -27,6 +27,9 @@
 
 .imagePanel {
   background-color: #f3f4f6;
+  height: 200px ;
+  max-height: 200px ;
+  object-fit: cover;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -34,9 +37,11 @@
 
 .image {
   max-width: 100%;
-  max-height: fit-content;
-  object-fit: contain;
+  height: 200px ;
+  max-height: 200px ;
+  object-fit: fill;
   border-radius: 8px;
+  object-fit: fill;
 }
 
 .body {
