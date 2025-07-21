@@ -1,6 +1,6 @@
 import styles from "@/styles/home.module.css"
 import USEK from "/public/usek.jpeg"
-import EST from "/public/EST.jpg"
+import EST from "/public/est.jpg"
 import AboutContainer from "@/common/AboutContainer"
 
 export default function About() {
