@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { Urbanist } from 'next/font/google'
 import theme from '../theme/theme'
+import { Analytics } from "@vercel/analytics/next"
 import '@/styles/globals.css'
 
 const urbanist = Urbanist({
@@ -22,6 +23,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider theme={theme}>
           <CssBaseline />
           {children}
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
