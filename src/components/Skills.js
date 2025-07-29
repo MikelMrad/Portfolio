@@ -17,6 +17,7 @@ import Figma from "/public/figma.png"
 import Photoshop from "/public/ps.png"
 import MongoDB from "/public/MongoDB.png"
 import IcePanel from "/public/icepanel-logo.png"
+import Postman from "/public/postman.png"
 
 export default function Skills() {
   return (
@@ -53,6 +54,7 @@ export default function Skills() {
             <SkillContainer src={Figma} language="Figma" />
             <SkillContainer src={Photoshop} language="Photoshop" />
             <SkillContainer src={IcePanel} language="Ice Panel" />
+            <SkillContainer src={Postman} language="Postman" />
           </div>
         </div>
         <div>
