@@ -18,6 +18,7 @@ import Photoshop from "/public/ps.png"
 import MongoDB from "/public/MongoDB.png"
 import IcePanel from "/public/icepanel-logo.png"
 import Postman from "/public/postman.png"
+import FireBase from "/public/firebase.png"
 
 export default function Skills() {
   return (
@@ -60,7 +61,8 @@ export default function Skills() {
         <div>
           <h6  style={{margin:"0 0 20px 0"}}>Databases</h6>
           <div className={styles.Skills}>
-            <SkillContainer src={MongoDB} language="MongoDB  " />
+            <SkillContainer src={MongoDB} language="MongoDB" />
+            <SkillContainer src={FireBase} language="FireBase" />
           </div>
         </div>
       </div>
