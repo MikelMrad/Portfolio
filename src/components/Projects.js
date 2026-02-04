@@ -25,10 +25,10 @@ export default function Projects() {
         />
         <ProjectContainer
         src={UnderConstruction}
-        header="Full-Stack TODO App"
-        paragraph="A full-stack TODO app with user authentication."
+        header="E-Commerce Platform Rebuild (Web, Admin & Mobile)"
+        paragraph="Full rebuild of an e-commerce platform from Shopify into a custom web, backend, admin, and mobile admin system."
         techs={["Javascript", "Next"," Node.js", "Express", "MongoDB"," GraphQL"]}
-        dir={"https://github.com/MikelMrad/To-Do-App"}
+        dir={"https://github.com/MikelMrad"}
         />
       </div>
     </section>
