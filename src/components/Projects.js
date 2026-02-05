@@ -25,7 +25,7 @@ export default function Projects() {
         />
         <ProjectContainer
         src={UnderConstruction}
-        header="E-Commerce Platform Rebuild (Web, Admin & Mobile)"
+        header="E-Commerce Platform Rebuild"
         paragraph="Full rebuild of an e-commerce platform from Shopify into a custom web, backend, admin, and mobile admin system."
         techs={["Javascript", "Next"," Node.js", "Express", "MongoDB"," GraphQL"]}
         dir={"https://github.com/MikelMrad"}
