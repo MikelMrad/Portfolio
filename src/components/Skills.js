@@ -20,6 +20,7 @@ import IcePanel from "/public/icepanel-logo.png"
 import Postman from "/public/postman.png"
 import FireBase from "/public/firebase.png"
 import Shopify from "/public/shopify.png"
+import Liquid from "/public/liquid.png"
 
 export default function Skills() {
   return (
@@ -45,6 +46,7 @@ export default function Skills() {
             <SkillContainer src={Express} language="Express" />
             <SkillContainer src={GraphQL} language="GraphQL" />
             <SkillContainer src={Redux} language="Redux" />
+            <SkillContainer src={Liquid} language="Liquid" />
           </div>
         </div>
         <div>
