@@ -9,7 +9,7 @@ export default function SkillContainer({src, language}) {
         padding: "5px 15px",
         borderRadius: "50px",
         width: "fit-content",
-        fontSize: "14px",
+        fontSize: "11px",
         fontWeight: "700",
         display: "flex",
         alignItems: "center",
@@ -17,8 +17,8 @@ export default function SkillContainer({src, language}) {
       }}>
         <Image 
           src={src}
-          height={40}
-          width={40}
+          height={30}
+          width={30}
           alt="Image"/>
         <h1 style={{margin:"0 0 0 10px"}} >{language}</h1>
       </div>
