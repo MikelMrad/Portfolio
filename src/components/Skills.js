@@ -19,6 +19,7 @@ import MongoDB from "/public/MongoDB.png"
 import IcePanel from "/public/icepanel-logo.png"
 import Postman from "/public/postman.png"
 import FireBase from "/public/firebase.png"
+import Shopify from "/public/shopify.png"
 
 export default function Skills() {
   return (
@@ -56,6 +57,7 @@ export default function Skills() {
             <SkillContainer src={Photoshop} language="Photoshop" />
             <SkillContainer src={IcePanel} language="Ice Panel" />
             <SkillContainer src={Postman} language="Postman" />
+            <SkillContainer src={Shopify} language="Shopify" />
           </div>
         </div>
         <div>
