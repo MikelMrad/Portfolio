@@ -6,6 +6,7 @@ import Supplement from "/public/supp.JPG"
 import TutorMe from "/public/tutorme.JPG"
 import UnderConstruction from "/public/under-construction.png"
 import UncleJNutrition from "/public/unclejnutriotionproj.png"
+import TheOutletsLB from "/public/theoutlets.png"
 
 const projects = [
   {
@@ -14,6 +15,13 @@ const projects = [
     description: "Fully custom e-commerce platform website built on Shopify.",
     techs: ["Liquid"],
     link: "https://unclejnutrition.com/",
+  },
+  {
+    src: TheOutletsLB,
+    title: "E-Commerce Platform",
+    description: "Fully custom e-commerce platform website built on Shopify.",
+    techs: ["Liquid"],
+    link: "https://theoutletslb.com/",
   },
   {
     src: TutorMe,
