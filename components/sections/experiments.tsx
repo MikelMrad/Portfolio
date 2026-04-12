@@ -1,5 +1,5 @@
 "use client"
-import { useRef } from "react"
+import { useRef, useState, useCallback } from "react"
 import { Reveal } from "@/components/ui/reveal"
 
 type Experiment = {
@@ -35,6 +35,33 @@ const XPS: Experiment[] = [
 ]
 
 export function ExperimentsSection() {
+  const trackRef  = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(0)
+
+  const scrollToIdx = useCallback((idx: number) => {
+    const track = trackRef.current
+    if (!track) return
+    const child = track.children[idx] as HTMLElement
+    if (!child) return
+    const offset = child.offsetLeft - (track.offsetWidth - child.offsetWidth) / 2
+    track.scrollTo({ left: offset, behavior: "smooth" })
+    setActive(idx)
+  }, [])
+
+  const onScroll = useCallback(() => {
+    const track = trackRef.current
+    if (!track) return
+    const center = track.scrollLeft + track.offsetWidth / 2
+    let closest = 0
+    let minDist  = Infinity
+    Array.from(track.children).forEach((child, i) => {
+      const el   = child as HTMLElement
+      const dist = Math.abs(el.offsetLeft + el.offsetWidth / 2 - center)
+      if (dist < minDist) { minDist = dist; closest = i }
+    })
+    setActive(closest)
+  }, [])
+
   return (
     <section
       id="experiments"
@@ -58,14 +85,78 @@ export function ExperimentsSection() {
         </span>
       </Reveal>
 
-      <div className="mt-14 grid grid-cols-1 md:grid-cols-3 border-t border-hairline gap-px bg-hairline">
-        {XPS.map((xp, i) => <XPCard key={xp.num} xp={xp} index={i} />)}
+      {/* ── Carousel ─────────────────────────────────────────────── */}
+      <div className="mt-14 border-t border-hairline">
+
+        {/* Track */}
+        <div
+          ref={trackRef}
+          onScroll={onScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {XPS.map((xp, i) => (
+            <div
+              key={xp.num}
+              className="snap-center shrink-0 w-full flex justify-center md:py-10 md:px-[10%]"
+            >
+              <div className="w-full">
+                <XPCard xp={xp} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Controls bar ─────────────────────────────────────────── */}
+        <div className="border-t border-hairline flex items-center justify-between px-8 md:px-16 py-5">
+
+          {/* Index counter */}
+          <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-mid">
+            {String(active + 1).padStart(2, "0")} / {String(XPS.length).padStart(2, "0")}
+          </span>
+
+          {/* Dot indicators — matches SectionNav style */}
+          <div className="flex items-center gap-3">
+            {XPS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => scrollToIdx(i)}
+                aria-label={`Go to experiment ${i + 1}`}
+                className={`block h-px transition-all duration-300 ease-out ${
+                  active === i
+                    ? "w-8 bg-fg"
+                    : "w-2 bg-mid hover:w-5 hover:bg-fg"
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Prev / Next */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => scrollToIdx(Math.max(0, active - 1))}
+              disabled={active === 0}
+              aria-label="Previous experiment"
+              className="w-8 h-8 rounded-full border border-fg flex items-center justify-center font-mono text-[11px] text-fg hover:bg-fg hover:text-bg transition-colors duration-150 disabled:opacity-20 disabled:cursor-not-allowed"
+            >
+              ←
+            </button>
+            <button
+              onClick={() => scrollToIdx(Math.min(XPS.length - 1, active + 1))}
+              disabled={active === XPS.length - 1}
+              aria-label="Next experiment"
+              className="w-8 h-8 rounded-full border border-fg flex items-center justify-center font-mono text-[11px] text-fg hover:bg-fg hover:text-bg transition-colors duration-150 disabled:opacity-20 disabled:cursor-not-allowed"
+            >
+              →
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   )
 }
 
-function XPCard({ xp, index }: { xp: Experiment; index: number }) {
+function XPCard({ xp }: { xp: Experiment }) {
   const cardRef = useRef<HTMLAnchorElement>(null)
 
   const onMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -84,71 +175,68 @@ function XPCard({ xp, index }: { xp: Experiment; index: number }) {
   }
 
   return (
-    <Reveal
-      delay={index * 90}
-      className="bg-bg"
+    <a
+      ref={cardRef}
+      href={xp.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className="group relative block overflow-hidden"
+      style={{
+        transformStyle: "preserve-3d",
+        transition: "transform 0.1s linear",
+        willChange: "transform",
+      }}
     >
-      <a
-        ref={cardRef}
-        href={xp.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-        className="group relative block overflow-hidden"
+      {/* Image drives height naturally — no cropping */}
+      <img
+        src={xp.image}
+        alt={xp.title.replace("\n", " ")}
+        className="w-full h-auto block transition-all duration-700 ease-out grayscale group-hover:grayscale-0"
+      />
+
+      <div className="absolute inset-0 bg-bg/[0.72] group-hover:bg-bg/[0.38] transition-all duration-500" />
+
+      {/* Ghost number */}
+      <span
+        aria-hidden
+        className="absolute font-display leading-none text-fg pointer-events-none select-none"
         style={{
-          minHeight: "65vh",
-          transformStyle: "preserve-3d",
-          transition: "transform 0.1s linear",
-          willChange: "transform",
+          fontSize: "clamp(8rem, 22vw, 20rem)",
+          opacity: 0.045,
+          bottom: "-0.12em",
+          right: "-0.04em",
         }}
       >
-        <img
-          src={xp.image}
-          alt={xp.title.replace("\n", " ")}
-          className="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out grayscale group-hover:grayscale-0"
-        />
+        {xp.num}
+      </span>
 
-        <div className="absolute inset-0 bg-bg/[0.72] group-hover:bg-bg/[0.38] transition-all duration-500" />
-
-        <span
-          aria-hidden
-          className="absolute font-display leading-none text-fg pointer-events-none select-none"
-          style={{
-            fontSize: "clamp(10rem, 30vw, 22rem)",
-            opacity: 0.045,
-            bottom: "-0.12em",
-            right: "-0.04em",
-          }}
-        >
-          {xp.num}
+      {/* Card info */}
+      <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 flex flex-col gap-2 md:gap-3">
+        <span className="font-mono text-[9px] uppercase tracking-[0.28em] text-mid">
+          EXP — {xp.num}
         </span>
-
-        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-10 flex flex-col gap-3">
-          <span className="font-mono text-[9px] uppercase tracking-[0.28em] text-mid">
-            EXP — {xp.num}
-          </span>
-          <h3
-            className="font-display text-fg leading-tight whitespace-pre-line"
-            style={{ fontSize: "clamp(2rem, 4vw, 4.5rem)" }}
-          >
-            {xp.title}
-          </h3>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {xp.stack.map(s => (
-              <span
-                key={s}
-                className="font-mono text-[8px] uppercase tracking-[0.2em] border border-hairline text-mid px-2.5 py-1"
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-          <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-mid group-hover:text-fg transition-colors duration-200 flex items-center gap-2 mt-2">
-            VIEW ON GITHUB <span aria-hidden>→</span>
-          </span>
+        <h3
+          className="font-display text-fg leading-tight whitespace-pre-line"
+          style={{ fontSize: "clamp(1.75rem, 4vw, 4.5rem)" }}
+        >
+          {xp.title}
+        </h3>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {xp.stack.map(s => (
+            <span
+              key={s}
+              className="font-mono text-[8px] uppercase tracking-[0.2em] border border-hairline text-mid px-2.5 py-1"
+            >
+              {s}
+            </span>
+          ))}
         </div>
-      </a>
-    </Reveal>
+        <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-mid group-hover:text-fg transition-colors duration-200 flex items-center gap-2 mt-2">
+          VIEW ON GITHUB <span aria-hidden>→</span>
+        </span>
+      </div>
+    </a>
   )
 }
