@@ -106,7 +106,7 @@ export function AboutSection() {
               GITHUB →
             </a>
             <a
-              href="https://linkedin.com/in/mikelmrad"
+              href="https://www.linkedin.com/in/mikel-mrad/"
               target="_blank"
               rel="noopener noreferrer"
               className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg hover:text-mid transition-colors duration-150"
