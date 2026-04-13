@@ -1,6 +1,7 @@
 import { ZStage }             from "@/components/sections/z-stage"
 import { WorkSection }        from "@/components/sections/work"
 import { ExperimentsSection } from "@/components/sections/experiments"
+import { SkillsSection }      from "@/components/sections/skills"
 import { AboutSection }       from "@/components/sections/about"
 import { ContactSection }     from "@/components/sections/contact-section"
 import { Marquee }            from "@/components/ui/marquee"
@@ -19,6 +20,7 @@ export default function Home() {
           <WorkSection />
           <Marquee text="AVAILABLE FOR FREELANCE & FULL-TIME — SHOPIFY · NEXT.JS · THREE.JS · REACT · TS" speed={30} />
           <ExperimentsSection />
+          <SkillsSection />
           <Marquee text="COMMERCE · INTERFACES · AND THE DETAILS IN BETWEEN" speed={40} />
           <AboutSection />
           <Marquee text="LET'S BUILD SOMETHING TOGETHER — MIKEL MRAD — 2026" speed={25} />

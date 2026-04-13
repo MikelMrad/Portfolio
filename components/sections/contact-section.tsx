@@ -1,9 +1,8 @@
 "use client"
-import { useRef, useState } from "react"
+import { useRef, useState, useCallback } from "react"
 import emailjs from "@emailjs/browser"
 import { Reveal } from "@/components/ui/reveal"
 import { ScrambleText } from "@/components/ui/scramble-text"
-import { Magnetic } from "@/components/ui/magnetic"
 
 const EMAILJS_SERVICE_ID  = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID  ?? ""
 const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID ?? ""
@@ -30,6 +29,20 @@ export function ContactSection() {
 
   const sectionRef = useRef<HTMLElement>(null)
   const glowRef    = useRef<HTMLDivElement>(null)
+  const btnRef     = useRef<HTMLButtonElement>(null)
+  const btnTextRef = useRef<HTMLSpanElement>(null)
+
+  const onBtnMove = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!btnRef.current || !btnTextRef.current) return
+    const rect = btnRef.current.getBoundingClientRect()
+    const x = (e.clientX - rect.left - rect.width  / 2) * 0.28
+    const y = (e.clientY - rect.top  - rect.height / 2) * 0.28
+    btnTextRef.current.style.transform = `translate(${x}px, ${y}px)`
+  }, [])
+
+  const onBtnLeave = useCallback(() => {
+    if (btnTextRef.current) btnTextRef.current.style.transform = ""
+  }, [])
 
   const onMove = (e: React.MouseEvent<HTMLElement>) => {
     if (!glowRef.current || !sectionRef.current) return
@@ -155,15 +168,25 @@ export function ContactSection() {
                     SOMETHING WENT WRONG — TRY AGAIN OR EMAIL DIRECTLY.
                   </span>
                 )}
-                <Magnetic strength={0.4}>
-                  <button
-                    type="submit"
-                    disabled={status === "sending"}
-                    className="font-mono text-[10px] uppercase tracking-[0.28em] border border-fg text-fg px-7 py-4 hover:bg-fg hover:text-bg transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                <button
+                  ref={btnRef}
+                  type="submit"
+                  disabled={status === "sending"}
+                  onMouseMove={onBtnMove}
+                  onMouseLeave={onBtnLeave}
+                  className="font-mono text-[10px] uppercase tracking-[0.28em] border border-fg text-fg px-7 py-4 hover:bg-fg hover:text-bg transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
+                >
+                  <span
+                    ref={btnTextRef}
+                    style={{
+                      display: "inline-block",
+                      transition: "transform 0.35s cubic-bezier(0.23,1,0.32,1)",
+                      willChange: "transform",
+                    }}
                   >
                     {status === "sending" ? "SENDING..." : "SEND MESSAGE →"}
-                  </button>
-                </Magnetic>
+                  </span>
+                </button>
               </form>
             </Reveal>
           )}
