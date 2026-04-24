@@ -3,7 +3,7 @@
 @theme {
   --color-bg: #0a0a0a;
   --color-fg: #f0f0f0;
-  --color-mid: #666666;
+  --color-mid: #aaaaaa;
   --color-hairline: #1f1f1f;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
   --font-display: var(--font-barlow-condensed), ui-sans-serif, sans-serif;
