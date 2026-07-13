@@ -15,6 +15,15 @@ type Work = {
 const WORKS: Work[] = [
   {
     num:      "01",
+    title:    "BRAND\nATELIER",
+    subtitle: "AGENCY SITE / BILINGUAL EN—AR",
+    year:     "2026",
+    url:      "https://brandatelier.vercel.app",
+    image:    "/images/brandatelier.png",
+    stack:    ["NEXT.JS", "MUI", "NEXT-INTL", "FRAMER MOTION"],
+  },
+  {
+    num:      "02",
     title:    "UNCLE J\nNUTRITION",
     subtitle: "E-COMMERCE / SHOPIFY",
     year:     "2026",
@@ -23,7 +32,7 @@ const WORKS: Work[] = [
     stack:    ["SHOPIFY", "LIQUID"],
   },
   {
-    num:      "02",
+    num:      "03",
     title:    "THE\nOUTLETS",
     subtitle: "E-COMMERCE / SHOPIFY",
     year:     "2024",
