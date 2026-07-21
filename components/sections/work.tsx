@@ -24,6 +24,15 @@ const WORKS: Work[] = [
   },
   {
     num:      "02",
+    title:    "VINYLIZED",
+    subtitle: "E-COMMERCE / ORDER-TO-WHATSAPP FLOW",
+    year:     "2026",
+    url:      "https://vinylizedlb.com",
+    image:    "/images/vinylized.png",
+    stack:    ["NEXT.JS", "MUI", "SUPABASE", "CLOUDFLARE"],
+  },
+  {
+    num:      "03",
     title:    "UNCLE J\nNUTRITION",
     subtitle: "E-COMMERCE / SHOPIFY",
     year:     "2026",
@@ -32,7 +41,7 @@ const WORKS: Work[] = [
     stack:    ["SHOPIFY", "LIQUID"],
   },
   {
-    num:      "03",
+    num:      "04",
     title:    "THE\nOUTLETS",
     subtitle: "E-COMMERCE / SHOPIFY",
     year:     "2024",

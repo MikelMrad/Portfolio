@@ -1,6 +1,7 @@
 import { ZStage }             from "@/components/sections/z-stage"
 import { WorkSection }        from "@/components/sections/work"
-import { ExperimentsSection } from "@/components/sections/experiments"
+// Side work / experiments — hidden for now, keeping the page to client work.
+// import { ExperimentsSection } from "@/components/sections/experiments"
 import { SkillsSection }      from "@/components/sections/skills"
 import { AboutSection }       from "@/components/sections/about"
 import { ContactSection }     from "@/components/sections/contact-section"
@@ -19,7 +20,7 @@ export default function Home() {
         <SnapSections>
           <WorkSection />
           <Marquee text="AVAILABLE FOR FREELANCE & FULL-TIME — SHOPIFY · NEXT.JS · THREE.JS · REACT · TS" speed={30} />
-          <ExperimentsSection />
+          {/* <ExperimentsSection /> */}
           <SkillsSection />
           <Marquee text="COMMERCE · INTERFACES · AND THE DETAILS IN BETWEEN" speed={40} />
           <AboutSection />
