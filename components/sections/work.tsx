@@ -1,6 +1,7 @@
 "use client"
 import { Reveal } from "@/components/ui/reveal"
 import { Magnetic } from "@/components/ui/magnetic"
+import { WorkMarquee } from "@/components/ui/work-marquee"
 
 type Work = {
   num:      string
@@ -8,7 +9,8 @@ type Work = {
   subtitle: string
   year:     string
   url:      string
-  image:    string
+  /** One or more screenshots. Multiple images render as a carousel on desktop. */
+  images:   string[]
   stack:    string[]
 }
 
@@ -19,7 +21,12 @@ const WORKS: Work[] = [
     subtitle: "AGENCY SITE / BILINGUAL EN—AR",
     year:     "2026",
     url:      "https://brandatelier.vercel.app",
-    image:    "/images/brandatelier.png",
+    images:   [
+      "/images/work/brandatelier-01.webp",
+      "/images/work/brandatelier-02.webp",
+      "/images/work/brandatelier-03.webp",
+      "/images/work/brandatelier-04.webp",
+    ],
     stack:    ["NEXT.JS", "MUI", "NEXT-INTL", "FRAMER MOTION"],
   },
   {
@@ -28,7 +35,12 @@ const WORKS: Work[] = [
     subtitle: "E-COMMERCE / ORDER-TO-WHATSAPP FLOW",
     year:     "2026",
     url:      "https://vinylizedlb.com",
-    image:    "/images/vinylized.png",
+    images:   [
+      "/images/work/vinylized-01.webp",
+      "/images/work/vinylized-02.webp",
+      "/images/work/vinylized-03.webp",
+      "/images/work/vinylized-04.webp",
+    ],
     stack:    ["NEXT.JS", "MUI", "SUPABASE", "CLOUDFLARE"],
   },
   {
@@ -37,7 +49,14 @@ const WORKS: Work[] = [
     subtitle: "E-COMMERCE / SHOPIFY",
     year:     "2026",
     url:      "https://unclejnutrition.com",
-    image:    "/images/unclejnutriotionproj.png",
+    // Store is being shut down — these archived screenshots (captured 2026-08-12)
+    // are the record of the build once the live site goes offline.
+    images:   [
+      "/images/work/unclej-01.webp",
+      "/images/work/unclej-02.webp",
+      "/images/work/unclej-03.webp",
+      "/images/work/unclej-04.webp",
+    ],
     stack:    ["SHOPIFY", "LIQUID"],
   },
   {
@@ -46,7 +65,12 @@ const WORKS: Work[] = [
     subtitle: "E-COMMERCE / SHOPIFY",
     year:     "2024",
     url:      "https://theoutletslb.com",
-    image:    "/images/theoutlets.png",
+    images:   [
+      "/images/work/theoutlets-01.webp",
+      "/images/work/theoutlets-02.webp",
+      "/images/work/theoutlets-03.webp",
+      "/images/work/theoutlets-04.webp",
+    ],
     stack:    ["SHOPIFY", "LIQUID"],
   },
 ]
@@ -80,6 +104,8 @@ export function WorkSection() {
 }
 
 function WorkItem({ work, flip }: { work: Work; flip: boolean }) {
+  const title = work.title.replace("\n", " ")
+
   return (
     <article
       id={`work-${work.num}`}
@@ -129,12 +155,19 @@ function WorkItem({ work, flip }: { work: Work; flip: boolean }) {
         </Reveal>
 
         <Reveal delay={120}>
-          <div className={`w-full md:w-[42%] overflow-hidden border border-hairline group ${flip ? "ml-auto" : ""}`}>
-            <img
-              src={work.image}
-              alt={work.title.replace("\n", " ")}
-              className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-            />
+          <div className={`w-full md:w-[42%] ${flip ? "ml-auto" : ""}`}>
+            {work.images.length > 1 ? (
+              <WorkMarquee images={work.images} alt={title} />
+            ) : (
+              // Single-image items keep the original static frame.
+              <div className="overflow-hidden border border-hairline group">
+                <img
+                  src={work.images[0]}
+                  alt={title}
+                  className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                />
+              </div>
+            )}
           </div>
         </Reveal>
 
