@@ -11,8 +11,8 @@ export const IDENTITY = {
   location:  "BEIRUT, LEBANON",
   reach:     "BEIRUT → WORLDWIDE",
   available: true,
-  /** Drop a file here and the monogram fallback stands down automatically. */
-  avatar:    "/images/avatar.jpg",
+  /** Transparent PNG — a JPG would flatten the cutout onto a solid box. */
+  avatar:    "/images/avatar.png",
   monogram:  "MM",
 } as const
 

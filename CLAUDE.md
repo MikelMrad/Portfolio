@@ -118,6 +118,25 @@ stacks, which the card can only show as two clamped lines.
   `stage.tsx`). Opening one reuses the identical engine rather than introducing
   a second interaction language.
 
+### Nothing renders until the viewport is known
+
+`useViewportMode()` returns `{ mobile, resolved }`, and **no modules mount until
+`resolved` is true**. This is not caution, it fixes a real defect: the server
+can't know the viewport, so the SSR markup is always the desktop grid. On a
+phone hydration doesn't beat the first paint, so the 12-column desktop layout
+painted, reflowed, and landed on the mobile stack — visibly.
+
+Hiding the wrong layout behind `opacity: 0` is **not** sufficient, and was tried:
+mounting the desktop set means AnimatePresence has to animate it back out when
+`isMobile` flips, and that swap shows however it's masked. Rendering only once
+the answer is in means the first set to mount is the correct one, and the intro
+gather covers the wait.
+
+Cost: the grid's markup isn't in the SSR HTML. `<head>` metadata still is, so
+link previews are unaffected, and Googlebot executes JS. Verified under 6x CPU
+throttle at 360px: 0 modules at +100ms, then 4 full-width rows — the desktop
+layout is never visible at any frame.
+
 ### Mobile is the same engine on a different grid
 
 Below 767px (`MOBILE_Q` in `stage.tsx`) the grid becomes **one column, one row
@@ -167,7 +186,11 @@ Consequences worth knowing before changing it:
   by `!isMobile` — without that guard it renders *in addition to* its tile.
 - A tapped project tile expands to `ProjectDetail`, not `ProjectCard`.
 - Long content inside an *expanded* section may scroll within that section. That
-  is the one permitted scroll; the tile stack itself never scrolls.
+  is the one permitted scroll; the tile stack itself never scrolls. In
+  `ProjectDetail` the **outer** element is the scroller on narrow screens and the
+  reel takes a definite `cqh` height — making the copy `shrink-0` with its own
+  `overflow-y-auto` does nothing, because it then sizes to its content and the
+  module's `overflow: hidden` just clips it.
 - The close control is a **bar**, and the grid adds top padding when zoomed to
   reserve its height. As a floating button it sat on top of each expanded
   section's own header.
@@ -258,10 +281,14 @@ plays that role (`shadow-glow-sm` / `shadow-glow` / `shadow-glow-lg`, plus
 
 ## Assets
 
-- `public/images/avatar.jpg` — **not present yet**. `Identity` probes for it on
-  mount and falls back to an `MM` monogram. Drop the file in and it takes over.
-  The probe exists because the `<img>` is in the SSR HTML and fails to decode
-  before hydration, so an `onError` handler never fires.
+- `public/images/avatar.png` — a **transparent** cutout, so it must stay PNG; a
+  JPG would flatten it onto a solid box inside its hairline frame. It's the one
+  photographic thing in the identity card and is deliberately **not** greyscaled,
+  matching the rule that images keep their colour while type and chrome stay
+  monochrome. `Identity` probes for it on mount and falls back to an `MM`
+  monogram if it's missing — the probe exists because the `<img>` is in the SSR
+  HTML and fails to decode before hydration, so an `onError` handler never fires.
+  The mobile identity row renders it too, via `avatar` in `TILE_SPEC`.
 - `public/docs/Mikel-Mrad-CV.pdf` — the 2026 technical CV.
 - `public/images/work/*.webp` — 4 screenshots per project.
 

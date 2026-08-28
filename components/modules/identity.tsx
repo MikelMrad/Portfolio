@@ -32,7 +32,7 @@ export function Identity() {
         <div className="relative shrink-0 aspect-square border border-hairline overflow-hidden bg-bg w-[clamp(1.6rem,20cqh,2.5rem)] @[420px]:w-[clamp(2.5rem,18cqh,5rem)]">
           {avatarOk ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={IDENTITY.avatar} alt="Mikel Mrad" className="w-full h-full object-cover grayscale" />
+            <img src={IDENTITY.avatar} alt="Mikel Mrad" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full grid place-items-center">
               <span className="font-display text-fg leading-none tracking-tight text-[clamp(0.7rem,9cqh,2.25rem)]">

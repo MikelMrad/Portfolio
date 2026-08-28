@@ -47,16 +47,25 @@ const TRANSITION_MS = 950
 /** Below this the grid becomes a stack of title tiles. */
 const MOBILE_Q = "(max-width: 767px)"
 
-function useIsMobile() {
-  const [m, setM] = useState(false)
+/**
+ * Which layout to draw, and whether that's been decided yet.
+ *
+ * The server can't know the viewport, so the SSR markup is always the desktop
+ * grid. On a fast client the effect below resolves before the first paint and
+ * nobody notices — but on a phone, hydration doesn't beat the paint, so the
+ * desktop 12-column layout renders, reflows, and lands on the mobile stack.
+ * `resolved` lets the stage stay hidden until the answer is in.
+ */
+function useViewportMode() {
+  const [mode, setMode] = useState({ mobile: false, resolved: false })
   useLayoutEffect(() => {
     const mq = window.matchMedia(MOBILE_Q)
-    const sync = () => setM(mq.matches)
+    const sync = () => setMode({ mobile: mq.matches, resolved: true })
     sync()
     mq.addEventListener("change", sync)
     return () => mq.removeEventListener("change", sync)
   }, [])
-  return m
+  return mode
 }
 
 const pathFor  = (t: TabId) => (t === "index" ? "/" : `/${t}`)
@@ -69,7 +78,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   const [tab, setTab]       = useState<TabId>(initialTab)
   const [open, setOpen]     = useState<string | null>(null)
   const [busy, setBusy]     = useState(true) // true on first paint for the intro gather
-  const isMobile            = useIsMobile()
+  const { mobile: isMobile, resolved } = useViewportMode()
   const [zoom, setZoom]     = useState<ModuleId | null>(null) // mobile: expanded tile
 
   const mobileIds = useMemo(() => MOBILE_ORDER[tab], [tab])
@@ -328,6 +337,15 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
           }}
         >
           {/*
+            Nothing is rendered until the viewport is known. Hiding the wrong
+            layout isn't enough — mounting the desktop set means AnimatePresence
+            has to animate it back out again, and that swap is visible however
+            it's masked. Rendering only once `resolved` is true means the first
+            set to mount is the right one, and the intro gather covers the wait.
+          */}
+          {resolved && (
+          <>
+          {/*
             Desktop anchor. Outside AnimatePresence because it must never
             unmount, and positioned absolutely once the grid has been measured
             so its width/height can be animated for real — see rectFor(). Until
@@ -386,6 +404,8 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
               </ModuleCard>
             ))}
           </AnimatePresence>
+          </>
+          )}
         </div>
       </div>
 

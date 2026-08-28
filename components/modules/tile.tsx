@@ -17,6 +17,8 @@ import type { ModuleId, TabId } from "@/lib/grid"
 type TileSpec = {
   label: string
   title: string
+  /** Square thumbnail shown at the head of the row. */
+  avatar?: string
   /** Inline content for rows that don't need expanding. */
   detail?: string
   /** Omitted = static row, not tappable. */
@@ -40,6 +42,7 @@ export const TILE_SPEC: Partial<Record<ModuleId, TileSpec>> = {
     label:  "PORTFOLIO — 2026",
     title:  IDENTITY.name + ".",
     detail: "FRONT-END / FULL-STACK DEVELOPER",
+    avatar: IDENTITY.avatar,
     live:   true,
   },
   stats: {
@@ -98,7 +101,14 @@ export const isExpandable = (id: ModuleId) => TILE_SPEC[id]?.action === "expand"
 function Body({ spec }: { spec: TileSpec }) {
   return (
     <>
-      <span className="min-w-0 flex flex-col gap-1">
+      {spec.avatar && (
+        <span className="shrink-0 aspect-square overflow-hidden border border-hairline bg-bg w-[clamp(2rem,32cqh,3.5rem)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={spec.avatar} alt="Mikel Mrad" className="w-full h-full object-cover" />
+        </span>
+      )}
+
+      <span className="min-w-0 flex-1 flex flex-col gap-1">
         <span className="font-mono text-[8px] uppercase tracking-[0.28em] text-dim">{spec.label}</span>
 
         <span className="font-display text-fg leading-none tracking-tight truncate text-[clamp(1rem,min(8cqw,30cqh),2.25rem)]">
