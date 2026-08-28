@@ -160,14 +160,26 @@ export function ProjectDetail({ num }: { num: string }) {
   const title = project.title.replace("\n", " ")
 
   return (
-    <div className="h-full flex flex-col @[700px]:flex-row min-h-0">
-      {/* Reel — full-bleed, uncropped, always the widest thing on screen. */}
-      <div className="relative flex-1 min-h-0 min-w-0 border-b @[700px]:border-b-0 @[700px]:border-r border-hairline">
+    /*
+      Two different layouts.
+
+      Narrow (a phone): one column that scrolls as a whole. The copy used to be
+      `shrink-0` with its own `overflow-y-auto`, which meant it took its natural
+      height and never scrolled — the module's `overflow: hidden` simply clipped
+      whatever didn't fit. The scroller has to be the outer element, with the
+      reel given a definite share of the card so the copy can flow past it.
+
+      Wide (desktop): reel and copy side by side, nothing scrolls but the copy.
+    */
+    <div className="h-full min-h-0 overflow-y-auto @[700px]:overflow-hidden flex flex-col @[700px]:flex-row">
+      {/* Reel — full-bleed and uncropped. Definite height on a phone so it
+          can't eat the column; fills the row on desktop. */}
+      <div className="relative shrink-0 h-[45cqh] @[700px]:h-auto @[700px]:flex-1 @[700px]:min-h-0 min-w-0 border-b @[700px]:border-b-0 @[700px]:border-r border-hairline">
         <VerticalReel images={project.images} alt={title} />
       </div>
 
       {/* Copy */}
-      <div className="w-full @[700px]:w-[36%] shrink-0 flex flex-col gap-4 p-5 @[700px]:p-6 min-h-0 overflow-y-auto">
+      <div className="w-full @[700px]:w-[36%] shrink-0 flex flex-col gap-4 p-5 @[700px]:p-6 @[700px]:min-h-0 @[700px]:overflow-y-auto">
         <Label right={project.year}>WORK — {project.num}</Label>
 
         <h2 className="font-display text-fg leading-[0.86] tracking-tight whitespace-pre-line text-4xl @[700px]:text-6xl">
@@ -187,7 +199,7 @@ export function ProjectDetail({ num }: { num: string }) {
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mt-auto pt-2">
+        <div className="flex flex-wrap gap-1.5 @[700px]:mt-auto pt-2">
           {project.stack.map((s) => <Tag key={s}>{s}</Tag>)}
         </div>
 
