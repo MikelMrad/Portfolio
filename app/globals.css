@@ -1,40 +1,51 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0a0a0a;
-  --color-fg: #f0f0f0;
-  --color-mid: #aaaaaa;
+  /* Pure monochrome. The only "accent" is white light. */
+  --color-bg:       #0a0a0a;
+  --color-fg:       #f0f0f0;
+  --color-mid:      #aaaaaa;
+  --color-dim:      #666666;
   --color-hairline: #1f1f1f;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --color-card:     #0d0d0d;
+
+  --font-mono:    var(--font-jetbrains-mono), ui-monospace, monospace;
   --font-display: var(--font-barlow-condensed), ui-sans-serif, sans-serif;
+
+  /* White glow replaces an accent colour — used for active, hover, live. */
+  --shadow-glow-sm: 0 0 10px 0 rgba(240, 240, 240, 0.28);
+  --shadow-glow:    0 0 18px 2px rgba(240, 240, 240, 0.34), 0 0 46px 8px rgba(240, 240, 240, 0.09);
+  --shadow-glow-lg: 0 0 26px 4px rgba(240, 240, 240, 0.42), 0 0 70px 14px rgba(240, 240, 240, 0.13);
 }
 
 @layer base {
+  html, body {
+    height: 100%;
+    /* The page never scrolls. This is the whole premise. */
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
     background-color: var(--color-bg);
     color: var(--color-fg);
   }
+
   body {
     background-color: var(--color-bg);
     color: var(--color-fg);
     font-family: var(--font-mono);
   }
+
   ::selection { background-color: var(--color-fg); color: var(--color-bg); }
-  html.lenis, html.lenis body { height: auto; }
-  .lenis.lenis-smooth { scroll-behavior: auto !important; }
 
-  /* Thin scrollbar */
-  ::-webkit-scrollbar { width: 1px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--color-hairline); }
-
-  /* Custom cursor — hide native on pointer devices */
+  /* Hide the native cursor on pointer devices — <Cursor /> takes over. */
   @media (pointer: fine) {
     *, *::before, *::after { cursor: none !important; }
   }
 
-  /* Film grain overlay — fixed, covers everything, non-interactive */
+  /* Film grain, carried over from v3. Sits above everything, ignores input. */
   body::after {
     content: '';
     position: fixed;
@@ -45,13 +56,56 @@
     background-size: 200px 200px;
     opacity: 0.055;
   }
+
+  /* Horizontal pan track on small screens — no visible scrollbar. */
+  .pan-x { scrollbar-width: none; -ms-overflow-style: none; }
+  .pan-x::-webkit-scrollbar { display: none; }
 }
 
-@keyframes marquee {
-  to { transform: translateX(-50%); }
+@utility grid-bg {
+  background-image:
+    linear-gradient(var(--color-hairline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-hairline) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* A module. Hairline box that lifts into a white glow on hover. */
+@utility module {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  transition: border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* Vertical filmstrip. The track holds the images twice, so -50% is exactly
+   one full set and the loop is seamless. */
+@keyframes marquee-y {
+  to { transform: translateY(-50%); }
+}
+
+/* Role blurbs collide with the next role when the card is short, so they're
+   gated on HEIGHT. The width term is only a sanity floor: gating on 420px wide
+   also hid them on a full-screen phone (~366px), which has height to spare.
+   Requires container-type: size on the card (see ModuleCard). */
+.role-blurb { display: none; }
+@container (min-width: 250px) and (min-height: 330px) {
+  .role-blurb { display: block; }
 }
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
+  50%      { opacity: 0.15; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px 0 rgba(240, 240, 240, 0.35); }
+  50%      { box-shadow: 0 0 16px 3px rgba(240, 240, 240, 0.65); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

@@ -1,34 +1,28 @@
 "use client"
 import { useEffect, useRef, useState } from "react"
 
-export function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
+/**
+ * Ported from v3 but re-triggered on mount rather than on scroll into view —
+ * nothing scrolls here, and cards arrive already visible.
+ */
+export function Counter({ to, suffix = "", delay = 0 }: { to: number; suffix?: string; delay?: number }) {
   const [val, setVal] = useState(0)
-  const ref     = useRef<HTMLSpanElement>(null)
-  const started = useRef(false)
+  const raf = useRef(0)
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting || started.current) return
-        started.current = true
-        const t0 = performance.now()
-        const dur = 1600
-        const tick = (now: number) => {
-          const t    = Math.min(1, (now - t0) / dur)
-          const ease = 1 - Math.pow(1 - t, 3)
-          setVal(Math.round(ease * to))
-          if (t < 1) requestAnimationFrame(tick)
-        }
-        requestAnimationFrame(tick)
-        io.disconnect()
-      },
-      { threshold: 0.5 }
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [to])
+    const DUR = 1300
+    let t0 = 0
 
-  return <span ref={ref}>{val}{suffix}</span>
+    const tick = (now: number) => {
+      if (!t0) t0 = now
+      const t = Math.min(1, (now - t0) / DUR)
+      setVal(Math.round((1 - Math.pow(1 - t, 3)) * to))
+      if (t < 1) raf.current = requestAnimationFrame(tick)
+    }
+
+    const timer = setTimeout(() => { raf.current = requestAnimationFrame(tick) }, delay)
+    return () => { clearTimeout(timer); cancelAnimationFrame(raf.current) }
+  }, [to, delay])
+
+  return <span>{val}{suffix}</span>
 }

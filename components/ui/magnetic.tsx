@@ -1,13 +1,9 @@
 "use client"
-import { useRef, useEffect, ReactNode } from "react"
+import { useRef, useEffect, type ReactNode } from "react"
 
-interface MagneticProps {
-  children: ReactNode
-  strength?: number
-  className?: string
-}
-
-export function Magnetic({ children, strength = 0.35, className }: MagneticProps) {
+export function Magnetic({
+  children, strength = 0.35, className,
+}: { children: ReactNode; strength?: number; className?: string }) {
   const ref     = useRef<HTMLDivElement>(null)
   const rafRef  = useRef(0)
   const posRef  = useRef({ x: 0, y: 0 })
@@ -17,19 +13,16 @@ export function Magnetic({ children, strength = 0.35, className }: MagneticProps
   useEffect(() => {
     const tick = () => {
       if (!ref.current) return
-      const tx = posRef.current.x
-      const ty = posRef.current.y
+      const { x: tx, y: ty } = posRef.current
       curRef.current.x += (tx - curRef.current.x) * 0.12
       curRef.current.y += (ty - curRef.current.y) * 0.12
       ref.current.style.transform = `translate(${curRef.current.x}px, ${curRef.current.y}px)`
-      if (
-        Math.abs(tx - curRef.current.x) > 0.05 ||
-        Math.abs(ty - curRef.current.y) > 0.05
-      ) {
+      if (Math.abs(tx - curRef.current.x) > 0.05 || Math.abs(ty - curRef.current.y) > 0.05) {
         rafRef.current = requestAnimationFrame(tick)
       }
     }
     tickRef.current = tick
+    return () => cancelAnimationFrame(rafRef.current)
   }, [])
 
   const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -55,7 +48,14 @@ export function Magnetic({ children, strength = 0.35, className }: MagneticProps
       className={className}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      style={{ display: "inline-block", willChange: "transform" }}
+      /*
+        `width: fit-content` is load-bearing, not cosmetic. As a flex item this
+        wrapper stretches to the container's full width despite inline-block,
+        which puts its centre far from the content it wraps — the offset is
+        measured from that centre, so a left-aligned label shoots sideways on
+        hover. A definite width overrides the stretch.
+      */
+      style={{ display: "inline-block", width: "fit-content", willChange: "transform" }}
     >
       {children}
     </div>
