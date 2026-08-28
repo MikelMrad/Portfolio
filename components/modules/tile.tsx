@@ -21,7 +21,7 @@ type TileSpec = {
   /** Inline content for rows that don't need expanding. */
   detail?: string
   /** Omitted = static row, not tappable. */
-  action?: "expand" | { href: string; newTab?: boolean }
+  action?: "expand" | "home" | { href: string; newTab?: boolean }
   live?: boolean
   links?: { label: string; href: string }[]
 }
@@ -41,6 +41,7 @@ export const TILE_SPEC: Partial<Record<ModuleId, TileSpec>> = {
     label:  "PORTFOLIO — 2026",
     title:  IDENTITY.name + ".",
     detail: "FRONT-END / FULL-STACK DEVELOPER",
+    action: "home",
     live:   true,
   },
   stats: {
@@ -136,7 +137,7 @@ function Body({ spec }: { spec: TileSpec }) {
 
       {spec.action && (
         <span aria-hidden className="font-mono text-[11px] text-dim shrink-0 group-active:text-fg transition-colors">
-          {spec.action === "expand" ? "↗" : "→"}
+          {spec.action === "expand" ? "↗" : spec.action === "home" ? "↖" : "→"}
         </span>
       )}
     </>
@@ -149,7 +150,7 @@ export function Tile({ id, onOpen }: { id: ModuleId; onOpen: (id: ModuleId) => v
 
   const shell = "group h-full w-full flex items-center justify-between gap-3 px-4 text-left"
 
-  if (spec.action === "expand") {
+  if (spec.action === "expand" || spec.action === "home") {
     return <button onClick={() => onOpen(id)} className={shell}><Body spec={spec} /></button>
   }
 

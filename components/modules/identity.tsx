@@ -12,9 +12,20 @@ import { LiveDot } from "@/components/ui/bits"
  * `@container` (inline-size) the `cqh` terms silently resolve against the
  * viewport and the type stops responding to the card's height.
  */
-export function Identity() {
+export function Identity({ onHome }: { onHome?: () => void }) {
+  const Shell = onHome ? "button" : "div"
   return (
-    <div className="h-full flex flex-col p-[clamp(0.6rem,4cqh,1.5rem)] gap-[clamp(0.35rem,2.5cqh,0.75rem)]">
+    <Shell
+      {...(onHome ? { onClick: onHome, type: "button" as const, "aria-label": "Go to index" } : {})}
+      className="group relative h-full w-full text-left flex flex-col p-[clamp(0.6rem,4cqh,1.5rem)] gap-[clamp(0.35rem,2.5cqh,0.75rem)]"
+    >
+      {/* Only surfaces on hover — the card is the anchor on every tab, so it
+          shouldn't advertise itself while you're reading it. */}
+      {onHome && (
+        <span className="absolute top-[clamp(0.6rem,4cqh,1.5rem)] right-[clamp(0.6rem,4cqh,1.5rem)] font-mono uppercase tracking-[0.24em] text-dim opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[clamp(7px,1.9cqh,9px)]">
+          INDEX ↖
+        </span>
+      )}
       <div className="min-w-0 shrink-0 flex flex-col gap-0.5">
         <span className="font-mono uppercase tracking-[0.28em] text-dim text-[clamp(7px,1.9cqh,9px)]">
           PORTFOLIO — 2026
@@ -48,6 +59,6 @@ export function Identity() {
           </span>
         </div>
       </div>
-    </div>
+    </Shell>
   )
 }

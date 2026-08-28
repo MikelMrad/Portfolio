@@ -277,7 +277,14 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
   const render = (id: ModuleId): React.ReactNode => {
     // Mobile, nothing expanded: every module is a title row.
-    if (isMobile && !zoom) return <Tile id={id} onOpen={openZoom} />
+    if (isMobile && !zoom) {
+      return (
+        <Tile
+          id={id}
+          onOpen={(next) => (next === "identity" ? goTab("index") : openZoom(next))}
+        />
+      )
+    }
     // Mobile, a project expanded: show its detail, not its card.
     if (isMobile && id === "project-detail" && zoom?.startsWith("project-0")) {
       return <ProjectDetail num={`0${zoom.slice(-1)}`} />
@@ -367,7 +374,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="h-full w-full"
               >
-                <Identity />
+                <Identity onHome={() => goTab("index")} />
               </motion.div>
             </motion.div>
           )}
