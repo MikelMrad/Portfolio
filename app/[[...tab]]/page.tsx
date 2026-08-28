@@ -11,7 +11,7 @@ export default async function Page({ params }: { params: Promise<{ tab?: string[
   const { tab } = await params
 
   // Without this the catch-all answers 200 for any path — including missing
-  // static assets like /images/avatar.jpg, which then arrive as HTML.
+  // static assets, which would then arrive as HTML instead of a 404.
   if (tab && tab.length > 0) {
     if (tab.length > 1) notFound()
     const match = TABS.find((t) => t.id === tab[0] && t.id !== "index")

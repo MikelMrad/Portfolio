@@ -1,5 +1,4 @@
 "use client"
-import { useEffect, useState } from "react"
 import { IDENTITY } from "@/lib/content"
 import { LiveDot } from "@/components/ui/bits"
 
@@ -14,42 +13,15 @@ import { LiveDot } from "@/components/ui/bits"
  * viewport and the type stops responding to the card's height.
  */
 export function Identity() {
-  // Probed rather than handled with onError: the <img> is in the SSR HTML and
-  // fails to decode before React hydrates, so an onError handler never fires.
-  const [avatarOk, setAvatarOk] = useState(false)
-  useEffect(() => {
-    const probe = new window.Image()
-    probe.onload  = () => setAvatarOk(probe.naturalWidth > 0)
-    probe.onerror = () => setAvatarOk(false)
-    probe.src = IDENTITY.avatar
-    return () => { probe.onload = null; probe.onerror = null }
-  }, [])
-
   return (
     <div className="h-full flex flex-col p-[clamp(0.6rem,4cqh,1.5rem)] gap-[clamp(0.35rem,2.5cqh,0.75rem)]">
-      {/* Mark + meta */}
-      <div className="flex items-start gap-3 shrink-0">
-        <div className="relative shrink-0 aspect-square border border-hairline overflow-hidden bg-bg w-[clamp(1.6rem,20cqh,2.5rem)] @[420px]:w-[clamp(2.5rem,18cqh,5rem)]">
-          {avatarOk ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={IDENTITY.avatar} alt="Mikel Mrad" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full grid place-items-center">
-              <span className="font-display text-fg leading-none tracking-tight text-[clamp(0.7rem,9cqh,2.25rem)]">
-                {IDENTITY.monogram}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-          <span className="font-mono uppercase tracking-[0.28em] text-dim text-[clamp(7px,1.9cqh,9px)]">
-            PORTFOLIO — 2026
-          </span>
-          <span className="font-mono uppercase tracking-[0.16em] text-mid leading-relaxed text-[clamp(7px,2.1cqh,10px)]">
-            {IDENTITY.role}
-          </span>
-        </div>
+      <div className="min-w-0 shrink-0 flex flex-col gap-0.5">
+        <span className="font-mono uppercase tracking-[0.28em] text-dim text-[clamp(7px,1.9cqh,9px)]">
+          PORTFOLIO — 2026
+        </span>
+        <span className="font-mono uppercase tracking-[0.16em] text-mid leading-relaxed text-[clamp(7px,2.1cqh,10px)]">
+          {IDENTITY.role}
+        </span>
       </div>
 
       {/* The name takes the slack. One line when the card is compact, two when

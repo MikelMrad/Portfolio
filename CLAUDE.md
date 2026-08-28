@@ -281,14 +281,6 @@ plays that role (`shadow-glow-sm` / `shadow-glow` / `shadow-glow-lg`, plus
 
 ## Assets
 
-- `public/images/avatar.png` — a **transparent** cutout, so it must stay PNG; a
-  JPG would flatten it onto a solid box inside its hairline frame. It's the one
-  photographic thing in the identity card and is deliberately **not** greyscaled,
-  matching the rule that images keep their colour while type and chrome stay
-  monochrome. `Identity` probes for it on mount and falls back to an `MM`
-  monogram if it's missing — the probe exists because the `<img>` is in the SSR
-  HTML and fails to decode before hydration, so an `onError` handler never fires.
-  The mobile identity row renders it too, via `avatar` in `TILE_SPEC`.
 - `public/docs/Mikel-Mrad-CV.pdf` — the 2026 technical CV.
 - `public/images/work/*.webp` — 4 screenshots per project.
 

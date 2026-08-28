@@ -11,9 +11,6 @@ export const IDENTITY = {
   location:  "BEIRUT, LEBANON",
   reach:     "BEIRUT → WORLDWIDE",
   available: true,
-  /** Transparent PNG — a JPG would flatten the cutout onto a solid box. */
-  avatar:    "/images/avatar.png",
-  monogram:  "MM",
 } as const
 
 export const CONTACT = {
