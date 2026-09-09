@@ -31,7 +31,9 @@ export function CvCard() {
           <br />
           CV
         </span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-dim leading-relaxed">
+        {/* First thing to go when the card is short — the CV itself says this,
+            and DOWNLOAD is the only line here that has to survive. */}
+        <span className="cq-h160 font-mono text-[9px] uppercase tracking-[0.16em] text-dim leading-relaxed">
           EXPERIENCE · STACK · EDUCATION
         </span>
       </div>
@@ -224,35 +226,42 @@ export function ProjectDetail({ num }: { num: string }) {
   )
 }
 
-/** Sidebar shown alongside an expanded project: close, plus jump to siblings. */
+/**
+ * Chrome for an expanded project: close, plus jump to siblings.
+ *
+ * A left-hand column on a desktop and a bar along the bottom on a phone — the
+ * flip is `.chrome` in globals.css, gated on the card's height. In bar mode the
+ * project titles drop and the numerals carry the list on their own; there is no
+ * room for twenty characters of title beside four of them.
+ */
 export function DetailNav({
   num, onClose, onOpen,
 }: { num: string; onClose: () => void; onOpen: (n: string) => void }) {
   return (
-    <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5 gap-3 min-h-0">
+    <div className="chrome h-full flex justify-between p-4 @[260px]:p-5 gap-3 min-h-0 min-w-0">
       <button
         onClick={onClose}
-        className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors flex items-center gap-2 self-start"
+        className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors flex items-center gap-2 self-center shrink-0"
       >
-        <span aria-hidden>←</span> CLOSE <span className="text-dim">ESC</span>
+        <span aria-hidden>←</span> CLOSE <span className="cq-h160 text-dim">ESC</span>
       </button>
 
       {/* Rows share the column evenly, matching the STACK spec sheets, so the
           sidebar fills instead of pooling its content in the middle. */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="chrome-list flex-1 min-h-0 min-w-0 flex">
         {PROJECTS.map((p) => {
           const active = p.num === num
           return (
             <button
               key={p.num}
               onClick={() => onOpen(p.num)}
-              className="text-left group flex flex-1 min-h-0 items-center gap-2 border-b border-hairline last:border-0"
+              className="chrome-item text-left group flex flex-1 min-h-0 min-w-0 items-center gap-2 border-hairline"
             >
               <span className={`font-mono text-[9px] tracking-[0.2em] ${active ? "text-fg" : "text-dim"}`}>
                 {p.num}
               </span>
               <span
-                className={`font-mono text-[9px] uppercase tracking-[0.12em] truncate transition-colors ${
+                className={`cq-h160 font-mono text-[9px] uppercase tracking-[0.12em] truncate transition-colors ${
                   active ? "text-fg" : "text-dim group-hover:text-mid"
                 }`}
               >
@@ -260,7 +269,7 @@ export function DetailNav({
               </span>
               {active && (
                 <span
-                  className="ml-auto block w-4 h-px bg-fg shrink-0"
+                  className="cq-h160 ml-auto w-4 h-px bg-fg shrink-0"
                   style={{ boxShadow: "0 0 8px 1px rgba(240,240,240,0.6)" }}
                 />
               )}
@@ -269,7 +278,7 @@ export function DetailNav({
         })}
       </div>
 
-      <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-dim leading-relaxed">
+      <span className="cq-h160 font-mono text-[8px] uppercase tracking-[0.2em] text-dim leading-relaxed">
         ← → TO STEP THROUGH
       </span>
     </div>

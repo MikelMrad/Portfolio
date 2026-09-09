@@ -79,7 +79,10 @@ export function ContactForm() {
         </div>
       ) : (
         <form onSubmit={submit} className="flex-1 min-h-0 flex flex-col gap-4 @[400px]:gap-5">
-          <div className="grid grid-cols-1 @[400px]:grid-cols-2 gap-4 @[400px]:gap-5 shrink-0">
+          {/* Paired at 320px, not 400: a phone's form card is ~369px wide, and
+              stacking the two inputs there costs 54px of the height the message
+              field needs. Two 176px inputs hold a 72px placeholder fine. */}
+          <div className="grid grid-cols-1 @[320px]:grid-cols-2 gap-4 @[400px]:gap-5 shrink-0">
             <input
               placeholder="YOUR NAME" value={name} onChange={(e) => setName(e.target.value)}
               required disabled={status === "sending"} className={FIELD}
@@ -123,14 +126,16 @@ export function Socials() {
     { label: "CV ↓",     href: CONTACT.cv },
   ]
   return (
-    <div className="h-full flex items-center gap-5 px-4 @[300px]:px-5">
+    /* Three nowrap labels in a 180px phone cell only fit at the tighter of the
+       two scales — hence the gates on gap, padding and tracking. */
+    <div className="h-full flex items-center justify-between @[220px]:justify-start gap-2 @[220px]:gap-5 px-3 @[300px]:px-5">
       {links.map((l) => (
         <a
           key={l.label}
           href={l.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors whitespace-nowrap"
+          className="font-mono text-[8px] @[220px]:text-[9px] uppercase tracking-[0.14em] @[220px]:tracking-[0.24em] text-mid hover:text-fg transition-colors whitespace-nowrap"
         >
           {l.label}
         </a>
@@ -141,9 +146,10 @@ export function Socials() {
 
 export function Footer() {
   return (
-    <div className="h-full flex items-center justify-between px-4 @[220px]:px-5 gap-3">
+    <div className="h-full flex items-center justify-between px-3 @[220px]:px-5 gap-3">
       <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-dim whitespace-nowrap">© 2026 MikelMrad</span>
-      <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-dim whitespace-nowrap">· NEXT.JS</span>
+      {/* The colophon is the half that goes when the cell is a phone-width bar. */}
+      <span className="hidden @[220px]:inline font-mono text-[8px] uppercase tracking-[0.2em] text-dim whitespace-nowrap">· NEXT.JS</span>
     </div>
   )
 }

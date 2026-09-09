@@ -3,14 +3,17 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, type MotionValue } from "motion/react"
 
 import {
-  GRID_COLS, GRID_ROWS, LAYOUTS, TABS,
+  GRID_COLS, GRID_ROWS, LAYOUTS, MOBILE_COLS, MOBILE_LAYOUTS, MOBILE_ROWS, TABS,
   gridStyle, rectFor, type GridGeom, type ModuleId, type Placement, type TabId,
 } from "@/lib/grid"
-import { MORPH_TRANSITION, flightVector, rankByRadius, slideDirection, slideVariants } from "@/lib/scatter"
+import {
+  DESKTOP_FLIGHT, MOBILE_FLIGHT, MORPH_TRANSITION, flightVector, rankByRadius,
+} from "@/lib/scatter"
 import { EMPLOYER, PROJECTS, STACK } from "@/lib/content"
 
 import { ModuleCard } from "./module-card"
 import { NavDock } from "./nav-dock"
+import { PinchPan } from "./pinch-pan"
 import { Cursor } from "@/components/ui/cursor"
 import { ZoomNav } from "@/components/ui/bits"
 import { Identity } from "@/components/modules/identity"
@@ -19,11 +22,12 @@ import { CvCard, DetailNav, ProjectCard, ProjectDetail, WorkMeta } from "@/compo
 import { Category, Education, TechCount } from "@/components/modules/stack-modules"
 import { ContactForm, EmailCard, Footer, Headline, Socials } from "@/components/modules/contact-modules"
 import { Signature } from "@/components/three/signature"
-import { MOBILE_ORDER, Tile, isExpandable } from "@/components/modules/tile"
 
 /**
- * An expanded project is just another layout. Opening one scatters the work
- * grid and gathers the detail in — the exact same engine, no second mechanic.
+ * An expanded project is just another layout. Opening one scatters the grid and
+ * gathers the detail in — the exact same engine, no second mechanic. Each grid
+ * gets its own shape of it: a sidebar column on a desktop, a bar under the
+ * detail on a phone, both driven by the same DetailNav.
  */
 const DETAIL_LAYOUT: Partial<Record<ModuleId, Placement>> = {
   identity:         { col: [1, 3], row: [1, 2] },
@@ -31,39 +35,65 @@ const DETAIL_LAYOUT: Partial<Record<ModuleId, Placement>> = {
   "project-detail": { col: [4, 9], row: [1, 8] },
 }
 
-/** A desktop zoom (currently only the experience timeline) reuses the detail shape. */
-const ZOOM_LAYOUT: Partial<Record<ModuleId, Placement>> = {
-  identity:   { col: [1, 3], row: [1, 2] },
-  "zoom-nav": { col: [1, 3], row: [3, 6] },
-  experience: { col: [4, 9], row: [1, 8] },
+const MOBILE_DETAIL_LAYOUT: Partial<Record<ModuleId, Placement>> = {
+  identity:         { col: [1, 4], row: [1, 2] },
+  "project-detail": { col: [1, 4], row: [3, 9] },
+  "detail-nav":     { col: [1, 4], row: [12, 1] },
 }
 
-/** Modules that expand on desktop, not just on a phone. */
-const DESKTOP_ZOOMABLE: ModuleId[] = ["experience"]
+/** A zoomed module reuses the detail shape, whichever grid it lands on. */
+const zoomLayout = (id: ModuleId): Partial<Record<ModuleId, Placement>> => ({
+  identity:   { col: [1, 3], row: [1, 2] },
+  "zoom-nav": { col: [1, 3], row: [3, 6] },
+  [id]:       { col: [4, 9], row: [1, 8] },
+})
+
+const mobileZoomLayout = (id: ModuleId): Partial<Record<ModuleId, Placement>> => ({
+  identity:   { col: [1, 4], row: [1, 2] },
+  [id]:       { col: [1, 4], row: [3, 9] },
+  "zoom-nav": { col: [1, 4], row: [12, 1] },
+})
+
+/** Modules that expand into the whole grid. The same set on both grids. */
+const ZOOMABLE: ModuleId[] = ["experience"]
 
 /** How long the scatter runs end to end. Used to park the WebGL loop. */
 const TRANSITION_MS = 950
 
-/** Below this the grid becomes a stack of title tiles. */
+/** Below this the grid becomes the portrait 4x12. */
 const MOBILE_Q = "(max-width: 767px)"
+/**
+ * Too short for the portrait grid — twelve rows would be ~18px each. This is a
+ * landscape phone, and the scaled desktop view is the only thing that fits it.
+ */
+const SHORT_Q = "(max-height: 540px)"
+
+/** The window the desktop grid is composed for; what the scaled view shows. */
+const DESKTOP_W = 1440
+const DESKTOP_H = 900
 
 /**
- * Which layout to draw, and whether that's been decided yet.
+ * Which grid to draw, and whether that's been decided yet.
  *
  * The server can't know the viewport, so the SSR markup is always the desktop
  * grid. On a fast client the effect below resolves before the first paint and
  * nobody notices — but on a phone, hydration doesn't beat the paint, so the
- * desktop 12-column layout renders, reflows, and lands on the mobile stack.
+ * desktop 12-column layout renders, reflows, and lands on the portrait one.
  * `resolved` lets the stage stay hidden until the answer is in.
  */
 function useViewportMode() {
-  const [mode, setMode] = useState({ mobile: false, resolved: false })
+  const [mode, setMode] = useState({ mobile: false, short: false, resolved: false })
   useLayoutEffect(() => {
     const mq = window.matchMedia(MOBILE_Q)
-    const sync = () => setMode({ mobile: mq.matches, resolved: true })
+    const sq = window.matchMedia(SHORT_Q)
+    const sync = () => setMode({ mobile: mq.matches, short: sq.matches, resolved: true })
     sync()
     mq.addEventListener("change", sync)
-    return () => mq.removeEventListener("change", sync)
+    sq.addEventListener("change", sync)
+    return () => {
+      mq.removeEventListener("change", sync)
+      sq.removeEventListener("change", sync)
+    }
   }, [])
   return mode
 }
@@ -78,18 +108,38 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   const [tab, setTab]       = useState<TabId>(initialTab)
   const [open, setOpen]     = useState<string | null>(null)
   const [busy, setBusy]     = useState(true) // true on first paint for the intro gather
-  const { mobile: isMobile, resolved } = useViewportMode()
-  const [zoom, setZoom]     = useState<ModuleId | null>(null) // mobile: expanded tile
+  const [zoom, setZoom]     = useState<ModuleId | null>(null)
+  const { mobile: isMobile, short: isShort, resolved } = useViewportMode()
 
-  const mobileIds = useMemo(() => MOBILE_ORDER[tab], [tab])
+  /**
+   * The phone's escape hatch: draw the real 12x8 at its full size and scale it
+   * to fit, then let the viewer drag and pinch into it. Forced on a landscape
+   * phone, where the portrait grid has no room to exist.
+   */
+  const [desktopView, setDesktopView] = useState(false)
+  const scaled    = isMobile && (isShort || desktopView)
+  const phoneGrid = isMobile && !scaled
 
-  const cols = isMobile ? 1 : GRID_COLS
-  const rows = isMobile ? Math.max(mobileIds.length, 1) : GRID_ROWS
+  const cols   = phoneGrid ? MOBILE_COLS : GRID_COLS
+  const rows   = phoneGrid ? MOBILE_ROWS : GRID_ROWS
+  const flight = phoneGrid ? MOBILE_FLIGHT : DESKTOP_FLIGHT
 
   const reduced             = !!useReducedMotion()
-  const panRef              = useRef<HTMLDivElement>(null)
   const gridRef             = useRef<HTMLDivElement>(null)
+  const roRef               = useRef<ResizeObserver | null>(null)
   const [geom, setGeom]     = useState<GridGeom | null>(null)
+  /**
+   * The same geometry, written during the measuring effect below.
+   *
+   * State lands one render late, and there is one moment where that matters:
+   * switching between the two grids changes the grid's size and the identity
+   * card's placement in the *same* commit. Reading `geom` there gives the
+   * previous grid's cell size against the next grid's placement — the card
+   * springs to a rect that belongs to neither. Layout effects run in
+   * declaration order, so this ref is already correct when the identity effect
+   * below reads it.
+   */
+  const geomRef             = useRef<GridGeom | null>(null)
 
   // The identity card's box, in pixels. These are always set before paint, so
   // the card never renders without dimensions (animating `left/top/width/height`
@@ -99,6 +149,10 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   const mW    = useMotionValue(0)
   const mH    = useMotionValue(0)
   const lastPlacement = useRef<Placement | null | undefined>(null)
+  /** The rect the card is currently headed for, so an unchanged one is a no-op
+   *  rather than a set() that the running spring immediately overwrites. */
+  const lastRect      = useRef<{ l: number; t: number; w: number; h: number } | null>(null)
+  const running       = useRef<{ stop: () => void }[]>([])
   const busyTimer           = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   /** Every state change that reshuffles the grid goes through here. */
@@ -117,27 +171,23 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   }, [reduced])
 
   const goTab = useCallback((next: TabId) => {
-    if (next === tab && !open) return
-    slideDirection.current =
-      TABS.findIndex((t) => t.id === next) >= TABS.findIndex((t) => t.id === tab) ? 1 : -1
+    if (next === tab && !open && !zoom) return
     beginTransition()
     // Shallow: the URL updates, React never unmounts the grid.
     window.history.pushState(null, "", pathFor(next))
     setTab(next)
     setOpen(null)
     setZoom(null)
-  }, [beginTransition, tab, open])
+  }, [beginTransition, tab, open, zoom])
 
-  /** Mobile: expand one tile to the whole grid, and collapse it again. */
+  /** Expand one module to the whole grid, and collapse it again. */
   const openZoom = useCallback((id: ModuleId) => {
-    if (isMobile ? !isExpandable(id) : !DESKTOP_ZOOMABLE.includes(id)) return
-    slideDirection.current = 1   // drilling in
+    if (!ZOOMABLE.includes(id)) return
     beginTransition()
     setZoom(id)
-  }, [beginTransition, isMobile])
+  }, [beginTransition])
 
   const closeZoom = useCallback(() => {
-    slideDirection.current = -1  // popping back out
     beginTransition()
     setZoom(null)
   }, [beginTransition])
@@ -159,10 +209,16 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     setOpen(PROJECTS[(i + dir + PROJECTS.length) % PROJECTS.length].num)
   }, [beginTransition, open])
 
+  const toggleView = useCallback(() => {
+    beginTransition()
+    setDesktopView((v) => !v)
+  }, [beginTransition])
+
   // Back / forward.
   useEffect(() => {
     const onPop = () => {
       setOpen(null)
+      setZoom(null)
       setTab(tabOfPath(window.location.pathname))
       beginTransition()
     }
@@ -199,97 +255,101 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     return () => window.removeEventListener("keydown", onKey)
   }, [tab, open, zoom, goTab, closeProject, closeZoom, stepProject])
 
-  // On a phone the grid is panned sideways — always land on its left edge.
-  useEffect(() => { panRef.current?.scrollTo({ left: 0, behavior: "smooth" }) }, [tab, open])
-
-  // Measured before paint so the identity card never renders at the wrong size.
-  useLayoutEffect(() => {
-    const el = gridRef.current
-    if (!el) return
-    const measure = () => {
-      const cs = getComputedStyle(el)
-      const gapX = parseFloat(cs.columnGap) || 0
-      const gapY = parseFloat(cs.rowGap) || 0
-      const padL = parseFloat(cs.paddingLeft) || 0
-      const padT = parseFloat(cs.paddingTop) || 0
-      const cw = el.clientWidth  - padL - (parseFloat(cs.paddingRight)  || 0)
-      const ch = el.clientHeight - padT - (parseFloat(cs.paddingBottom) || 0)
-      if (cw <= 0 || ch <= 0) return
-      setGeom({
-        padL, padT, gapX, gapY,
-        cellW: (cw - gapX * (cols - 1)) / cols,
-        cellH: (ch - gapY * (rows - 1)) / rows,
-      })
+  const measure = useCallback((el: HTMLDivElement) => {
+    const cs = getComputedStyle(el)
+    const gapX = parseFloat(cs.columnGap) || 0
+    const gapY = parseFloat(cs.rowGap) || 0
+    const padL = parseFloat(cs.paddingLeft) || 0
+    const padT = parseFloat(cs.paddingTop) || 0
+    const cw = el.clientWidth  - padL - (parseFloat(cs.paddingRight)  || 0)
+    const ch = el.clientHeight - padT - (parseFloat(cs.paddingBottom) || 0)
+    if (cw <= 0 || ch <= 0) return
+    const next: GridGeom = {
+      padL, padT, gapX, gapY,
+      cellW: (cw - gapX * (cols - 1)) / cols,
+      cellH: (ch - gapY * (rows - 1)) / rows,
     }
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
+    geomRef.current = next
+    setGeom(next)
   }, [cols, rows])
 
   /**
-   * Mobile is the same engine on a different grid: one column, one row per
-   * module, each collapsed to a title tile. Expanding a tile hands it the whole
-   * grid — identical to how a project detail works on desktop — so the tiles
-   * scatter out and the expanded section gathers in. Nothing scrolls either way.
+   * Attach the observer through the ref, not an effect.
+   *
+   * The grid's wrapper changes element type when the scaled view comes and goes
+   * — a plain div becomes a PinchPan — so React discards the grid's DOM node and
+   * mounts a new one. An effect keyed on [cols, rows] doesn't re-run for that
+   * (a landscape phone resolves straight into the scaled view with the same 12x8),
+   * leaving the observer watching a detached node and `geom` holding the
+   * measurements of a grid that no longer exists. That put the identity card at
+   * 264x132 in a slot 581x393.
+   *
+   * A ref callback re-runs whenever the node OR `measure` changes, which is
+   * exactly when the geometry can be wrong. Refs are set before layout effects,
+   * so the identity effect below still reads a fresh geomRef.
+   */
+  const attachGrid = useCallback((el: HTMLDivElement | null) => {
+    gridRef.current = el
+    roRef.current?.disconnect()
+    roRef.current = null
+    if (!el) return
+    const ro = new ResizeObserver(() => measure(el))
+    ro.observe(el)
+    roRef.current = ro
+    measure(el)
+  }, [measure])
+
+  /**
+   * The grid, whichever grid it is. A phone runs the same four maps on a
+   * portrait 4x12, expands the same modules into the same synthetic layouts,
+   * and flies them with the same engine — only the proportions change.
    */
   const activeMap: Partial<Record<ModuleId, Placement>> = useMemo(() => {
-    if (!isMobile) {
-      if (open) return DETAIL_LAYOUT
-      if (zoom) return ZOOM_LAYOUT
-      return LAYOUTS[tab]
-    }
-    const full: Placement = { col: [1, 1], row: [1, rows] }
-    // A zoomed project shows its full detail rather than the card.
-    if (zoom) return { [zoom.startsWith("project-0") ? "project-detail" : zoom]: full }
-    return Object.fromEntries(
-      mobileIds.map((id, i) => [id, { col: [1, 1], row: [i + 1, 1] } as Placement]),
-    )
-  }, [isMobile, open, tab, zoom, mobileIds, rows])
+    if (open) return phoneGrid ? MOBILE_DETAIL_LAYOUT : DETAIL_LAYOUT
+    if (zoom) return phoneGrid ? mobileZoomLayout(zoom) : zoomLayout(zoom)
+    return phoneGrid ? MOBILE_LAYOUTS[tab] : LAYOUTS[tab]
+  }, [phoneGrid, open, zoom, tab])
 
   const { entries, outward, inward, identityAt } = useMemo(() => {
     const all = Object.entries(activeMap) as [ModuleId, Placement][]
-    const ranks = rankByRadius(all)
+    const ranks = rankByRadius(all, flight)
     return {
-      // Desktop lifts the identity card out to morph it. Mobile has no anchor —
-      // it's just another tile — so it scatters with everything else.
-      entries: isMobile ? all : all.filter(([id]) => id !== "identity"),
+      // The identity card is lifted out on both grids — it morphs rather than
+      // scattering, which needs a real animated box rather than a grid cell.
+      entries: all.filter(([id]) => id !== "identity"),
       outward: ranks.outward,
       inward: ranks.inward,
       identityAt: activeMap.identity,
     }
-  }, [activeMap, isMobile])
+  }, [activeMap, flight])
 
-  // Springs the card's real box when the tab changes; snaps on resize and on
-  // first paint. Animating width/height for real is what lets the card's
+  // Springs the card's real box when the placement changes; snaps on resize and
+  // on first paint. Animating width/height for real is what lets the card's
   // container queries — and therefore its contents — keep pace with the box.
   useLayoutEffect(() => {
-    if (!geom || !identityAt || isMobile) return
-    const r = rectFor(identityAt, geom)
+    const g = geomRef.current ?? geom
+    if (!g || !identityAt) return
+    const r = rectFor(identityAt, g)
+
+    // Same box as last time — the grid re-measured to the value it already had.
+    // Setting the values again would stutter a spring that is mid-flight.
+    const prev = lastRect.current
+    if (prev && prev.l === r.left && prev.t === r.top && prev.w === r.width && prev.h === r.height) return
+    lastRect.current = { l: r.left, t: r.top, w: r.width, h: r.height }
+
+    running.current.forEach((a) => a.stop())
+    running.current = []
+
     const pairs: [MotionValue<number>, number][] = [
       [mLeft, r.left], [mTop, r.top], [mW, r.width], [mH, r.height],
     ]
     const isMorph = lastPlacement.current !== null && lastPlacement.current !== identityAt
     lastPlacement.current = identityAt
-    if (isMorph && !reduced) pairs.forEach(([mv, v]) => animate(mv, v, MORPH_TRANSITION))
+    if (isMorph && !reduced) running.current = pairs.map(([mv, v]) => animate(mv, v, MORPH_TRANSITION))
     else                     pairs.forEach(([mv, v]) => mv.set(v))
-  }, [geom, identityAt, isMobile, reduced, mLeft, mTop, mW, mH])
+  }, [geom, identityAt, reduced, mLeft, mTop, mW, mH])
 
   const render = (id: ModuleId): React.ReactNode => {
-    // Mobile, nothing expanded: every module is a title row.
-    if (isMobile && !zoom) {
-      return (
-        <Tile
-          id={id}
-          onOpen={(next) => (next === "identity" ? goTab("index") : openZoom(next))}
-        />
-      )
-    }
-    // Mobile, a project expanded: show its detail, not its card.
-    if (isMobile && id === "project-detail" && zoom?.startsWith("project-0")) {
-      return <ProjectDetail num={`0${zoom.slice(-1)}`} />
-    }
-
     if (id.startsWith("project-0")) {
       const p = PROJECTS.find((x) => x.num === id.slice(-2))!
       return <ProjectCard project={p} onOpen={openProject} />
@@ -306,7 +366,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       case "experience":
         return zoom === "experience"
           ? <ExperienceDetail />
-          : <Experience onOpen={DESKTOP_ZOOMABLE.includes("experience") ? () => openZoom("experience") : undefined} />
+          : <Experience onOpen={() => openZoom("experience")} />
       case "location":       return <Location />
       case "latest":         return <Latest onGo={goTab} />
       case "work-meta":      return <WorkMeta />
@@ -326,113 +386,113 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     }
   }
 
-  return (
-    <main className="fixed inset-0 bg-bg grid-bg">
-      <Cursor />
-
-      {/* Nothing scrolls, on any screen. Mobile fits because it collapses each
-          module to a single title row rather than shrinking the desktop grid. */}
-      <div ref={panRef} className="h-dvh w-full overflow-hidden">
-        <div
-          ref={gridRef}
-          className={`relative h-dvh w-full p-3 md:p-4 pb-[4.5rem] md:pb-[5.5rem] grid gap-2 md:gap-2.5 ${
-            isMobile && zoom ? "pt-[3.75rem]" : ""
-          }`}
-          style={{
-            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-            gridTemplateRows:    `repeat(${rows}, minmax(0, 1fr))`,
-          }}
+  const grid = (
+    <div
+      ref={attachGrid}
+      className={
+        scaled
+          // Desktop paddings by hand: the `md:` variants read the *window*,
+          // which on a phone is small, so they'd apply the phone's spacing to a
+          // 1440px canvas.
+          // Its own background and border: at 0.27 the page would otherwise
+          // float on a hairline grid drawn at full screen scale, which reads
+          // as broken rather than as a scaled-down desktop.
+          ? "relative bg-bg grid-bg border border-hairline p-4 pb-[5.5rem] grid gap-2.5"
+          : "relative h-dvh w-full p-3 md:p-4 pb-[4.5rem] md:pb-[5.5rem] grid gap-2 md:gap-2.5"
+      }
+      style={{
+        ...(scaled ? { width: DESKTOP_W, height: DESKTOP_H } : null),
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        gridTemplateRows:    `repeat(${rows}, minmax(0, 1fr))`,
+      }}
+    >
+      {/*
+        Nothing is rendered until the viewport is known. Hiding the wrong layout
+        isn't enough — mounting the desktop set means AnimatePresence has to
+        animate it back out again, and that swap is visible however it's masked.
+        Rendering only once `resolved` is true means the first set to mount is
+        the right one, and the intro gather covers the wait.
+      */}
+      {resolved && (
+      <>
+      {/*
+        The anchor. Outside AnimatePresence because it must never unmount, and
+        positioned absolutely once the grid has been measured so its
+        width/height can be animated for real — see rectFor(). Until then it
+        renders as an ordinary grid item, keeping it in the SSR markup.
+      */}
+      {identityAt && (
+        <motion.div
+          style={
+            geom
+              ? { position: "absolute", left: mLeft, top: mTop, width: mW, height: mH }
+              : gridStyle(identityAt)
+          }
+          className="module @container [container-type:size] z-10 min-h-0 min-w-0 hover:border-fg/35 hover:shadow-glow"
         >
-          {/*
-            Nothing is rendered until the viewport is known. Hiding the wrong
-            layout isn't enough — mounting the desktop set means AnimatePresence
-            has to animate it back out again, and that swap is visible however
-            it's masked. Rendering only once `resolved` is true means the first
-            set to mount is the right one, and the intro gather covers the wait.
-          */}
-          {resolved && (
-          <>
-          {/*
-            Desktop anchor. Outside AnimatePresence because it must never
-            unmount, and positioned absolutely once the grid has been measured
-            so its width/height can be animated for real — see rectFor(). Until
-            then it renders as an ordinary grid item, keeping it in the SSR
-            markup. On mobile it's just another tile, handled below.
-          */}
-          {!isMobile && identityAt && (
-            <motion.div
-              style={
-                geom
-                  ? { position: "absolute", left: mLeft, top: mTop, width: mW, height: mH }
-                  : gridStyle(identityAt)
-              }
-              className="module @container [container-type:size] z-10 min-h-0 min-w-0 hover:border-fg/35 hover:shadow-glow"
-            >
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="h-full w-full"
-              >
-                <Identity onHome={() => goTab("index")} />
-              </motion.div>
-            </motion.div>
-          )}
-
-          {/* Everything else scatters and gathers. */}
-          <AnimatePresence mode="sync">
-            {entries.map(([id, placement], i) => (
-              <ModuleCard
-                /*
-                  On mobile the key carries the zoom state so that expanding a
-                  row which is already on screen (EXPERIENCE, a stack category)
-                  remounts instead of persisting — otherwise it snaps straight
-                  from a 184px row to full screen while everything else slides.
-                  Remounting turns it into a proper push: the row leaves, the
-                  section arrives.
-                */
-                key={isMobile ? `${id}:${zoom ? "z" : "l"}` : id}
-                placement={placement}
-                variants={isMobile ? slideVariants : undefined}
-                custom={
-                  isMobile
-                    // Ranked by row, not by distance from centre: on a vertical
-                    // list, sequential top-to-bottom reads as deliberate.
-                    ? { rank: i, reduced }
-                    : {
-                        vector: flightVector(placement),
-                        exitRank: outward[id] ?? 0,
-                        enterRank: inward[id] ?? 0,
-                        reduced,
-                      }
-                }
-              >
-                {render(id)}
-              </ModuleCard>
-            ))}
-          </AnimatePresence>
-          </>
-          )}
-        </div>
-      </div>
-
-      {/* A bar rather than a floating button: the grid reserves its height below,
-          so it can never sit on top of the expanded section's own header. */}
-      {isMobile && zoom && (
-        <div className="fixed top-0 inset-x-0 z-50 h-12 flex items-center justify-between px-4 bg-bg/90 backdrop-blur-sm border-b border-hairline">
-          <button
-            onClick={closeZoom}
-            className="font-mono text-[9px] uppercase tracking-[0.24em] text-fg flex items-center gap-2"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="h-full w-full"
           >
-            <span aria-hidden>←</span> CLOSE
-          </button>
-          <span className="font-mono text-[8px] uppercase tracking-[0.24em] text-dim">
-            {TABS.find((t) => t.id === tab)?.label}
-          </span>
-        </div>
+            <Identity onHome={() => goTab("index")} />
+          </motion.div>
+        </motion.div>
       )}
 
-      <NavDock tab={tab} onSelect={goTab} detailOpen={!!open || !!zoom} />
+      {/* Everything else scatters and gathers. */}
+      <AnimatePresence mode="sync">
+        {entries.map(([id, placement]) => (
+          <ModuleCard
+            /*
+              The key carries the grid and the expansion state, not just the id.
+              A module that appears in both the outgoing and incoming layout —
+              EXPERIENCE expanding into its own zoom, or any card when the
+              desktop view is toggled — would otherwise persist and snap
+              straight from one cell to the other while everything around it
+              flew. Remounting turns that into a proper scatter and gather.
+            */
+            key={`${id}:${phoneGrid ? "m" : "d"}:${open ? "o" : zoom ? "z" : "l"}`}
+            placement={placement}
+            custom={{
+              vector: flightVector(placement, flight),
+              exitRank: outward[id] ?? 0,
+              enterRank: inward[id] ?? 0,
+              reduced,
+            }}
+          >
+            {render(id)}
+          </ModuleCard>
+        ))}
+      </AnimatePresence>
+      </>
+      )}
+    </div>
+  )
+
+  return (
+    <main className={`fixed inset-0 bg-bg ${scaled ? "" : "grid-bg"}`}>
+      <Cursor />
+
+      {/* Nothing scrolls, on any screen. The phone grid fits because it is a
+          portrait grid, not a squeezed landscape one; the scaled view fits
+          because it is scaled. */}
+      {scaled
+        // Fit above the dock, not behind it: on a landscape phone the canvas is
+        // height-bound, so anything the dock covers is content you cannot reach.
+        ? <div className="h-dvh w-full pb-14"><PinchPan width={DESKTOP_W} height={DESKTOP_H}>{grid}</PinchPan></div>
+        : <div className="h-dvh w-full overflow-hidden">{grid}</div>}
+
+      <NavDock
+        tab={tab}
+        onSelect={goTab}
+        detailOpen={!!open || !!zoom}
+        desktopView={scaled}
+        // No choice to offer on a desktop, or on a landscape phone where the
+        // portrait grid has no room to exist.
+        onToggleView={isMobile && !isShort ? toggleView : undefined}
+      />
     </main>
   )
 }

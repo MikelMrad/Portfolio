@@ -139,6 +139,16 @@ export function Signature({ paused = false }: { paused?: boolean }) {
     <div className="absolute inset-0">
       <Canvas
         frameloop={paused ? "never" : "always"}
+        /*
+          Size the drawing buffer from offsetWidth/offsetHeight, not from
+          getBoundingClientRect. They agree everywhere except inside the phone's
+          scaled desktop view, where the rect is the *visual* box — 0.27 of the
+          real one — so the canvas came out a quarter size and sat in the corner
+          of its card. The per-frame pointer maths below still reads the rect,
+          and still should: it normalises by rect width, so the ratio holds at
+          any scale.
+        */
+        resize={{ offsetSize: true }}
         orthographic
         camera={{ position: [0, 0, 10], zoom: 60 }}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}

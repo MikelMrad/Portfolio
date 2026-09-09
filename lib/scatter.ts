@@ -7,11 +7,31 @@
  */
 
 import type { Variants } from "motion/react"
-import { placementCenter, type Placement } from "./grid"
+import {
+  GRID_COLS, GRID_ROWS, MOBILE_COLS, MOBILE_ROWS, placementCenter, type Placement,
+} from "./grid"
 
-/** How far offscreen a card travels. Beyond the viewport in both axes. */
-const TRAVEL_X = 1400
-const TRAVEL_Y = 1000
+/**
+ * The grid a flight is being computed against, plus how far offscreen a card
+ * travels on it. Both matter: the angle comes from the cell's position in the
+ * grid, and the distance has to clear the viewport that grid is filling.
+ */
+export type FlightGrid = { cols: number; rows: number; travelX: number; travelY: number }
+
+/** Beyond the viewport in both axes. */
+export const DESKTOP_FLIGHT: FlightGrid = {
+  cols: GRID_COLS, rows: GRID_ROWS, travelX: 1400, travelY: 1000,
+}
+
+/**
+ * A phone is a quarter the width and half the height of the window this was
+ * tuned for. Sending a card 1400px sideways there means it spends the whole
+ * spring travelling through empty space — it reads as a whip-pan rather than a
+ * scatter. These clear a 430x932 screen and no more.
+ */
+export const MOBILE_FLIGHT: FlightGrid = {
+  cols: MOBILE_COLS, rows: MOBILE_ROWS, travelX: 560, travelY: 900,
+}
 
 const EXIT_STAGGER  = 0.035 // outermost first
 const ENTER_STAGGER = 0.045 // centre outward
@@ -29,8 +49,8 @@ export type Vector = { x: number; y: number; rotate: number; radius: number }
  * Derive a card's flight path from its grid cell.
  * Cards left of centre fly left, top fly up, corners fly diagonally.
  */
-export function flightVector(p: Placement): Vector {
-  const { cx, cy } = placementCenter(p)
+export function flightVector(p: Placement, g: FlightGrid = DESKTOP_FLIGHT): Vector {
+  const { cx, cy } = placementCenter(p, g.cols, g.rows)
   const dx = cx - 0.5
   const dy = cy - 0.5
 
@@ -39,8 +59,8 @@ export function flightVector(p: Placement): Vector {
   const angle  = radius < 0.01 ? Math.PI / 2 : snap8(Math.atan2(dy, dx))
 
   return {
-    x: Math.cos(angle) * TRAVEL_X,
-    y: Math.sin(angle) * TRAVEL_Y,
+    x: Math.cos(angle) * g.travelX,
+    y: Math.sin(angle) * g.travelY,
     // Rotation sign follows horizontal travel so cards bank into the turn.
     rotate: Math.cos(angle) >= 0 ? 3 : -3,
     radius,
@@ -60,8 +80,9 @@ export function enterDelay(rank: number) { return ENTER_OFFSET + rank * ENTER_ST
  */
 export function rankByRadius<T extends string>(
   entries: [T, Placement][],
+  g: FlightGrid = DESKTOP_FLIGHT,
 ): { outward: Record<string, number>; inward: Record<string, number> } {
-  const withRadius = entries.map(([id, p]) => ({ id, r: flightVector(p).radius }))
+  const withRadius = entries.map(([id, p]) => ({ id, r: flightVector(p, g).radius }))
 
   const inward: Record<string, number> = {}
   ;[...withRadius].sort((a, b) => a.r - b.r).forEach((e, i) => { inward[e.id] = i })
@@ -140,92 +161,4 @@ export const MORPH_TRANSITION = {
   damping: 28,
   mass: 0.8,
   delay: ENTER_OFFSET,
-}
-
-// ── Mobile ────────────────────────────────────────────────────────────────────
-
-/**
- * The scatter engine degenerates at one column: every cell shares the grid's
- * horizontal centre, so `dx` is 0 and all rows fly straight up or down — each
- * one tilted, each one travelling 1000px. On full-width bars that reads as
- * cheap rather than choreographed.
- *
- * Mobile navigation is lateral (tab to tab) or a drill-in (row to section), so
- * it gets a push/pop instead: rows leave one way, the next screen arrives from
- * the other. No rotation, no scaling, ordered top to bottom.
- */
-
-/** A little over a phone width — far enough to clear, near enough to stay quick. */
-const SLIDE = 460
-
-const SLIDE_EXIT_STAGGER  = 0.028
-const SLIDE_ENTER_STAGGER = 0.034
-const SLIDE_ENTER_OFFSET  = 0.13
-
-/**
- * Direction of travel, read at the moment a variant is resolved.
- *
- * It deliberately isn't part of `custom`: an exiting child keeps the props from
- * its last render, which still holds the *previous* direction, so a "back"
- * navigation would slide the outgoing screen the same way as a "forward" one.
- * Variants resolve after the handler has run, so reading it here is correct for
- * entering and exiting children alike — and unlike AnimatePresence's `custom`
- * override, it leaves each child's own rank intact for the stagger.
- */
-export const slideDirection = { current: 1 as 1 | -1 }
-
-export type SlideCustom = {
-  /** Row order, top to bottom. Sequential reads as deliberate; radius doesn't. */
-  rank: number
-  reduced: boolean
-}
-
-export const slideVariants: Variants = {
-  enter: ({ reduced }: SlideCustom) =>
-    reduced
-      ? { opacity: 0, x: 0, y: 0, rotate: 0, scale: 1 }
-      : { opacity: 0, x: slideDirection.current * SLIDE, y: 0, rotate: 0, scale: 1 },
-
-  settled: ({ rank, reduced }: SlideCustom) => {
-    const delay = SLIDE_ENTER_OFFSET + rank * SLIDE_ENTER_STAGGER
-    return {
-      opacity: 1,
-      x: 0,
-      // Reset every axis the scatter variants can touch — the first paint may
-      // have started this card under them.
-      y: 0,
-      rotate: 0,
-      scale: 1,
-      transition: reduced
-        ? { duration: 0.2 }
-        : {
-            // Firm enough not to wobble — a list of bars bouncing looks tacky.
-            type: "spring",
-            stiffness: 340,
-            damping: 36,
-            mass: 0.7,
-            delay,
-            opacity: { duration: 0.2, delay },
-          },
-    }
-  },
-
-  exit: ({ rank, reduced }: SlideCustom) => {
-    const delay = rank * SLIDE_EXIT_STAGGER
-    return reduced
-      ? { opacity: 0, y: 0, rotate: 0, scale: 1, transition: { duration: 0.15 } }
-      : {
-          opacity: 0,
-          x: -slideDirection.current * SLIDE,
-          y: 0,
-          rotate: 0,
-          scale: 1,
-          transition: {
-            duration: 0.28,
-            delay,
-            ease: [0.4, 0, 1, 1],
-            opacity: { duration: 0.2, delay: delay + 0.06 },
-          },
-        }
-  },
 }

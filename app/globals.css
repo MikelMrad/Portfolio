@@ -56,10 +56,6 @@
     background-size: 200px 200px;
     opacity: 0.055;
   }
-
-  /* Horizontal pan track on small screens — no visible scrollbar. */
-  .pan-x { scrollbar-width: none; -ms-overflow-style: none; }
-  .pan-x::-webkit-scrollbar { display: none; }
 }
 
 @utility grid-bg {
@@ -91,6 +87,39 @@
 .role-blurb { display: none; }
 @container (min-width: 250px) and (min-height: 330px) {
   .role-blurb { display: block; }
+}
+
+/*
+  Optional content, revealed only when the card has the vertical room for it.
+
+  Gated on HEIGHT for the same reason .role-blurb is: the phone grid and the
+  desktop grid put the same module in boxes of similar *width* and wildly
+  different height — the CV card is 180x121 on a phone and ~290x340 on a
+  desktop. A width gate can't tell those apart. Named for their threshold in
+  pixels. Requires container-type: size, which ModuleCard sets.
+*/
+.cq-h80, .cq-h100, .cq-h160 { display: none; }
+@container (min-height:  80px) { .cq-h80  { display: revert; } }
+@container (min-height: 100px) { .cq-h100 { display: revert; } }
+@container (min-height: 160px) { .cq-h160 { display: revert; } }
+
+/*
+  Detail chrome — the close control and the sibling list beside an expanded
+  section — is a left-hand column on a desktop and a single bar along the
+  bottom on a phone. Same markup, flipped on its side, so there is one
+  component rather than two that drift apart.
+
+  57px tall (one phone row) vs ~560px (six desktop rows), hence the height gate.
+*/
+.chrome      { flex-direction: row; align-items: center; }
+.chrome-list { flex-direction: row; align-items: center; gap: 0.375rem; }
+.chrome-item { border-bottom-width: 0; justify-content: center; }
+
+@container (min-height: 160px) {
+  .chrome      { flex-direction: column; align-items: stretch; }
+  .chrome-list { flex-direction: column; align-items: stretch; gap: 0; }
+  .chrome-item { border-bottom-width: 1px; justify-content: flex-start; }
+  .chrome-item:last-child { border-bottom-width: 0; }
 }
 
 @keyframes blink {

@@ -1,12 +1,29 @@
 /**
- * The whole site is one 12x8 grid. Every tab is a placement map onto it.
+ * The whole site is one grid. Every tab is a placement map onto it.
  * Cards fly between arrangements because they share the same coordinate space.
  *
- * Adding a tab means adding a key to LAYOUTS — never writing animation code.
+ * There are two grids, not two sites: 12x8 on a desktop, 4x12 on a phone. Both
+ * hold the same modules and both feed the same scatter engine — only the
+ * proportions differ, because a phone is portrait and a desktop is landscape.
+ *
+ * Adding a tab means adding a key to LAYOUTS *and* MOBILE_LAYOUTS — never
+ * writing animation code.
  */
 
 export const GRID_COLS = 12
 export const GRID_ROWS = 8
+
+/**
+ * The phone grid. Same engine, different proportions: a phone is roughly 9:19
+ * where a desktop is 16:9, so the grid is turned on its side — 4 narrow columns
+ * and enough rows to give a card a sensible portrait shape.
+ *
+ * 12 rows is the granularity, not the module count: on a 393x852 phone a row is
+ * ~57px, so a module can be one bar (a footer), two (a stat block) or nine (an
+ * expanded project) without any of them being forced into the wrong height.
+ */
+export const MOBILE_COLS = 4
+export const MOBILE_ROWS = 12
 
 export type TabId = "index" | "work" | "stack" | "contact"
 
@@ -80,11 +97,78 @@ export const LAYOUTS: Record<TabId, Partial<Record<ModuleId, Placement>>> = {
   },
 }
 
-/** Normalised centre of a placement in 0..1 grid space. */
-export function placementCenter(p: Placement) {
+/**
+ * The same modules, arranged for a portrait 4x12.
+ *
+ * Not a transposition of the desktop map — a phone column is ~86px, so what
+ * works as a 5-wide band on a desktop has to become either a full-width bar or
+ * a half-width block. Each tab is composed for the shape it is actually in.
+ *
+ * Every tab holds exactly the modules its desktop layout holds. If a module is
+ * missing from one of these maps it does not exist on a phone, and the grid
+ * will have a hole where it should be.
+ */
+export const MOBILE_LAYOUTS: Record<TabId, Partial<Record<ModuleId, Placement>>> = {
+  // Identity, then the numbers, then the story — with the four small modules
+  // paired off two-by-two down the bottom third.
+  index: {
+    identity:   { col: [1, 4], row: [1, 2] },
+    stats:      { col: [1, 4], row: [3, 2] },
+    experience: { col: [1, 4], row: [5, 4] },
+    signature:  { col: [1, 2], row: [9, 2] },
+    latest:     { col: [3, 2], row: [9, 2] },
+    status:     { col: [1, 2], row: [11, 2] },
+    location:   { col: [3, 2], row: [11, 2] },
+  },
+  // The projects are the tab, so they take four rows each in a 2x2 — a portrait
+  // card at ~180x251, which is the shape a phone screenshot wants anyway.
+  work: {
+    identity:     { col: [1, 4], row: [1, 2] },
+    "work-meta":  { col: [1, 2], row: [3, 2] },
+    cv:           { col: [3, 2], row: [3, 2] },
+    "project-01": { col: [1, 2], row: [5, 4] },
+    "project-02": { col: [3, 2], row: [5, 4] },
+    "project-03": { col: [1, 2], row: [9, 4] },
+    "project-04": { col: [3, 2], row: [9, 4] },
+  },
+  // Two columns of spec sheets. Row count roughly tracks entry count, but the
+  // spec-sheet rows are `flex-1` and share whatever they get, so the tighter
+  // constraint is EDUCATION: at three rows its second school lost its dates off
+  // the bottom. FRAMEWORKS gives up the row — a denser list is cosmetic, a
+  // missing line is not.
+  stack: {
+    identity:         { col: [1, 4], row: [1, 2] },
+    "tech-count":     { col: [1, 2], row: [3, 2] },
+    "cat-databases":  { col: [3, 2], row: [3, 2] },
+    "cat-languages":  { col: [1, 2], row: [5, 4] },
+    "cat-tools":      { col: [1, 2], row: [9, 4] },
+    "cat-frameworks": { col: [3, 2], row: [5, 4] },
+    education:        { col: [3, 2], row: [9, 4] },
+  },
+  // HEADLINE needs three rows: its type is already at the floor of its clamp,
+  // and `leading-[0.82]` lets the glyphs overflow their line boxes, so at two
+  // rows "WORK." sat on top of the availability line. The form gives up the row
+  // — its textarea is flex-1 and had the slack.
+  contact: {
+    identity: { col: [1, 4], row: [1, 2] },
+    headline: { col: [1, 4], row: [3, 3] },
+    email:    { col: [1, 4], row: [6, 2] },
+    form:     { col: [1, 4], row: [8, 4] },
+    socials:  { col: [1, 2], row: [12, 1] },
+    footer:   { col: [3, 2], row: [12, 1] },
+  },
+}
+
+/**
+ * Normalised centre of a placement in 0..1 grid space.
+ *
+ * Takes the grid's dimensions rather than assuming the desktop 12x8, because
+ * the same function ranks and aims the phone grid's 4x12.
+ */
+export function placementCenter(p: Placement, cols = GRID_COLS, rows = GRID_ROWS) {
   return {
-    cx: (p.col[0] - 1 + p.col[1] / 2) / GRID_COLS,
-    cy: (p.row[0] - 1 + p.row[1] / 2) / GRID_ROWS,
+    cx: (p.col[0] - 1 + p.col[1] / 2) / cols,
+    cy: (p.row[0] - 1 + p.row[1] / 2) / rows,
   }
 }
 

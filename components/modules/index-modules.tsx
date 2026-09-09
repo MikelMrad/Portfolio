@@ -31,7 +31,9 @@ export function Stats() {
             <span className="font-display text-fg leading-none text-[clamp(1.1rem,min(9cqw,22cqh),3rem)]">
               <Counter to={s.value} suffix={s.suffix} delay={500 + i * 120} />
             </span>
-            <span className="font-mono text-[7px] @[300px]:text-[8px] uppercase tracking-[0.16em] text-dim leading-tight">
+            {/* A landscape phone gives this card ~65px, which is a numeral and
+                nothing else. The captions go rather than being sliced in half. */}
+            <span className="cq-h80 font-mono text-[7px] @[300px]:text-[8px] uppercase tracking-[0.16em] text-dim leading-tight">
               {s.label}
             </span>
           </div>
@@ -49,9 +51,11 @@ export function Location() {
         <span className="font-display text-fg leading-[0.9] block tracking-tight text-[clamp(1.25rem,min(18cqw,26cqh),3.25rem)]">
           BEIRUT
         </span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-dim mt-1.5 block">
-          {IDENTITY.reach}
-        </span>
+        <div className="cq-h100">
+          <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-dim mt-1.5 block">
+            {IDENTITY.reach}
+          </span>
+        </div>
       </div>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-mid">
         GMT+3 · REMOTE-READY
@@ -73,9 +77,15 @@ export function Latest({ onGo }: { onGo: (t: TabId) => void }) {
         <span className="font-display text-fg leading-[0.88] block tracking-tight whitespace-pre-line text-[clamp(1.1rem,min(11cqw,17cqh),2.5rem)]">
           {p.title}
         </span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-dim mt-2 block truncate">
-          {p.subtitle}
-        </span>
+        {/* Two rows on a 360px phone is 86px — enough for the title and the
+            link out, and not for this as well. The link is the point.
+            Gated on the wrapper: .cq-h100 reverts `display`, and `truncate`
+            needs a block box to have anything to overflow. */}
+        <div className="cq-h100">
+          <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-dim mt-2 block truncate">
+            {p.subtitle}
+          </span>
+        </div>
       </div>
       <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid group-hover:text-fg transition-colors flex items-center gap-2">
         ALL WORK <span aria-hidden>→</span>

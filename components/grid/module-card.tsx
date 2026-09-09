@@ -2,30 +2,28 @@
 import type { ReactNode } from "react"
 import { motion } from "motion/react"
 import { gridStyle, type Placement } from "@/lib/grid"
-import { scatterVariants, type ScatterCustom, type SlideCustom } from "@/lib/scatter"
-import type { Variants } from "motion/react"
+import { scatterVariants, type ScatterCustom } from "@/lib/scatter"
 
 /**
  * One tile. Everything about how it flies is carried in `custom`, which the
  * stage derives from the tile's grid cell — nothing is authored per module.
  *
- * `@container` matters: the same module can be 5x4 on one tab and 3x2 on
- * another, so its content sizes off the card, never the viewport.
+ * `@container` matters: the same module can be 5x4 on a desktop tab, 3x2 on
+ * another and 2x4 on a phone, so its content sizes off the card, never the
+ * viewport.
  */
 export function ModuleCard({
-  placement, custom, children, padded = true, variants = scatterVariants,
+  placement, custom, children, padded = true,
 }: {
   placement: Placement
-  /** Shape must match `variants`: scatter on desktop, slide on mobile. */
-  custom: ScatterCustom | SlideCustom
+  custom: ScatterCustom
   children: ReactNode
   padded?: boolean
-  variants?: Variants
 }) {
   return (
     <motion.div
       custom={custom}
-      variants={variants}
+      variants={scatterVariants}
       initial="enter"
       animate="settled"
       exit="exit"

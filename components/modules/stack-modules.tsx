@@ -52,15 +52,24 @@ export function Education() {
   return (
     <div className="h-full flex flex-col p-4 @[260px]:p-5 gap-3 min-h-0">
       <Label>EDUCATION</Label>
-      <div className="flex-1 min-h-0 flex flex-col justify-center gap-4">
+      {/*
+        `safe center` rather than plain centring. When the two entries are taller
+        than the card — a 360px phone gives this three rows, ~133px — centred
+        content overflows in *both* directions, and the first school rode up over
+        the EDUCATION label. Safe centring falls back to flex-start instead, so
+        it clips off the bottom like everything else does.
+      */}
+      <div className="flex-1 min-h-0 flex flex-col [justify-content:safe_center] gap-4">
         {EDUCATION.map((e) => (
           <div key={e.short} className="border-b border-hairline pb-3 last:border-0 last:pb-0">
             <span className="font-display text-fg leading-none block tracking-tight text-[clamp(1rem,min(15cqw,11cqh),1.875rem)]">
               {e.short}
             </span>
-            <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-mid block mt-1.5 leading-relaxed">
-              {e.award}
-            </span>
+            <div className="cq-h160">
+              <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-mid block mt-1.5 leading-relaxed">
+                {e.award}
+              </span>
+            </div>
             <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-dim block mt-1">
               {e.years}
             </span>
