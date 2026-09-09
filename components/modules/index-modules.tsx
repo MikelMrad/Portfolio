@@ -25,7 +25,9 @@ export function Stats() {
   return (
     <div className="h-full flex flex-col justify-between p-4 @[300px]:p-5">
       <Label>BY THE NUMBERS</Label>
-      <div className="grid grid-cols-3 gap-2">
+      {/* Column count follows the data — the row fills whether STATS holds two
+          entries or four, with no class to keep in sync. */}
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${STATS.length}, minmax(0, 1fr))` }}>
         {STATS.map((s, i) => (
           <div key={s.label} className="flex flex-col gap-1 min-w-0">
             <span className="font-display text-fg leading-none text-[clamp(1.1rem,min(9cqw,22cqh),3rem)]">

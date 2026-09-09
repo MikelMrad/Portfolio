@@ -22,9 +22,8 @@ export const CONTACT = {
 } as const
 
 export const STATS = [
-  { value: 2,  suffix: "+", label: "YEARS SHIPPING"  },
-  { value: 5,  suffix: "",  label: "COUNTRY TENANTS" },
-  { value: 10, suffix: "+", label: "PROJECTS BUILT"  },
+  { value: 2,  suffix: "+", label: "YEARS SHIPPING" },
+  { value: 10, suffix: "+", label: "PROJECTS BUILT" },
 ] as const
 
 // ── Experience ────────────────────────────────────────────────────────────────
