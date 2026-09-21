@@ -10,7 +10,16 @@ export const IDENTITY = {
   tagline:   "COMMERCE, INTERFACES, AND THE DETAILS IN BETWEEN.",
   location:  "BEIRUT, LEBANON",
   reach:     "BEIRUT → WORLDWIDE",
-  available: true,
+  /**
+   * Freelance only — the full-time seat is taken (see ROLES), so nothing on the
+   * site may read as looking for another one. Three lengths because the line
+   * lands in three box shapes: the identity card narrow and wide, and STATUS.
+   */
+  availability: {
+    short: "OPEN TO FREELANCE",
+    long:  "AVAILABLE FOR FREELANCE",
+    note:  "FREELANCE PROJECTS ONLY",
+  },
 } as const
 
 export const CONTACT = {

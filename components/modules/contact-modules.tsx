@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import emailjs from "@emailjs/browser"
-import { CONTACT } from "@/lib/content"
+import { CONTACT, IDENTITY } from "@/lib/content"
 import { GlowRule, Label } from "@/components/ui/bits"
 import { Magnetic } from "@/components/ui/magnetic"
 import { ScrambleText } from "@/components/ui/scramble-text"
@@ -16,7 +16,7 @@ export function Headline() {
         <span style={{ WebkitTextStroke: "2px #f0f0f0", color: "transparent" }}>WORK.</span>
       </h2>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim leading-relaxed">
-        AVAILABLE FOR FREELANCE & FULL-TIME
+        {IDENTITY.availability.long}
       </span>
     </div>
   )

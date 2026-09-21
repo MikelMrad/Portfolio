@@ -26,9 +26,12 @@ export function CvCard() {
     <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5">
       <Label right="PDF">CURRICULUM VITAE</Label>
       <div className="flex flex-col gap-2">
+        {/* One line in the phone's full-width bar, two in the desktop card's
+            portrait box — the break is gated on the same height as the contents
+            line below it. */}
         <span className="font-display text-fg leading-[0.88] block tracking-tight text-[clamp(1.25rem,min(20cqw,20cqh),3rem)]">
-          2026
-          <br />
+          2026{" "}
+          <br className="cq-h160" />
           CV
         </span>
         {/* First thing to go when the card is short — the CV itself says this,

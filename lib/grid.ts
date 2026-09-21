@@ -120,16 +120,23 @@ export const MOBILE_LAYOUTS: Record<TabId, Partial<Record<ModuleId, Placement>>>
     status:     { col: [1, 2], row: [11, 2] },
     location:   { col: [3, 2], row: [11, 2] },
   },
-  // The projects are the tab, so they take four rows each in a 2x2 — a portrait
-  // card at ~180x251, which is the shape a phone screenshot wants anyway.
+  // The projects are the tab, so they take the middle in a 2x2 — three rows
+  // each, ~180x181, which holds the title and the two lines under it with room
+  // to spare. Four rows left them with a hole through the middle.
+  //
+  // SELECTED and the CV are full-width bars instead of a half-width pair: both
+  // are a label, a numeral and a line of mono, and at ~180 wide every one of
+  // those lines wrapped — "SHOPIFY · HEADLESS · COMMERCE" took two lines and
+  // pushed itself into the card's edge. The same two rows at full width fit
+  // them on one line each. The CV goes last because DOWNLOAD is the exit.
   work: {
     identity:     { col: [1, 4], row: [1, 2] },
-    "work-meta":  { col: [1, 2], row: [3, 2] },
-    cv:           { col: [3, 2], row: [3, 2] },
-    "project-01": { col: [1, 2], row: [5, 4] },
-    "project-02": { col: [3, 2], row: [5, 4] },
-    "project-03": { col: [1, 2], row: [9, 4] },
-    "project-04": { col: [3, 2], row: [9, 4] },
+    "work-meta":  { col: [1, 4], row: [3, 2] },
+    "project-01": { col: [1, 2], row: [5, 3] },
+    "project-02": { col: [3, 2], row: [5, 3] },
+    "project-03": { col: [1, 2], row: [8, 3] },
+    "project-04": { col: [3, 2], row: [8, 3] },
+    cv:           { col: [1, 4], row: [11, 2] },
   },
   // Two columns of spec sheets. Row count roughly tracks entry count, but the
   // spec-sheet rows are `flex-1` and share whatever they get, so the tighter

@@ -54,8 +54,8 @@ export function Identity({ onHome }: { onHome?: () => void }) {
         <div className="flex items-center gap-2">
           <LiveDot />
           <span className="font-mono uppercase tracking-[0.22em] text-mid text-[clamp(7px,2cqh,9px)]">
-            <span className="@[420px]:hidden">OPEN TO WORK</span>
-            <span className="hidden @[420px]:inline">AVAILABLE FOR WORK</span>
+            <span className="@[420px]:hidden">{IDENTITY.availability.short}</span>
+            <span className="hidden @[420px]:inline">{IDENTITY.availability.long}</span>
           </span>
         </div>
       </div>

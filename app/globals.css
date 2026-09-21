@@ -93,9 +93,9 @@
   Optional content, revealed only when the card has the vertical room for it.
 
   Gated on HEIGHT for the same reason .role-blurb is: the phone grid and the
-  desktop grid put the same module in boxes of similar *width* and wildly
-  different height — the CV card is 180x121 on a phone and ~290x340 on a
-  desktop. A width gate can't tell those apart. Named for their threshold in
+  desktop grid put the same module in wildly different *heights* — the CV card
+  is a ~369x112 bar on a phone and a ~290x340 block on a desktop. A width gate
+  can't tell those apart, and on the CV card it gets the answer backwards. Named for their threshold in
   pixels. Requires container-type: size, which ModuleCard sets.
 */
 .cq-h80, .cq-h100, .cq-h160 { display: none; }

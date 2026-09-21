@@ -274,13 +274,15 @@ as HTML.
   directions, write a real two-axis container query in `globals.css`. See
   `.role-blurb`, which hides experience blurbs when a card is too short for them.
 - **Drop optional lines with the `.cq-h*` gates, don't let them clip.** The two
-  grids put the same module in boxes of similar width and wildly different
-  height — the CV card is 180x121 on a phone and ~290x340 on a desktop — so a
-  width gate can't tell them apart. `.cq-h80`, `.cq-h100` and `.cq-h160` in
-  `globals.css` show their content only above that container height. Gate the
-  line the card can most afford to lose: STATS keeps its numerals and drops the
-  captions, LATEST keeps its link and drops the subtitle, the CV card keeps
-  DOWNLOAD and drops the contents list.
+  grids put the same module in wildly different heights — the CV card is a
+  ~369x112 bar on a phone and a ~290x340 block on a desktop — so a width gate
+  can't tell them apart, and on the CV card it now gets the answer backwards.
+  `.cq-h80`, `.cq-h100` and `.cq-h160` in `globals.css` show their content only
+  above that container height. Gate the line the card can most afford to lose:
+  STATS keeps its numerals and drops the captions, LATEST keeps its link and
+  drops the subtitle, the CV card keeps DOWNLOAD and drops the contents list —
+  and its own `<br>` is gated the same way, so "2026 CV" is one line in the
+  phone's bar and two in the desktop's block.
   They set `display: revert`, which for a bare `<span>` is `inline` — so on a
   non-flex parent, gate a wrapper `<div>` instead, or `truncate` and vertical
   margins silently stop working.

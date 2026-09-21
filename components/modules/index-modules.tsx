@@ -15,7 +15,7 @@ export function Status() {
         </span>
       </div>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim leading-relaxed">
-        FREELANCE & FULL-TIME
+        {IDENTITY.availability.note}
       </span>
     </div>
   )
