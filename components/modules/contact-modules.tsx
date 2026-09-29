@@ -1,6 +1,5 @@
 "use client"
 import { useState } from "react"
-import emailjs from "@emailjs/browser"
 import { CONTACT, IDENTITY } from "@/lib/content"
 import { GlowRule, Label } from "@/components/ui/bits"
 import { Magnetic } from "@/components/ui/magnetic"
@@ -53,6 +52,10 @@ export function ContactForm() {
     e.preventDefault()
     setStatus("sending")
     try {
+      // Loaded on submit, not on load. The SDK is only ever needed by the
+      // person who actually presses this button, and a static import put it in
+      // the bundle of every tab — including the three that have no form.
+      const { default: emailjs } = await import("@emailjs/browser")
       await emailjs.send(
         process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID ?? "",
         process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID ?? "",

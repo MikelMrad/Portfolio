@@ -1,5 +1,6 @@
 "use client"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, type MotionValue } from "motion/react"
 
 import {
@@ -21,7 +22,22 @@ import { Experience, ExperienceDetail, Latest, Location, Stats, Status } from "@
 import { CvCard, DetailNav, ProjectCard, ProjectDetail, WorkMeta } from "@/components/modules/work-modules"
 import { Category, Education, TechCount } from "@/components/modules/stack-modules"
 import { ContactForm, EmailCard, Footer, Headline, Socials } from "@/components/modules/contact-modules"
-import { Signature } from "@/components/three/signature"
+
+/**
+ * The one WebGL module, kept out of the first load.
+ *
+ * three.js and @react-three/fiber are ~290KB gzipped — more than half of what
+ * the page used to ship — for a single 2x2 card that only exists on INDEX. A
+ * static import put that in the critical path of all four tabs: /contact
+ * downloaded the whole renderer to draw a form. Imported this way it never
+ * loads on the other three, and on INDEX it arrives after the grid is up.
+ *
+ * `ssr: false` because it is a canvas either way — there is nothing for the
+ * server to render, and prerendering it only puts the module back in the graph.
+ */
+const Signature = dynamic(() => import("@/components/three/signature").then((m) => m.Signature), {
+  ssr: false,
+})
 
 /**
  * An expanded project is just another layout. Opening one scatters the grid and
@@ -59,6 +75,30 @@ const ZOOMABLE: ModuleId[] = ["experience"]
 
 /** How long the scatter runs end to end. Used to park the WebGL loop. */
 const TRANSITION_MS = 950
+
+/**
+ * The boot drawing paces itself against the load rather than against a clock.
+ *
+ * It starts slow — `--boot-draw` and STAGGER_MS put a full tab at ~2.6s — so
+ * that on a phone it is still drawing when the JS lands. The moment the app is
+ * ready this speeds it up to cover whatever is left in BOOT_FINISH_MS, so the
+ * last line closes as the modules arrive instead of the viewer watching a
+ * finished wireframe wait for them. BOOT_MIN_MS is the other end of it: a warm
+ * desktop load resolves in a few hundred ms, and snapping the drawing shut that
+ * fast reads as a flicker rather than as a drawing.
+ */
+const BOOT_FINISH_MS = 300
+const BOOT_MIN_MS    = 700
+
+/**
+ * How far before the last line lands the modules start arriving.
+ *
+ * The same trick the scatter plays with ENTER_OFFSET: overlapping the two reads
+ * as one motion, and waiting for the drawing to be strictly finished leaves a
+ * beat where the wireframe is complete and empty. By the time the final stroke
+ * closes, the content is already up inside it.
+ */
+const BOOT_OVERLAP_MS = 180
 
 /** Below this the grid becomes the portrait 4x12. */
 const MOBILE_Q = "(max-width: 767px)"
@@ -98,6 +138,14 @@ function useViewportMode() {
   return mode
 }
 
+/** Animation times are CSSNumberish — a number in every browser that matters,
+ *  a CSSUnitValue in principle. */
+function msOf(v: CSSNumberish | null | undefined): number {
+  if (typeof v === "number") return v
+  if (v && typeof v === "object" && "value" in v) return Number((v as { value: number }).value)
+  return 0
+}
+
 const pathFor  = (t: TabId) => (t === "index" ? "/" : `/${t}`)
 const tabOfPath = (p: string): TabId => {
   const seg = p.replace(/^\/+|\/+$/g, "")
@@ -108,6 +156,16 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   const [tab, setTab]       = useState<TabId>(initialTab)
   const [open, setOpen]     = useState<string | null>(null)
   const [busy, setBusy]     = useState(true) // true on first paint for the intro gather
+  /**
+   * The boot drawing has finished and the modules may appear.
+   *
+   * This gates the mount rather than just hiding something, because the boot
+   * layer is a line drawing — there is no fill to hide behind, so a module that
+   * mounted early would simply show through its own outline.
+   */
+  const [booted, setBooted] = useState(false)
+  /** First mount of the session: the cards rise in place instead of scattering. */
+  const [intro, setIntro]   = useState(true)
   const [zoom, setZoom]     = useState<ModuleId | null>(null)
   const { mobile: isMobile, short: isShort, resolved } = useViewportMode()
 
@@ -158,17 +216,92 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   /** Every state change that reshuffles the grid goes through here. */
   const beginTransition = useCallback(() => {
     setBusy(true)
+    // Whatever mounts from here on scatters. Flipping it at the start of the
+    // first transition rather than on a timer means nothing re-renders the
+    // cards mid-reveal.
+    setIntro(false)
     clearTimeout(busyTimer.current)
     busyTimer.current = setTimeout(() => setBusy(false), reduced ? 200 : TRANSITION_MS)
   }, [reduced])
 
   // `busy` initialises to true so the intro gather is already covered; this only
-  // schedules its release. Calling beginTransition() here would setState
-  // synchronously in an effect body and cascade a render.
+  // schedules its release, from the moment the modules actually mount rather
+  // than from first paint — they now wait for the boot drawing. Calling
+  // beginTransition() here would setState synchronously in an effect body and
+  // cascade a render.
   useEffect(() => {
+    if (!booted) return
     busyTimer.current = setTimeout(() => setBusy(false), reduced ? 200 : TRANSITION_MS)
     return () => clearTimeout(busyTimer.current)
-  }, [reduced])
+  }, [booted, reduced])
+
+  /**
+   * Hand the boot drawing over to the real grid.
+   *
+   * Two conditions, and it is the later of them: `resolved` (hydration has run,
+   * so the modules know which grid they are on) and the drawing having closed
+   * its last box — which the drawing itself reports, rather than a duration
+   * copied out of the stylesheet. That matters twice over: the boxes are the
+   * tab's own modules, so the drawing is as long as that layout is, and CSS
+   * animations start at first paint while `performance.now()` counts from
+   * navigation. A constant would cut a line off mid-stroke on one load and
+   * leave a finished wireframe sitting there on the next.
+   *
+   * The attribute on <html> is what starts the outline's fade — the layer it
+   * drives is server-rendered markup this component doesn't own, see
+   * components/grid/grid-boot.tsx — and `booted` mounts the modules into it on
+   * the same tick, so the line hands its box to a real border.
+   */
+  useEffect(() => {
+    if (!resolved) return
+    let settled = false
+    const hand = () => {
+      if (settled) return
+      settled = true
+      document.documentElement.dataset.booted = "1"
+      setBooted(true)
+    }
+
+    // Empty under reduced motion, where the global rule in globals.css has
+    // already collapsed every duration — nothing to wait for.
+    const drawing = document.querySelector(".boot")?.getAnimations({ subtree: true }) ?? []
+    if (drawing.length === 0) { hand(); return }
+
+    // Close it. Every box shares a start, so they share a currentTime; the end
+    // comes off the animations themselves rather than the stylesheet, because
+    // how long the drawing is depends on how many modules this tab has.
+    const at   = Math.max(...drawing.map((a) => msOf(a.currentTime)))
+    const ends = Math.max(...drawing.map((a) => msOf(a.effect?.getComputedTiming().endTime)))
+    const left = Math.max(0, ends - at)
+
+    // The drawing outlasted the load — it was the app that was slow, and the
+    // wireframe is already sitting there finished. Nothing to wait for.
+    if (left === 0) { hand(); return }
+
+    // Never slower than it was already going.
+    const rate = Math.max(1, left / Math.max(BOOT_FINISH_MS, BOOT_MIN_MS - at))
+    drawing.forEach((a) => { a.playbackRate = rate })
+
+    // Deliberately a timer rather than `animation.finished`: this has to fire
+    // *before* the drawing ends, and a throttled background tab must not be
+    // able to hold the content back with it.
+    const t = setTimeout(hand, Math.max(0, left / rate - BOOT_OVERLAP_MS))
+    return () => { settled = true; clearTimeout(t) }
+  }, [resolved])
+
+  /**
+   * Start the WebGL chunk downloading during the boot drawing.
+   *
+   * It is ~226KB and `next/dynamic` would otherwise not ask for it until the
+   * card mounts — which is after the loading screen, so the one module that
+   * needs it arrives last, into a box that is already on screen. Requesting it
+   * here overlaps the download with the drawing instead. INDEX only: the whole
+   * point of the dynamic import is that the other three tabs never fetch it.
+   */
+  useEffect(() => {
+    if (!resolved || tab !== "index") return
+    void import("@/components/three/signature")
+  }, [resolved, tab])
 
   const goTab = useCallback((next: TabId) => {
     if (next === tab && !open && !zoom) return
@@ -362,7 +495,13 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     switch (id) {
       case "status":         return <Status />
       case "stats":          return <Stats />
-      case "signature":      return <Signature paused={busy} />
+      /*
+        `busy` parks the WebGL loop while the grid is flying, which is what it
+        is for. The intro is not a flight — the cards rise in place — so parking
+        it there just leaves the card blank for TRANSITION_MS after everything
+        else has arrived, which is the longest anything on the page waits.
+      */
+      case "signature":      return <Signature paused={busy && !intro} />
       case "experience":
         return zoom === "experience"
           ? <ExperienceDetail />
@@ -407,13 +546,15 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       }}
     >
       {/*
-        Nothing is rendered until the viewport is known. Hiding the wrong layout
-        isn't enough — mounting the desktop set means AnimatePresence has to
-        animate it back out again, and that swap is visible however it's masked.
-        Rendering only once `resolved` is true means the first set to mount is
-        the right one, and the intro gather covers the wait.
+        Nothing is rendered until the viewport is known *and* the boot drawing
+        has closed. Hiding the wrong layout isn't enough — mounting the desktop
+        set means AnimatePresence has to animate it back out again, and that
+        swap is visible however it's masked. Rendering only once `resolved` is
+        true means the first set to mount is the right one; waiting for `booted`
+        on top of that means it mounts into a box that has already been drawn
+        for it.
       */}
-      {resolved && (
+      {resolved && booted && (
       <>
       {/*
         The anchor. Outside AnimatePresence because it must never unmount, and
@@ -433,7 +574,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.28, delay: 0 }}
             className="h-full w-full"
           >
             <Identity onHome={() => goTab("index")} />
@@ -460,6 +601,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
               exitRank: outward[id] ?? 0,
               enterRank: inward[id] ?? 0,
               reduced,
+              intro,
             }}
           >
             {render(id)}

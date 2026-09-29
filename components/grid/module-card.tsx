@@ -24,7 +24,9 @@ export function ModuleCard({
     <motion.div
       custom={custom}
       variants={scatterVariants}
-      initial="enter"
+      /* The first cards of the session rise into the boxes the boot layer drew
+         for them; every card after that scatters. */
+      initial={custom.intro ? "reveal" : "enter"}
       animate="settled"
       exit="exit"
       style={{ ...gridStyle(placement), willChange: "transform, opacity" }}

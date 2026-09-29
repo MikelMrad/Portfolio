@@ -75,6 +75,17 @@ export function exitDelay(rank: number)  { return rank * EXIT_STAGGER }
 export function enterDelay(rank: number) { return ENTER_OFFSET + rank * ENTER_STAGGER }
 
 /**
+ * The intro is not a gather, so it gets no ENTER_OFFSET.
+ *
+ * That offset exists to let a scatter launch before the next tab arrives. On
+ * the first load there is nothing to overlap with — the boxes are already
+ * drawn and waiting — so every frame of it is a frame spent looking at an empty
+ * outline. The stagger stays, tighter, because the drawing was sequential too.
+ */
+const REVEAL_STAGGER = 0.025
+export function revealDelay(rank: number) { return rank * REVEAL_STAGGER }
+
+/**
  * Sort placements by distance from grid centre and return a lookup of
  * id -> rank, in both directions.
  */
@@ -102,15 +113,29 @@ export type ScatterCustom = {
   exitRank: number
   enterRank: number
   reduced: boolean
+  /** First mount of the session — the boot drawing is handing over. */
+  intro: boolean
 }
 
 export const scatterVariants: Variants = {
+  /**
+   * The intro, which is not a scatter.
+   *
+   * On the first mount the boot layer has just drawn this card's box on the
+   * page (components/grid/grid-boot.tsx), so flying in from offscreen would
+   * contradict the drawing — the card is already, visibly, *there*. It fades up
+   * in place instead, on the same centre-outward stagger the drawing used, and
+   * the outline it inherits is the one the line left behind.
+   */
+  reveal: ({ reduced }: ScatterCustom) =>
+    reduced ? { opacity: 0 } : { opacity: 0, scale: 0.985, y: 4, x: 0, rotate: 0 },
+
   enter: ({ vector, reduced }: ScatterCustom) =>
     reduced
       ? { opacity: 0 }
       : { opacity: 0, x: vector.x, y: vector.y, scale: 0.94, rotate: vector.rotate },
 
-  settled: ({ enterRank, reduced }: ScatterCustom) => ({
+  settled: ({ enterRank, reduced, intro }: ScatterCustom) => ({
     opacity: 1,
     x: 0,
     y: 0,
@@ -118,14 +143,26 @@ export const scatterVariants: Variants = {
     rotate: 0,
     transition: reduced
       ? { duration: 0.2, delay: 0 }
-      : {
-          type: "spring",
-          stiffness: 220,
-          damping: 26,
-          mass: 0.9,
-          delay: enterDelay(enterRank),
-          opacity: { duration: 0.28, delay: enterDelay(enterRank) },
-        },
+      : intro
+        // Rising 4px into a box that is already there, not flying in from off
+        // screen: a stiffer, lighter spring, because there is no distance to
+        // cover and the viewer has just watched a loader.
+        ? {
+            type: "spring",
+            stiffness: 300,
+            damping: 30,
+            mass: 0.6,
+            delay: revealDelay(enterRank),
+            opacity: { duration: 0.2, delay: revealDelay(enterRank) },
+          }
+        : {
+            type: "spring",
+            stiffness: 220,
+            damping: 26,
+            mass: 0.9,
+            delay: enterDelay(enterRank),
+            opacity: { duration: 0.28, delay: enterDelay(enterRank) },
+          },
   }),
 
   exit: ({ vector, exitRank, reduced }: ScatterCustom) =>

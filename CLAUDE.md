@@ -36,7 +36,12 @@ the same scatter. It runs on a portrait grid instead of a landscape one — see
 - **Motion 12** (`motion/react`) drives the whole transition.
 - **@react-three/fiber** for exactly one module (`components/three/signature.tsx`
   — a field of arrows that all turn to face the cursor, drawn as raw line
-  segments to match the site's hairline weight). It listens for `pointermove` on
+  segments to match the site's hairline weight). **Imported through
+  `next/dynamic` with `ssr: false`** — see The first load. Two things about its
+  timing: the stage requests the chunk during the boot drawing rather than
+  waiting for the card to mount, and `paused` is `busy && !intro`, because
+  parking the loop through an intro that isn't a flight just leaves the card
+  blank for `TRANSITION_MS` after everything else has landed. It listens for `pointermove` on
   **`window`**, not the canvas, so the field reacts while the cursor is anywhere
   on the page; each arrow eases toward its target, which is what drags a wave
   through the grid as you move.
@@ -170,8 +175,79 @@ mounting the desktop set means AnimatePresence has to animate it back out when
 the answer is in means the first set to mount is the correct one, and the intro
 gather covers the wait.
 
-Cost: the grid's markup isn't in the SSR HTML. `<head>` metadata still is, so
-link previews are unaffected, and Googlebot executes JS.
+Cost: the grid's markup isn't in the SSR HTML, so there is a window where the
+page is empty by design. That window is what the boot layer fills — see The
+first load. `<head>` metadata still is server-rendered, so link previews are
+unaffected, and Googlebot executes JS.
+
+### The first load
+
+Two pieces, and they solve different halves of the same problem.
+
+**Nothing heavy is in the critical path.** The page used to ship ~473KB gzipped
+of JS before the first pixel, because `Signature` and `@emailjs/browser` were
+static imports: every tab downloaded three.js for a 2x2 card that only exists on
+INDEX, and the SDK for a form that only exists on CONTACT. Both are lazy now —
+`next/dynamic` with `ssr: false` for the WebGL module, `await import()` inside
+the submit handler for EmailJS — which is 247KB on every route. **Don't import
+either of them statically again**, and weigh anything else this size the same
+way: the grid can't paint until the bundle has.
+
+**The boot layer covers what's left.** `components/grid/grid-boot.tsx` draws
+*this tab's* bento as a line — one SVG rectangle per module in the layout the
+route is about to render, stroked on centre-outward like a plan being drawn.
+When the last line closes, the modules mount inside the boxes that were just
+drawn for them and fade up in place (`reveal` in `lib/scatter.ts`), and the
+drawing hands its outline to their real borders. Five things are load-bearing:
+
+- **It is a server component with no JavaScript.** Its whole job is the frames
+  *before* React exists, so the drawing is CSS keyframes (`.boot` in
+  `globals.css`). JS only sets `data-booted` on `<html>`, which is the handoff.
+- **It renders in `page.tsx`, not `layout.tsx`.** The layout also wraps
+  `not-found`, which never mounts a Stage — nothing would set `data-booted`
+  there and the drawing would sit on top of the 404 forever.
+- **The modules are gated on it, not hidden behind it.** A line drawing has no
+  fill, so a module that mounted early would show through its own outline.
+  `resolved && booted` is the mount condition.
+- **`.boot` restates the stage's grid geometry** — same padding, gaps and
+  12x8 / 4x12 templates — and each box is placed with `gridStyle()`, the helper
+  the real cards use. Change the grid container in `stage.tsx` and you must
+  change `.boot` too. Both maps are in the markup and CSS picks, because the
+  server can't know the viewport.
+- **An `<svg>` grid item needs an explicit `width/height: 100%`.** It is a
+  replaced element, so it takes its default 300x150 and ignores the cell it was
+  placed in — every box the same size, in the wrong place.
+
+**The drawing is paced by the load, not by a clock.** `--boot-draw` and
+`STAGGER_MS` are deliberately slow — a seven-module tab runs ~2.6s — so that a
+phone is still drawing when its JS lands. The moment the app is ready the stage
+raises the animations' `playbackRate` to cover whatever is left in
+`BOOT_FINISH_MS`, and hands over `BOOT_OVERLAP_MS` *before* the last line
+closes, so the modules are rising inside the boxes as they finish. `BOOT_MIN_MS`
+is the other end: a warm desktop resolves in a few hundred ms, and snapping the
+drawing shut that fast reads as a flicker.
+
+Three consequences worth keeping:
+
+- **Don't replace the pacing with a duration constant.** The drawing is as long
+  as the tab's layout has modules, and CSS animations start at first paint while
+  `performance.now()` counts from navigation. A constant cuts a line off
+  mid-stroke on one load and leaves a finished, empty wireframe on the next —
+  which is exactly the complaint this design exists to answer.
+- **The intro reveal is not the gather.** `revealDelay()` drops `ENTER_OFFSET`
+  and tightens the stagger, because there is no scatter to overlap with and
+  every frame of it is a frame spent looking at an empty outline.
+- **The handoff is a timer, not `animation.finished`.** It has to fire before
+  the drawing ends, and a tab loaded in the background throttles its animations
+  — the content must not be held back with them.
+- **The WebGL chunk is requested during the drawing.** Lazy-loading it moved
+  ~226KB off the critical path but left the one module that needs it arriving
+  last, into a box already on screen; asking for it at `resolved` overlaps the
+  download with the loading screen. INDEX only — the other three tabs must go
+  on never fetching it.
+
+Measured on a warm load: first paint 104ms, content starts rising 621ms, last
+line closes 774ms, everything settled 966ms.
 
 ### Two grids, one site
 

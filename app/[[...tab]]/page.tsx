@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { GridBoot } from "@/components/grid/grid-boot"
 import { Stage } from "@/components/grid/stage"
 import { TABS, type TabId } from "@/lib/grid"
 
@@ -16,8 +17,15 @@ export default async function Page({ params }: { params: Promise<{ tab?: string[
     if (tab.length > 1) notFound()
     const match = TABS.find((t) => t.id === tab[0] && t.id !== "index")
     if (!match) notFound()
-    return <Stage initialTab={match.id} />
+    return <><GridBoot tab={match.id} /><Stage initialTab={match.id} /></>
   }
 
-  return <Stage initialTab={"index" satisfies TabId} />
+  return (
+    <>
+      {/* Server-rendered, so this tab's bento starts drawing on the first
+          frame — long before the Stage below it has any JS to run. */}
+      <GridBoot tab="index" />
+      <Stage initialTab={"index" satisfies TabId} />
+    </>
+  )
 }
