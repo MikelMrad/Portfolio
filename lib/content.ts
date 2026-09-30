@@ -1,6 +1,6 @@
 /**
  * Single source of truth for every piece of copy on the site.
- * Reconciled from Mikel-Mrad-CV-Technical.pdf (Aug 2026) and the v3 portfolio.
+ * Reconciled from Mikel-Mrad-CV-Technical.pdf (Sep 2026) and the v3 portfolio.
  * Modules read from here — never hardcode strings in components.
  */
 
@@ -67,8 +67,8 @@ export const ROLES: Role[] = [
     months: 7,
     level:  3,
     blurb:
-      "Became Front-End Lead after driving core platform initiatives — the school registration flow, education categories, and the dashboard builder. Took on Mobile Lead, leading a 3-engineer team building the iOS & Android app in React Native / Expo.",
-    skills: ["REACT NATIVE", "EXPO", "ZUSTAND", "TYPESCRIPT"],
+      "Became Front-End Lead after driving core platform initiatives — the school registration flow, education categories, and the dashboard builder. Took on Mobile Lead, leading a 3-engineer team building the iOS & Android app in React Native / Expo, and shipped OTP verification for mobile signup and password reset full-stack — from the Node.js auth microservice to the app screens.",
+    skills: ["REACT NATIVE", "EXPO", "NODE.JS", "ZUSTAND", "TYPESCRIPT"],
   },
   {
     title:  "FRONT-END DEVELOPER",
