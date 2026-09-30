@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { JetBrains_Mono, Barlow_Condensed } from "next/font/google"
+import { CONTACT } from "@/lib/content"
 import "./globals.css"
 
 const jetbrains = JetBrains_Mono({
@@ -18,6 +19,9 @@ const barlow = Barlow_Condensed({
 export const metadata: Metadata = {
   title: "Mikel Mrad — Front-End / Full-Stack Developer",
   description: "Commerce, interfaces, and the details in between. Beirut, Lebanon.",
+  // Link previews need absolute URLs; app/opengraph-image.tsx supplies the image.
+  metadataBase: new URL(CONTACT.site),
+  twitter: { card: "summary_large_image" },
 }
 
 export const viewport: Viewport = {

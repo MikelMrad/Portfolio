@@ -28,6 +28,8 @@ export const CONTACT = {
   github:   "https://github.com/mikelmrad",
   linkedin: "https://www.linkedin.com/in/mikel-mrad/",
   cv:       "/docs/Mikel-Mrad-CV.pdf",
+  /** The production origin — metadataBase and the link preview use it. */
+  site:     "https://mikelmrad.dev",
 } as const
 
 export const STATS = [
@@ -152,7 +154,7 @@ export const PROJECTS: Project[] = [
     subtitle: "AGENCY SITE / BILINGUAL EN—AR",
     role:     "CUSTOM WEB PLATFORM",
     year:     "2026",
-    url:      "https://brandatelier.vercel.app",
+    url:      "https://brandatelierdigital.com",
     images: [
       "/images/work/brandatelier-01.webp",
       "/images/work/brandatelier-02.webp",
