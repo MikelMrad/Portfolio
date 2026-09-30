@@ -35,6 +35,30 @@ export const STATS = [
   { value: 10, suffix: "+", label: "PROJECTS BUILT" },
 ] as const
 
+/**
+ * What a module is called when it is too small to show itself.
+ *
+ * A card moved into a cell much smaller than the one it was composed for
+ * collapses to this title plus EXPAND, and opens full-size on tap (see
+ * `isCramped()` in stage.tsx). Projects and stack categories use their own
+ * titles, so they're not listed here.
+ */
+export const MODULE_TITLES: Record<string, string> = {
+  status:       "STATUS",
+  stats:        "BY THE\nNUMBERS",
+  experience:   "EXPERIENCE",
+  location:     "BASED",
+  latest:       "MOST\nRECENT",
+  "work-meta":  "SELECTED\nWORK",
+  cv:           "2026 CV",
+  "tech-count": "TOOLBOX",
+  education:    "EDUCATION",
+  headline:     "CONTACT",
+  email:        "DIRECT",
+  form:         "SEND A\nMESSAGE",
+  socials:      "ELSEWHERE",
+}
+
 // ── Experience ────────────────────────────────────────────────────────────────
 // Four roles, one employer. The progression is the story, so `level` drives the
 // height of each rung in the timeline module.
@@ -230,6 +254,24 @@ export const STACK: StackCategory[] = [
 ]
 
 export const TECH_COUNT = STACK.reduce((n, c) => n + c.skills.length, 0)
+
+/**
+ * BY THE NUMBERS, expanded. The card shows STATS; the full view adds the
+ * figures behind them. Derived wherever the data already exists here, so they
+ * can't drift from the rest of the site — the tenant count is the CV's.
+ */
+export const STATS_DETAIL: { value: number; suffix?: string; label: string; note: string }[] = [
+  { ...STATS[0], note: "NEXT.JS, REACT, TYPESCRIPT" },
+  { ...STATS[1], note: `${PROJECTS.length} OF THEM UNDER WORK` },
+  {
+    value: ROLES.reduce((n, r) => n + r.months, 0),
+    label: "MONTHS AT YORK PRESS",
+    note:  `${ROLES.length} ROLES, INTERN → LEAD`,
+  },
+  { value: 5, label: "COUNTRY TENANTS", note: "ONE CODEBASE" },
+  { value: 3, label: "ENGINEERS LED", note: "IOS & ANDROID, REACT NATIVE" },
+  { value: TECH_COUNT, label: "TECHNOLOGIES", note: `ACROSS ${STACK.length} CATEGORIES` },
+]
 
 export const EDUCATION = [
   {

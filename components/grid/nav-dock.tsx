@@ -7,7 +7,7 @@ import { Magnetic } from "@/components/ui/magnetic"
  * the desktop view is being dragged around underneath it.
  */
 export function NavDock({
-  tab, onSelect, detailOpen, desktopView, onToggleView,
+  tab, onSelect, detailOpen, desktopView, onToggleView, onReset,
 }: {
   tab: TabId
   onSelect: (t: TabId) => void
@@ -16,6 +16,8 @@ export function NavDock({
   /** Omitted when there is no choice to offer — desktop, or a phone too short
    *  for the portrait grid, where the scaled view is the only thing that fits. */
   onToggleView?: () => void
+  /** Present only once this tab's cards have been rearranged. */
+  onReset?: () => void
 }) {
   return (
     <nav
@@ -53,8 +55,25 @@ export function NavDock({
         )
       })}
 
+      {/* The left margin is free on every screen: the view toggle has the right
+          one on a phone, the key hints on a desktop. */}
+      {onReset && (
+        <button
+          onClick={onReset}
+          aria-label="Put the cards back"
+          className="absolute left-2 md:left-6 p-2.5 flex items-center gap-2 group"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden className="text-fg">
+            <path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" stroke="currentColor" />
+          </svg>
+          <span className="hidden md:inline font-mono text-[8px] uppercase tracking-[0.22em] text-mid group-hover:text-fg transition-colors">
+            RESET GRID
+          </span>
+        </button>
+      )}
+
       <span className="hidden lg:block absolute right-6 font-mono text-[8px] uppercase tracking-[0.22em] text-dim">
-        1—4 · ← → · ESC
+        DRAG · FLING · 1—4 · ← → · ESC
       </span>
 
       {/*

@@ -10,15 +10,17 @@ import {
 import {
   DESKTOP_FLIGHT, MOBILE_FLIGHT, MORPH_TRANSITION, flightVector, rankByRadius,
 } from "@/lib/scatter"
-import { EMPLOYER, PROJECTS, STACK } from "@/lib/content"
+import { EMPLOYER, MODULE_TITLES, PROJECTS, STACK } from "@/lib/content"
 
 import { ModuleCard } from "./module-card"
 import { NavDock } from "./nav-dock"
 import { PinchPan } from "./pinch-pan"
+import { captureCentres } from "./throw"
+import { ThrowDemo } from "./throw-demo"
 import { Cursor } from "@/components/ui/cursor"
-import { ZoomNav } from "@/components/ui/bits"
+import { CompactCard, ZoomNav } from "@/components/ui/bits"
 import { Identity } from "@/components/modules/identity"
-import { Experience, ExperienceDetail, Latest, Location, Stats, Status } from "@/components/modules/index-modules"
+import { Experience, ExperienceDetail, Latest, Location, Stats, StatsDetail, Status } from "@/components/modules/index-modules"
 import { CvCard, DetailNav, ProjectCard, ProjectDetail, WorkMeta } from "@/components/modules/work-modules"
 import { Category, Education, TechCount } from "@/components/modules/stack-modules"
 import { ContactForm, EmailCard, Footer, Headline, Socials } from "@/components/modules/contact-modules"
@@ -70,8 +72,36 @@ const mobileZoomLayout = (id: ModuleId): Partial<Record<ModuleId, Placement>> =>
   "zoom-nav": { col: [1, 4], row: [12, 1] },
 })
 
-/** Modules that expand into the whole grid. The same set on both grids. */
-const ZOOMABLE: ModuleId[] = ["experience"]
+/*
+ * Any module can expand into the whole grid (`zoom`). EXPERIENCE does it from
+ * its normal card; every other module only from its compact face, when it has
+ * been swapped somewhere too small — see isCramped().
+ */
+
+/** Size-agnostic modules: a canvas, and a one-line colophon. Never compacted. */
+const ALWAYS_FITS: ModuleId[] = ["signature", "footer"]
+
+/**
+ * Has this card been swapped into a cell too small for what it holds?
+ *
+ * Measured against the cell it was composed for on this grid, not in pixels:
+ * each layout was tuned so its module fits, so the composed cell is the real
+ * minimum. Allowing 20% slack lets near-equal slots trade freely (a 5-wide and
+ * a 4-wide project card), while anything genuinely smaller — EXPERIENCE's 4x4
+ * block dropped into a 2x2 on a phone — shows its title instead.
+ */
+function isCramped(id: ModuleId, now: Placement, native: Placement | undefined) {
+  if (!native || ALWAYS_FITS.includes(id)) return false
+  return now.col[1] < native.col[1] * 0.8 || now.row[1] < native.row[1] * 0.8
+}
+
+function titleOf(id: ModuleId): string {
+  if (id.startsWith("project-0")) return PROJECTS.find((p) => p.num === id.slice(-2))?.title ?? id
+  if (id.startsWith("cat-")) {
+    return STACK.find((c) => c.label.toLowerCase().startsWith(id.slice(4)))?.label.replace(" & ", " &\n") ?? id
+  }
+  return MODULE_TITLES[id] ?? id.toUpperCase()
+}
 
 /** How long the scatter runs end to end. Used to park the WebGL loop. */
 const TRANSITION_MS = 950
@@ -167,6 +197,16 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   /** First mount of the session: the cards rise in place instead of scattering. */
   const [intro, setIntro]   = useState(true)
   const [zoom, setZoom]     = useState<ModuleId | null>(null)
+  /**
+   * Rearrangements, per grid and tab. Dropping one card on another swaps their
+   * placements here, and `activeMap` reads through it — so a swapped card also
+   * *scatters* from its new cell, because the flight is derived from the cell.
+   * Session only: the boot drawing is server-rendered from the untouched maps,
+   * so a persisted arrangement would draw one layout and mount another.
+   */
+  const [swaps, setSwaps]   = useState<Record<string, Partial<Record<ModuleId, Placement>>>>({})
+  /** The card another card is currently being dragged over. */
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
   const { mobile: isMobile, short: isShort, resolved } = useViewportMode()
 
   /**
@@ -315,7 +355,6 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
   /** Expand one module to the whole grid, and collapse it again. */
   const openZoom = useCallback((id: ModuleId) => {
-    if (!ZOOMABLE.includes(id)) return
     beginTransition()
     setZoom(id)
   }, [beginTransition])
@@ -437,11 +476,42 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
    * portrait 4x12, expands the same modules into the same synthetic layouts,
    * and flies them with the same engine — only the proportions change.
    */
+  const layoutKey = `${phoneGrid ? "m" : "d"}:${tab}`
+  const baseMap   = phoneGrid ? MOBILE_LAYOUTS[tab] : LAYOUTS[tab]
+
   const activeMap: Partial<Record<ModuleId, Placement>> = useMemo(() => {
     if (open) return phoneGrid ? MOBILE_DETAIL_LAYOUT : DETAIL_LAYOUT
     if (zoom) return phoneGrid ? mobileZoomLayout(zoom) : zoomLayout(zoom)
-    return phoneGrid ? MOBILE_LAYOUTS[tab] : LAYOUTS[tab]
-  }, [phoneGrid, open, zoom, tab])
+    return swaps[layoutKey] ?? baseMap
+  }, [phoneGrid, open, zoom, swaps, layoutKey, baseMap])
+
+  /** Exchange two cards' cells. Both slide from where they visually are. */
+  const swapCards = useCallback((a: ModuleId, b: ModuleId) => {
+    captureCentres([a, b])
+    setSwaps((prev) => {
+      const cur = prev[layoutKey] ?? baseMap
+      if (!cur[a] || !cur[b]) return prev
+      return { ...prev, [layoutKey]: { ...cur, [a]: cur[b], [b]: cur[a] } }
+    })
+  }, [layoutKey, baseMap])
+
+  /** Put this tab back the way it was composed — every card slides home. */
+  const resetCards = useCallback(() => {
+    // Only the cards that actually moved: a card whose placement doesn't change
+    // never runs its slide, so a centre recorded for it would sit in `flipFrom`
+    // and fire on some later, unrelated re-layout.
+    const cur = activeMap as Record<string, Placement>
+    const base = baseMap as Record<string, Placement>
+    captureCentres(Object.keys(cur).filter((id) => id !== "identity" && cur[id] !== base[id]))
+    setSwaps((prev) => {
+      const next = { ...prev }
+      delete next[layoutKey]
+      return next
+    })
+  }, [activeMap, baseMap, layoutKey])
+
+  /** Only a settled, unexpanded grid at real size can be rearranged. */
+  const canThrow = !busy && !open && !zoom && !scaled
 
   const { entries, outward, inward, identityAt } = useMemo(() => {
     const all = Object.entries(activeMap) as [ModuleId, Placement][]
@@ -494,7 +564,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     }
     switch (id) {
       case "status":         return <Status />
-      case "stats":          return <Stats />
+      case "stats":          return zoom === "stats" ? <StatsDetail /> : <Stats />
       /*
         `busy` parks the WebGL loop while the grid is flying, which is what it
         is for. The intro is not a flight — the cards rise in place — so parking
@@ -520,7 +590,9 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       case "project-detail": return <ProjectDetail num={open!} />
       case "detail-nav":     return <DetailNav num={open!} onClose={closeProject} onOpen={openProject} />
       case "zoom-nav":
-        return <ZoomNav label={EMPLOYER.name} title="EXPERIENCE" meta={`${EMPLOYER.span} · 4 ROLES`} onClose={closeZoom} />
+        return zoom === "experience"
+          ? <ZoomNav label={EMPLOYER.name} title="EXPERIENCE" meta={`${EMPLOYER.span} · 4 ROLES`} onClose={closeZoom} />
+          : <ZoomNav label="EXPANDED" title={titleOf(zoom!).replace(/\n/g, " ")} onClose={closeZoom} />
       default:               return null
     }
   }
@@ -595,7 +667,17 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
               flew. Remounting turns that into a proper scatter and gather.
             */
             key={`${id}:${phoneGrid ? "m" : "d"}:${open ? "o" : zoom ? "z" : "l"}`}
+            id={id}
             placement={placement}
+            throwable={{
+              enabled: canThrow,
+              target: dropTarget === id,
+              onHover: setDropTarget,
+              onDrop: (target) => {
+                setDropTarget(null)
+                if (target !== "identity") swapCards(id, target as ModuleId)
+              },
+            }}
             custom={{
               vector: flightVector(placement, flight),
               exitRank: outward[id] ?? 0,
@@ -604,7 +686,14 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
               intro,
             }}
           >
-            {render(id)}
+            {!open && !zoom && isCramped(id, placement, baseMap[id])
+              ? (
+                <CompactCard
+                  title={titleOf(id)}
+                  onOpen={() => (id.startsWith("project-0") ? openProject(id.slice(-2)) : openZoom(id))}
+                />
+              )
+              : render(id)}
           </ModuleCard>
         ))}
       </AnimatePresence>
@@ -626,10 +715,16 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
         ? <div className="h-dvh w-full pb-14"><PinchPan width={DESKTOP_W} height={DESKTOP_H}>{grid}</PinchPan></div>
         : <div className="h-dvh w-full overflow-hidden">{grid}</div>}
 
+      {/* Shows the throwable cards off, once, after the first settle. */}
+      {resolved && booted && (
+        <ThrowDemo ready={!open && !zoom && !scaled && !reduced} cards={entries} flight={flight} />
+      )}
+
       <NavDock
         tab={tab}
         onSelect={goTab}
         detailOpen={!!open || !!zoom}
+        onReset={swaps[layoutKey] && !open && !zoom ? resetCards : undefined}
         desktopView={scaled}
         // No choice to offer on a desktop, or on a landscape phone where the
         // portrait grid has no room to exist.

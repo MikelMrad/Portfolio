@@ -25,8 +25,10 @@ export function Magnetic({
     return () => cancelAnimationFrame(rafRef.current)
   }, [])
 
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return
+  // Pointer, not mouse, events — see cursor.tsx: a card being dragged
+  // suppresses mouse events, and a missed leave left the label pulled aside.
+  const handleMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!ref.current || e.pointerType === "touch") return
     const rect = ref.current.getBoundingClientRect()
     posRef.current = {
       x: (e.clientX - rect.left - rect.width  / 2) * strength,
@@ -46,8 +48,8 @@ export function Magnetic({
     <div
       ref={ref}
       className={className}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
+      onPointerMove={handleMove}
+      onPointerLeave={handleLeave}
       /*
         `width: fit-content` is load-bearing, not cosmetic. As a flex item this
         wrapper stretches to the container's full width despite inline-block,

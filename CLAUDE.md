@@ -131,9 +131,16 @@ in:
 
 - **Projects** → `DETAIL_LAYOUT` / `MOBILE_DETAIL_LAYOUT`, driven by `open` (a
   project number).
-- **Experience** → `zoomLayout(id)` / `mobileZoomLayout(id)`, driven by `zoom`.
-  Membership is `ZOOMABLE` in `stage.tsx`; add an id there and give it an
-  expanded render branch.
+- **Any other module** → `zoomLayout(id)` / `mobileZoomLayout(id)`, driven by
+  `zoom`. EXPERIENCE opens it from its own card; every module opens it from
+  its compact face (below). A module with a dedicated expanded view renders it
+  when `zoom === id` — `ExperienceDetail`, `StatsDetail`. Give one to any
+  module that looks empty blown up to the whole grid; the rest render as-is.
+
+**Compact faces.** A card swapped into a cell under 80% of its composed size on
+either axis (`isCramped()` in `stage.tsx`) shows only its title and EXPAND
+(`CompactCard`, titles in `MODULE_TITLES`) rather than being crushed; tapping
+it expands it. `ALWAYS_FITS` exempts the size-agnostic ones.
 
 All four put the identity card at the top and the close/context chrome
 (`DetailNav`, `ZoomNav`) opposite the expanded module. On a desktop that chrome
@@ -318,6 +325,33 @@ Two things that break if you touch it:
   corner of its card. `offsetWidth/offsetHeight` are not. The per-frame pointer
   maths in `signature.tsx` still reads the rect, and still should: it normalises
   by rect width, so the ratio holds at any scale.
+
+### Throwable cards
+
+Every card except the identity anchor can be picked up (`ModuleCard`, plumbing
+in `components/grid/throw.ts`). Drop it on another card and the two swap cells;
+release it fast (`FLING_SPEED`) and it is thrown off-screen, comes back, and its
+landing sends a shockwave through the other cards. `RESET GRID` in the dock
+appears once a tab has been rearranged.
+
+- **Swaps are placements, not transforms.** `swaps[layoutKey]` in `stage.tsx`
+  overrides the tab's map and `activeMap` reads through it, so a swapped card
+  also *scatters* from its new cell. Session only, on purpose: the boot drawing
+  is server-rendered from the untouched maps.
+- **The slide is a FLIP.** The stage records visual centres into `flipFrom`
+  *before* committing the new placement; the card's layout effect reads its
+  entry after and slides from there. Only record cards whose placement will
+  actually change — an unused entry fires on some later re-layout.
+- **`x`/`y`/`scale`/`rotate` are the card's own motion values**, passed through
+  `style`, so the scatter variants, the drag, the throw and the slide all drive
+  the same four numbers rather than fighting over the transform.
+- **`ThrowDemo`** (`throw-demo.tsx`) plays on every load once the grid first
+  settles: a faint grey finger swaps two cards and flings a third. It is a
+  ghost — outlines drawn over the grid, never the real cards — so stopping it
+  (SKIP DEMO, Esc, or any touch of the page) can't leave a half-done swap.
+- Drag starts manually (`dragListener={false}`) so form fields are exempt, and a
+  drag that ends on a button swallows the click. Disabled while `busy`, in an
+  expanded view, and in the scaled phone canvas (whose drag is pan).
 
 ### Routing
 

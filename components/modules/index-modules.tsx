@@ -1,5 +1,5 @@
 "use client"
-import { EMPLOYER, IDENTITY, PROJECTS, ROLES, STATS } from "@/lib/content"
+import { EMPLOYER, IDENTITY, PROJECTS, ROLES, STATS, STATS_DETAIL } from "@/lib/content"
 import { Counter } from "@/components/ui/counter"
 import { GlowRule, Label, LiveDot, Tag } from "@/components/ui/bits"
 import type { TabId } from "@/lib/grid"
@@ -37,6 +37,35 @@ export function Stats() {
                 nothing else. The captions go rather than being sliced in half. */}
             <span className="cq-h80 font-mono text-[7px] @[300px]:text-[8px] uppercase tracking-[0.16em] text-dim leading-tight">
               {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * BY THE NUMBERS at full size. Two numerals in a whole-grid box read as an
+ * empty page, so the expanded view carries the figures behind them — a spec
+ * sheet of six, each with the line that qualifies it. Two columns in a
+ * portrait box, three in a landscape one.
+ */
+export function StatsDetail() {
+  return (
+    <div className="h-full flex flex-col p-4 @[420px]:p-6 gap-4 min-h-0">
+      <Label right={`${STATS_DETAIL.length} FIGURES`}>BY THE NUMBERS</Label>
+      <div className="stats-detail flex-1 min-h-0 grid gap-x-4 @[420px]:gap-x-6">
+        {STATS_DETAIL.map((s, i) => (
+          <div key={s.label} className="flex flex-col justify-end gap-2 border-t border-hairline pt-3 pb-1 min-h-0 min-w-0">
+            <span className="font-display text-fg leading-[0.85] tracking-tight text-[clamp(2.25rem,min(13cqw,17cqh),9rem)]">
+              <Counter to={s.value} suffix={s.suffix ?? ""} delay={250 + i * 90} />
+            </span>
+            <span className="font-mono text-[9px] @[420px]:text-[10px] uppercase tracking-[0.18em] text-fg truncate">
+              {s.label}
+            </span>
+            <span className="font-mono text-[8px] @[420px]:text-[9px] uppercase tracking-[0.16em] text-dim truncate">
+              {s.note}
             </span>
           </div>
         ))}

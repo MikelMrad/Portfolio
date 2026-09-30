@@ -16,7 +16,16 @@ export function Cursor() {
     let raf = 0
     let visible = false
 
-    const onMove = (e: MouseEvent) => {
+    /*
+      Pointer events, not mouse events. Picking up a card calls preventDefault()
+      on its pointerdown (see ModuleCard), and by spec that suppresses every
+      compatibility mouse event until the pointer is released — on mousemove the
+      cursor froze where the card was grabbed for the whole drag, then jumped.
+      Pointer events are never suppressed. Touch is skipped: a finger has no
+      cursor, and a tap would otherwise park the ring where it landed.
+    */
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return
       tx = e.clientX; ty = e.clientY
       if (!visible) {
         visible = true
@@ -36,7 +45,8 @@ export function Cursor() {
     const INTERACTIVE = "a,button,[data-cursor='grow'],input,textarea"
 
     // Delegated so it survives every remount of the grid.
-    const onOver = (e: MouseEvent) => {
+    const onOver = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return
       const hit = (e.target as HTMLElement)?.closest?.(INTERACTIVE)
       const r = ringRef.current
       if (!r) return
@@ -51,12 +61,12 @@ export function Cursor() {
       }
     }
 
-    document.addEventListener("mousemove", onMove)
-    document.addEventListener("mouseover", onOver)
+    document.addEventListener("pointermove", onMove, { passive: true })
+    document.addEventListener("pointerover", onOver, { passive: true })
     raf = requestAnimationFrame(tick)
     return () => {
-      document.removeEventListener("mousemove", onMove)
-      document.removeEventListener("mouseover", onOver)
+      document.removeEventListener("pointermove", onMove)
+      document.removeEventListener("pointerover", onOver)
       cancelAnimationFrame(raf)
     }
   }, [])

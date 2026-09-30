@@ -89,6 +89,13 @@
   .role-blurb { display: block; }
 }
 
+/* StatsDetail: two columns in a portrait box (a phone's expanded view), three
+   in a landscape one. Rows share the height so the six figures fill it. */
+.stats-detail { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+@container (min-aspect-ratio: 1 / 1) {
+  .stats-detail { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+}
+
 /*
   Optional content, revealed only when the card has the vertical room for it.
 

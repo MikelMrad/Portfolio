@@ -24,6 +24,32 @@ export function Label({ children, right }: { children: ReactNode; right?: ReactN
   )
 }
 
+/**
+ * A module that has been moved into a cell too small for it (see isCramped()
+ * in stage.tsx): just its title, and a tap opens it at full size. Better one
+ * clear word than a whole module crushed into overlapping lines.
+ *
+ * Built to hold in anything down to a one-row phone bar (~57px): the title is
+ * capped on height as well as width, and EXPAND drops to a bare arrow below
+ * 100px tall.
+ */
+export function CompactCard({ title, onOpen }: { title: string; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group h-full w-full text-left flex flex-col justify-between p-3 @[220px]:p-4 min-h-0 min-w-0 overflow-hidden"
+    >
+      <span className="font-display text-fg leading-[0.9] tracking-tight whitespace-pre-line text-[clamp(0.95rem,min(15cqw,30cqh),3.5rem)]">
+        {title}
+      </span>
+      <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-dim group-hover:text-fg transition-colors self-end">
+        <span className="cq-h100">EXPAND </span>↗
+      </span>
+    </button>
+  )
+}
+
 /** Bordered technology chip. */
 export function Tag({ children }: { children: ReactNode }) {
   return (

@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import * as THREE from "three"
 
@@ -134,10 +134,45 @@ function Arrows({ paused }: { paused: boolean }) {
   )
 }
 
+/**
+ * How many times a lost WebGL context is rebuilt before the field gives up and
+ * hides. A browser that keeps dropping it has blocklisted the GPU, and a
+ * remount loop would only thrash.
+ */
+const MAX_RESTARTS = 3
+
 export function Signature({ paused = false }: { paused?: boolean }) {
+  /**
+   * Recovering from a lost context.
+   *
+   * The browser can drop the GPU context whenever it likes — memory pressure,
+   * a driver reset, a dev-server hot reload — and it happens most often right
+   * after this card is swapped into a new cell, when the drawing buffer is
+   * reallocated at the new size. Left alone, Chrome paints its broken-canvas
+   * icon over a dead white field for the rest of the visit. Bumping the key
+   * remounts the Canvas with a fresh context instead: a one-frame blink.
+   */
+  const [generation, setGeneration] = useState(0)
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false }
+  }, [])
+
+  if (generation > MAX_RESTARTS) return null
+
   return (
     <div className="absolute inset-0">
       <Canvas
+        key={generation}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener("webglcontextlost", (e) => {
+            // Also fires when R3F forces the loss itself on unmount — only a
+            // live card should rebuild.
+            e.preventDefault()
+            if (mounted.current) setGeneration((g) => g + 1)
+          }, { once: true })
+        }}
         frameloop={paused ? "never" : "always"}
         /*
           Size the drawing buffer from offsetWidth/offsetHeight, not from
