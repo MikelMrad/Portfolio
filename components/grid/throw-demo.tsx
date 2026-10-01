@@ -75,6 +75,9 @@ export function ThrowDemo({
   const fs = useMotionValue(1)
   const co = useMotionValue(0)
   const [caption, setCaption] = useState("")
+  /** Caption on the finger's left — for a finger near the right edge, where
+   *  the caption would otherwise run off a phone screen. */
+  const [captionLeft, setCaptionLeft] = useState(false)
   const a = useGhost()
   const b = useGhost()
   const c = useGhost()
@@ -155,6 +158,7 @@ export function ThrowDemo({
       ]); alive()
 
       // 2 — press, and the card's outline lifts.
+      setCaptionLeft(fx.get() > window.innerWidth - 170)
       setCaption("DRAG TO SWAP")
       place(a, rA)
       await Promise.all([
@@ -196,6 +200,7 @@ export function ThrowDemo({
       // 5 — over to the outer card for a flick.
       const cC = centre(rC)
       await point(cC, { duration: 0.8, ease: [0.45, 0, 0.2, 1] }); alive()
+      setCaptionLeft(fx.get() > window.innerWidth - 170)
       setCaption("FLING TO THROW")
       place(c, rC)
       await Promise.all([
@@ -205,12 +210,22 @@ export function ThrowDemo({
       ]); alive()
       await wait(FLING_HOLD_MS); alive()
 
-      // 6 — flick along the card's real exit vector; the outline leaves spinning.
-      const v   = flightVector(outer[1], flight)
-      const len = Math.hypot(v.x, v.y) || 1
-      const dir = { x: v.x / len, y: v.y / len }
+      // 6 — the flick; the outline leaves spinning.
+      //
+      // On a desktop, along the card's real exit vector. On a phone, always
+      // up and a little toward the middle: the outermost card there is usually
+      // in the bottom rows, and its own vector sent the outline — and the
+      // finger after it — straight off the bottom edge, so the one moment
+      // worth seeing happened out of frame. Thrown upward it crosses the whole
+      // screen. It also travels a little slower there, so the eye can follow it.
+      const phone = window.matchMedia("(max-width: 767px)").matches
+      const raw = phone
+        ? { x: Math.sign(window.innerWidth / 2 - cC.x) * 0.3, y: -1 }
+        : flightVector(outer[1], flight)
+      const len = Math.hypot(raw.x, raw.y) || 1
+      const dir = { x: raw.x / len, y: raw.y / len }
       const far = Math.hypot(window.innerWidth, window.innerHeight)
-      const out = { duration: 0.5, ease: [0.15, 0.6, 0.35, 1] as const }
+      const out = { duration: phone ? 0.75 : 0.5, ease: [0.15, 0.6, 0.35, 1] as const }
       await Promise.all([
         point({ x: cC.x + dir.x * 90, y: cC.y + dir.y * 90 }, { duration: 0.16, ease: "easeOut" }),
         run(animate(fs, 1, { duration: 0.16 })),
@@ -221,8 +236,11 @@ export function ThrowDemo({
       await wait(380); alive()
 
       // 7 — and back into its cell.
-      c.r.set(Math.sign(dir.x || 1) * -40)
-      const back = { type: "spring" as const, stiffness: 110, damping: 15 }
+      // The same return the real cards make (ModuleCard's fling): a slight
+      // tilt to unwind and a near-critically damped spring, so the demo
+      // promises the landing the visitor will actually get.
+      c.r.set(Math.sign(dir.x || 1) * 14)
+      const back = { type: "spring" as const, stiffness: 120, damping: 20 }
       await Promise.all([
         run(animate(c.x, rC.x, back)),
         run(animate(c.y, rC.y, back)),
@@ -280,7 +298,9 @@ export function ThrowDemo({
           <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
         </motion.svg>
         <motion.span
-          className="absolute left-6 top-9 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.24em] text-mid/60"
+          className={`absolute top-9 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.24em] text-mid/60 ${
+            captionLeft ? "right-8" : "left-6"
+          }`}
           style={{ opacity: co }}
         >
           {caption}
