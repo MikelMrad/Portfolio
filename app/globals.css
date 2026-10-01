@@ -74,6 +74,10 @@
   transition: border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
+/* A card mid-swap (ModuleCard's morph) stays above its neighbours while it
+   passes over them. Inline z-index from the drag still wins while it is held. */
+.module[data-morphing] { z-index: 25; }
+
 /* Vertical filmstrip. The track holds the images twice, so -50% is exactly
    one full set and the loop is seamless. */
 @keyframes marquee-y {

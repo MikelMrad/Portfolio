@@ -183,7 +183,14 @@ export function Signature({ paused = false }: { paused?: boolean }) {
           and still should: it normalises by rect width, so the ratio holds at
           any scale.
         */
-        resize={{ offsetSize: true }}
+        /*
+          Debounced: a swapped card's box is animated for real, frame by frame,
+          and reallocating the drawing buffer on every one of those frames is
+          the costliest thing the GPU can be asked to do — the likeliest cause
+          of the lost contexts below. The canvas stretches with its card for the
+          few hundred ms of the morph and re-renders crisp once it lands.
+        */
+        resize={{ offsetSize: true, debounce: { scroll: 50, resize: 150 } }}
         orthographic
         camera={{ position: [0, 0, 10], zoom: 60 }}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}

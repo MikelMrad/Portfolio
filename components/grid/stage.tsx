@@ -15,7 +15,7 @@ import { EMPLOYER, MODULE_TITLES, PROJECTS, STACK } from "@/lib/content"
 import { ModuleCard } from "./module-card"
 import { NavDock } from "./nav-dock"
 import { PinchPan } from "./pinch-pan"
-import { captureCentres } from "./throw"
+import { captureBoxes } from "./throw"
 import { ThrowDemo } from "./throw-demo"
 import { Cursor } from "@/components/ui/cursor"
 import { CompactCard, ZoomNav } from "@/components/ui/bits"
@@ -487,7 +487,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
   /** Exchange two cards' cells. Both slide from where they visually are. */
   const swapCards = useCallback((a: ModuleId, b: ModuleId) => {
-    captureCentres([a, b])
+    captureBoxes([a, b])
     setSwaps((prev) => {
       const cur = prev[layoutKey] ?? baseMap
       if (!cur[a] || !cur[b]) return prev
@@ -502,7 +502,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     // and fire on some later, unrelated re-layout.
     const cur = activeMap as Record<string, Placement>
     const base = baseMap as Record<string, Placement>
-    captureCentres(Object.keys(cur).filter((id) => id !== "identity" && cur[id] !== base[id]))
+    captureBoxes(Object.keys(cur).filter((id) => id !== "identity" && cur[id] !== base[id]))
     setSwaps((prev) => {
       const next = { ...prev }
       delete next[layoutKey]
