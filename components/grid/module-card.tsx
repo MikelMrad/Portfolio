@@ -19,6 +19,8 @@ export type Throwable = {
   target: boolean
   onHover: (target: string | null) => void
   onDrop: (target: string) => void
+  /** A card was thrown. */
+  onFling?: () => void
 }
 
 /**
@@ -222,7 +224,11 @@ export function ModuleCard({
     setTimeout(() => { dragged.current = false }, 0)
     const speed = Math.hypot(info.velocity.x, info.velocity.y)
 
-    if (speed > FLING_SPEED && !reduced) { void fling(info.velocity, speed); return }
+    if (speed > FLING_SPEED && !reduced) {
+      throwable?.onFling?.()
+      void fling(info.velocity, speed)
+      return
+    }
 
     const target = cardAt(info.point, id)
     if (target) {

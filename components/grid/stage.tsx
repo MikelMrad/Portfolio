@@ -16,6 +16,7 @@ import { ModuleCard } from "./module-card"
 import { NavDock } from "./nav-dock"
 import { PinchPan } from "./pinch-pan"
 import { captureBoxes } from "./throw"
+import { armMotionPermission, useShake } from "./shake"
 import { ThrowDemo } from "./throw-demo"
 import { Cursor } from "@/components/ui/cursor"
 import { CompactCard, ZoomNav } from "@/components/ui/bits"
@@ -205,6 +206,12 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
    * so a persisted arrangement would draw one layout and mount another.
    */
   const [swaps, setSwaps]   = useState<Record<string, Partial<Record<ModuleId, Placement>>>>({})
+  /**
+   * Bumped by a shake. It is part of every card's key, so a shake remounts the
+   * whole set: the cards scatter out and gather back in — the same transition
+   * as a tab switch, landing on the tab's original layout.
+   */
+  const [shakeGen, setShakeGen] = useState(0)
   /** The card another card is currently being dragged over. */
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   const { mobile: isMobile, short: isShort, resolved } = useViewportMode()
@@ -487,6 +494,9 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
   /** Exchange two cards' cells. Both slide from where they visually are. */
   const swapCards = useCallback((a: ModuleId, b: ModuleId) => {
+    // The grid has been rearranged, so a reset means something now: on iOS,
+    // ask for motion access (for shake-to-reset) on the next tap.
+    armMotionPermission()
     captureBoxes([a, b])
     setSwaps((prev) => {
       const cur = prev[layoutKey] ?? baseMap
@@ -512,6 +522,25 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
   /** Only a settled, unexpanded grid at real size can be rearranged. */
   const canThrow = !busy && !open && !zoom && !scaled
+
+  /**
+   * Shake to reset, on the phone grid. Unlike RESET GRID's slide home it is a
+   * full scatter and gather — a shake is a big gesture and gets a big answer —
+   * and it plays even when nothing was moved, so the gesture always lands.
+   */
+  const shakeReset = useCallback(() => {
+    beginTransition()
+    setSwaps((prev) => {
+      if (!prev[layoutKey]) return prev
+      const next = { ...prev }
+      delete next[layoutKey]
+      return next
+    })
+    setShakeGen((g) => g + 1)
+    navigator.vibrate?.(40)
+  }, [beginTransition, layoutKey])
+
+  useShake(shakeReset, phoneGrid && canThrow && !reduced)
 
   const { entries, outward, inward, identityAt } = useMemo(() => {
     const all = Object.entries(activeMap) as [ModuleId, Placement][]
@@ -666,13 +695,14 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
               straight from one cell to the other while everything around it
               flew. Remounting turns that into a proper scatter and gather.
             */
-            key={`${id}:${phoneGrid ? "m" : "d"}:${open ? "o" : zoom ? "z" : "l"}`}
+            key={`${id}:${phoneGrid ? "m" : "d"}:${open ? "o" : zoom ? "z" : "l"}:${shakeGen}`}
             id={id}
             placement={placement}
             throwable={{
               enabled: canThrow,
               target: dropTarget === id,
               onHover: setDropTarget,
+              onFling: armMotionPermission,
               onDrop: (target) => {
                 setDropTarget(null)
                 if (target !== "identity") swapCards(id, target as ModuleId)
@@ -717,7 +747,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
       {/* Shows the throwable cards off, once, after the first settle. */}
       {resolved && booted && (
-        <ThrowDemo ready={!open && !zoom && !scaled && !reduced} cards={entries} flight={flight} />
+        <ThrowDemo ready={!open && !zoom && !scaled && !reduced} cards={entries} flight={flight} shake={phoneGrid} />
       )}
 
       <NavDock

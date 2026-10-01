@@ -57,13 +57,15 @@ function GhostBox({ g }: { g: Ghost }) {
 }
 
 export function ThrowDemo({
-  ready, cards, flight,
+  ready, cards, flight, shake = false,
 }: {
   /** Modules mounted, nothing expanded, full-size, motion allowed. Not
    *  gated on the intro transition finishing — see START_DELAY_MS. */
   ready: boolean
   cards: [ModuleId, Placement][]
   flight: FlightGrid
+  /** Phone grid: end with shake-to-reset (see shake.ts). */
+  shake?: boolean
 }) {
   const [active, setActive] = useState(false)
   const played = useRef(false)
@@ -78,6 +80,12 @@ export function ThrowDemo({
   /** Caption on the finger's left — for a finger near the right edge, where
    *  the caption would otherwise run off a phone screen. */
   const [captionLeft, setCaptionLeft] = useState(false)
+  // The shake step: a phone glyph, and every card's outline shaking with it.
+  const po = useMotionValue(0)
+  const pr = useMotionValue(0)
+  const go = useMotionValue(0)
+  const gx = useMotionValue(0)
+  const [all, setAll] = useState<Rect[]>([])
   const a = useGhost()
   const b = useGhost()
   const c = useGhost()
@@ -109,7 +117,7 @@ export function ThrowDemo({
       events.forEach((e) => window.removeEventListener(e, stop))
       running.forEach((r) => r.stop())
       // Fade out from wherever it got to, however it was interrupted.
-      Promise.all([fo, co, a.o, b.o, c.o].map((v) => animate(v, 0, { duration: 0.25 })))
+      Promise.all([fo, co, po, go, a.o, b.o, c.o].map((v) => animate(v, 0, { duration: 0.25 })))
         .then(() => setActive(false))
     }
     cancel.current = stop
@@ -248,6 +256,28 @@ export function ThrowDemo({
       ]); alive()
       await wait(300); alive()
 
+      // 8 — phones only: shake to reset. The finger has nothing to point at
+      // for this one, so it gives way to a phone glyph mid-screen, and every
+      // card's outline shakes in time with it.
+      if (shake) {
+        setAll(cards.map(([id]) => rectOf(id)).filter((r): r is Rect => !!r))
+        setCaption("")
+        await Promise.all([
+          run(animate(fo, 0, { duration: 0.25 })),
+          run(animate(po, 1, { duration: 0.3 })),
+          run(animate(go, 1, { duration: 0.3 })),
+        ]); alive()
+        const shakeOnce = { duration: 0.75, ease: "easeInOut" as const }
+        for (let i = 0; i < 2; i++) {
+          await Promise.all([
+            run(animate(pr, [0, -16, 16, -16, 16, -8, 0], shakeOnce)),
+            run(animate(gx, [0, -7, 7, -7, 7, -3, 0], shakeOnce)),
+          ]); alive()
+          await wait(260); alive()
+        }
+        await wait(500); alive()
+      }
+
       stop()
     }
 
@@ -277,6 +307,36 @@ export function ThrowDemo({
         </svg>
       </motion.button>
       <div aria-hidden>
+      {/* Shake-to-reset: every card's outline, moving as one. */}
+      <motion.div className="absolute inset-0" style={{ x: gx, opacity: go }}>
+        {all.map((r, i) => (
+          <div
+            key={i}
+            className="absolute border border-mid/40 bg-mid/[0.05]"
+            style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
+          />
+        ))}
+      </motion.div>
+      <motion.div
+        className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-4"
+        style={{ opacity: po }}
+      >
+        <motion.svg
+          width="46" height="76" viewBox="0 0 46 76" fill="none"
+          className="text-mid/70 drop-shadow-[0_0_8px_rgba(170,170,170,0.3)]"
+          style={{ rotate: pr }}
+          stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"
+        >
+          <rect x="2" y="2" width="42" height="72" rx="8" />
+          <path d="M18 8h10" />
+          <circle cx="23" cy="66" r="2.5" />
+        </motion.svg>
+        {/* Backed: mid-screen it lands on top of card copy. */}
+        <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid/80 whitespace-nowrap px-2.5 py-1.5 bg-bg/85">
+          SHAKE TO RESET
+        </span>
+      </motion.div>
+
       <GhostBox g={a} />
       <GhostBox g={b} />
       <GhostBox g={c} />
