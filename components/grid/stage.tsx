@@ -572,7 +572,9 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   }, [beginTransition, layoutKey])
 
   // Any touch screen, any orientation — not just the portrait grid.
-  useShake(shakeReset, touch && canThrow && !reduced)
+  // Not gated on reduced motion: the shake is the visitor's own gesture, and
+  // the reset it triggers already honours the preference.
+  useShake(shakeReset, touch && canThrow)
 
   /**
    * Rotation. Turning the device switches grids, which remounts every card

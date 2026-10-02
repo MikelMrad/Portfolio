@@ -357,6 +357,7 @@ export const UI = {
     swap: "DRAG ONTO ANOTHER TO SWAP",
     fling: "FLING TO THROW",
     shake: "SHAKE TO RESET",
+    enableShake: "TAP TO TURN ON SHAKE",
     skip: "SKIP DEMO", skipAria: "Close the demonstration",
   },
 }

@@ -3,16 +3,38 @@ import { useSyncExternalStore } from "react"
 import { THEME_COLOR } from "./lang-boot"
 
 /**
- * Dark (the default) or inverted. Like the language, it lives on <html> — as
- * data-theme — because the colours are CSS's job: every token, glow and
+ * Dark or light — by default whichever the visitor's device is set to (applied
+ * before first paint by PREFS_BOOT). Like the language, it lives on <html> —
+ * as data-theme — because the colours are CSS's job: every token, glow and
  * hairline is a variable (globals.css, "Inverted mode"). React only needs to
  * know for the one thing CSS can't reach, the WebGL arrow field.
+ *
+ * It keeps following the device while the page is open (a phone switching to
+ * dark at sunset), until the visitor uses the toggle — from then on their
+ * choice wins for the rest of the visit. A `?theme=` link is a choice too.
  */
 
 export type Theme = "dark" | "light"
 
 const listeners = new Set<() => void>()
-const subscribe = (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn) } }
+
+/** The visitor (or a ?theme= link) has picked a theme — stop following the device. */
+let chosen = false
+let following = false
+
+function followDevice() {
+  if (following) return
+  following = true
+  chosen ||= new URLSearchParams(location.search).has("theme")
+  const mq = window.matchMedia("(prefers-color-scheme: light)")
+  mq.addEventListener("change", () => { if (!chosen) apply(mq.matches ? "light" : "dark") })
+}
+
+const subscribe = (fn: () => void) => {
+  followDevice()
+  listeners.add(fn)
+  return () => { listeners.delete(fn) }
+}
 const read = (): Theme => (document.documentElement.dataset.theme === "light" ? "light" : "dark")
 
 export function useThemeStore(): Theme {
@@ -24,7 +46,7 @@ function apply(theme: Theme) {
   if (theme === "light") h.dataset.theme = "light"
   else delete h.dataset.theme
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", THEME_COLOR[theme])
-  // Not saved: every visit starts dark (see PREFS_BOOT).
+  // Not saved: each visit starts from the device's setting (see PREFS_BOOT).
   listeners.forEach((fn) => fn())
 }
 
@@ -48,6 +70,7 @@ let switching = false
 
 export function toggleTheme(origin: { x: number; y: number }) {
   const next: Theme = read() === "light" ? "dark" : "light"
+  chosen = true
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { apply(next); return }
   if (switching) return
   switching = true

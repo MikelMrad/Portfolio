@@ -4,6 +4,7 @@ import { animate, motion, useMotionValue, useTransform, type MotionValue } from 
 import type { ModuleId, Placement } from "@/lib/grid"
 import { useContent } from "@/lib/i18n"
 import { flightVector, rankByRadius, type FlightGrid } from "@/lib/scatter"
+import { motionPermission, requestMotionPermission, shakeAvailable } from "./shake"
 
 /**
  * The guided tour that plays once the intro has settled.
@@ -132,6 +133,12 @@ export function ThrowDemo({
   const go = useMotionValue(0)
   const gx = useMotionValue(0)
   const [all, setAll] = useState<Rect[]>([])
+  /**
+   * iOS only: shake needs a permission the page may only ask for from a tap.
+   * The shake step shows a "turn on" button and waits — this resolves it.
+   */
+  const [askShake, setAskShake] = useState(false)
+  const shakeAnswered = useRef<(() => void) | null>(null)
   const a = useGhost()
   const b = useGhost()
   const c = useGhost()
@@ -403,7 +410,8 @@ export function ThrowDemo({
       // 8 — phones only: shake to reset. The finger has nothing to point at
       // for this one, so it gives way to a phone glyph mid-screen, and every
       // card's outline shakes in time with it.
-      if (touch) {
+      // Only where it can work: a touch screen on a secure page (see shake.ts).
+      if (touch && shakeAvailable()) {
         setAll(cards.map(([id]) => rectOf(id)).filter((r): r is Rect => !!r))
         setCaption("")
         await Promise.all([
@@ -411,6 +419,17 @@ export function ThrowDemo({
           run(animate(po, 1, { duration: 0.3 })),
           run(animate(go, 1, { duration: 0.3 })),
         ]); alive()
+        // iOS: ask now — the visitor is being told about the gesture — and
+        // wait for the answer, or ~5s, before showing it off.
+        if (motionPermission() === "unknown") {
+          setAskShake(true)
+          await Promise.race([
+            new Promise<void>((done) => { shakeAnswered.current = done }),
+            wait(5000),
+          ]); alive()
+          shakeAnswered.current = null
+          setAskShake(false)
+        }
         const shakeOnce = { duration: 0.75, ease: "easeInOut" as const }
         for (let i = 0; i < 2; i++) {
           await Promise.all([
@@ -482,6 +501,18 @@ export function ThrowDemo({
         <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-fg/90 whitespace-nowrap px-2.5 py-1.5 bg-bg/85 [text-shadow:0_0_8px_rgb(var(--glow)/calc(0.45*var(--glow-k)))]">
           {UI.demo.shake}
         </span>
+        {askShake && (
+          // The overlay ignores input; this button, like SKIP, doesn't.
+          <button
+            type="button"
+            onClick={() => {
+              void requestMotionPermission().finally(() => shakeAnswered.current?.())
+            }}
+            className="pointer-events-auto font-mono text-[9px] uppercase tracking-[0.22em] text-fg border border-fg/50 bg-bg/85 px-3 py-2 shadow-glow-sm"
+          >
+            {UI.demo.enableShake}
+          </button>
+        )}
       </motion.div>
 
       <GhostBox g={a} />

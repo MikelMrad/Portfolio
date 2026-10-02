@@ -16,10 +16,10 @@ export const THEME_COLOR = { dark: "#0a0a0a", light: "#f3f3f1" } as const
  * before the first paint, so the server-rendered boot drawing is already
  * mirrored and already the right colours. Dependency-free on purpose.
  *
- * The language is remembered; the theme is not. Every visit starts dark — the
- * site's own look — and inverted mode is something to try, not a setting that
- * follows you. `?theme=light` still opens it deliberately (a shared link).
- * The old saved choice is cleared, so anyone who tried light mode before this
- * isn't stuck in it.
+ * The language is remembered. The theme follows the device: light if the
+ * visitor's phone or computer is set to light, dark otherwise — so the site
+ * opens matching everything else on their screen. `?theme=light|dark` in a
+ * link overrides it. The ◐ toggle lasts for the visit and isn't saved (an old
+ * saved choice is cleared, so nobody is stuck in a mode they once tried).
  */
-export const PREFS_BOOT = `(function(){try{var h=document.documentElement,q=new URLSearchParams(location.search);var l=q.get("lang");l=l==="ar"||l==="en"?l:localStorage.getItem("${LANG_KEY}");if(l==="ar"){h.lang="ar";h.dir="rtl"}try{localStorage.removeItem("${THEME_KEY}")}catch(e){}var t=q.get("theme");if(t==="light"){h.dataset.theme="light";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","${THEME_COLOR.light}")}}catch(e){}})()`
+export const PREFS_BOOT = `(function(){try{var h=document.documentElement,q=new URLSearchParams(location.search);var l=q.get("lang");l=l==="ar"||l==="en"?l:localStorage.getItem("${LANG_KEY}");if(l==="ar"){h.lang="ar";h.dir="rtl"}try{localStorage.removeItem("${THEME_KEY}")}catch(e){}var t=q.get("theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";if(t==="light"){h.dataset.theme="light";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","${THEME_COLOR.light}")}}catch(e){}})()`

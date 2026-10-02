@@ -391,9 +391,10 @@ the rules worth knowing before touching anything:
 
 The dock's ◐ toggle flips the site black-on-white — still strictly monochrome:
 the six colour tokens swap (`:root[data-theme="light"]` in `globals.css`).
-**Every visit starts dark** — the choice is deliberately not saved (the language
-is); `?theme=light` opens it on purpose, applied before first paint by
-`PREFS_BOOT` (`lib/lang-boot.ts`); `lib/theme.tsx` holds
+**The theme follows the visitor's device** (`prefers-color-scheme`), before
+first paint via `PREFS_BOOT` (`lib/lang-boot.ts`) and live while the page is
+open, until they use the toggle; `?theme=light|dark` overrides it. The toggle
+is per-visit, never saved (the language is); `lib/theme.tsx` holds
 the store and the switch: a disc of the new background scales out from the
 button, the theme flips under it, and it fades. Transform and opacity only —
 an earlier clip-path reveal juddered, because clip-path repaints every frame
