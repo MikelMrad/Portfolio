@@ -16,7 +16,7 @@ import { CONTENT, LangProvider, setLang, useLangStore } from "@/lib/i18n"
 import { ModuleCard } from "./module-card"
 import { NavDock } from "./nav-dock"
 import { captureBoxes } from "./throw"
-import { armMotionPermission, useShake } from "./shake"
+import { ShakeDebug, armMotionPermission, useShake } from "./shake"
 import { ThrowDemo } from "./throw-demo"
 import { Cursor } from "@/components/ui/cursor"
 import { CompactCard, ZoomNav } from "@/components/ui/bits"
@@ -790,6 +790,8 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
           portrait={phoneGrid}
         />
       )}
+
+      <ShakeDebug enabled={touch && canThrow} />
 
       <NavDock
         tab={tab}

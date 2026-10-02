@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 
 /**
  * Shake the phone to put the grid back.
@@ -25,10 +25,14 @@ import { useEffect, useRef } from "react"
  *   already honours the preference.
  */
 
-/** m/s², gravity excluded. A walk peaks around 5, a deliberate shake 15-30. */
-const SPIKE = 14
+/**
+ * m/s², gravity excluded. A walk peaks around 5; a deliberate shake 12-30 — an
+ * iPhone reads lower than the Android this was first tuned on, and 14 missed
+ * ordinary shakes there.
+ */
+const SPIKE = 12
 const SHAKE_SPIKES = 3
-const SHAKE_WINDOW_MS = 900
+const SHAKE_WINDOW_MS = 1000
 const SPIKE_GAP_MS = 80
 const COOLDOWN_MS = 1500
 
@@ -50,6 +54,9 @@ export function shakeAvailable() {
 type Permission = "unneeded" | "unknown" | "granted" | "denied"
 let permission: Permission | null = null
 
+/** Told when the permission is answered, so the listener can re-attach. */
+const permissionListeners = new Set<() => void>()
+
 export function motionPermission(): Permission {
   if (permission) return permission
   permission = typeof window !== "undefined" && motionApi()?.requestPermission ? "unknown" : "unneeded"
@@ -64,6 +71,7 @@ export async function requestMotionPermission(): Promise<boolean> {
   } catch {
     permission = "denied"
   }
+  permissionListeners.forEach((fn) => fn())
   return permission === "granted"
 }
 
@@ -81,10 +89,30 @@ export function armMotionPermission() {
   window.addEventListener("touchend", () => { void requestMotionPermission() }, { once: true, passive: true })
 }
 
+/**
+ * What the sensor has reported, for the `?debug=shake` readout (ShakeDebug in
+ * stage.tsx) — so a phone that won't shake can say why: no events at all
+ * (insecure page / no permission), events but weak forces (threshold), or
+ * spikes that never add up to a shake.
+ */
+export const shakeStats = { events: 0, lastForce: 0, maxForce: 0, spikes: 0, shakes: 0 }
+
 export function useShake(onShake: () => void, enabled: boolean) {
   // The latest handler without re-subscribing the sensor on every render.
   const handler = useRef(onShake)
   useEffect(() => { handler.current = onShake }, [onShake])
+
+  /*
+    Re-attach once permission is answered. Some iOS versions only deliver
+    motion to listeners added *after* the user allows it — one attached before
+    the prompt stays silent for the life of the page.
+  */
+  const [answered, setAnswered] = useState(0)
+  useEffect(() => {
+    const bump = () => setAnswered((n) => n + 1)
+    permissionListeners.add(bump)
+    return () => { permissionListeners.delete(bump) }
+  }, [])
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined" || !("DeviceMotionEvent" in window)) return
@@ -111,17 +139,72 @@ export function useShake(onShake: () => void, enabled: boolean) {
         prev = cur
       }
 
+      shakeStats.events++
+      shakeStats.lastForce = force
+      shakeStats.maxForce = Math.max(shakeStats.maxForce, force)
+
       if (force < SPIKE || now - lastSpike < SPIKE_GAP_MS) return
       lastSpike = now
+      shakeStats.spikes++
       spikes = [...spikes.filter((t) => now - t < SHAKE_WINDOW_MS), now]
       if (spikes.length < SHAKE_SPIKES || now - lastShake < COOLDOWN_MS) return
 
       lastShake = now
       spikes = []
+      shakeStats.shakes++
       handler.current()
     }
 
     window.addEventListener("devicemotion", onMotion)
     return () => window.removeEventListener("devicemotion", onMotion)
-  }, [enabled])
+  }, [enabled, answered])
+}
+
+/**
+ * `?debug=shake`: a small live readout of the motion pipeline, for diagnosing a
+ * phone that won't shake. Not linked anywhere; renders nothing without the flag.
+ * Its button asks for permission directly, so it can be tested in isolation.
+ */
+export function ShakeDebug({ enabled }: { enabled: boolean }) {
+  const [, tick] = useState(0)
+  // Through useSyncExternalStore, not a useState initializer: the server can't
+  // see the URL, and reading it in the first client render made the markup
+  // disagree with the server's — a hydration error.
+  const on = useSyncExternalStore(
+    () => () => {},
+    () => new URLSearchParams(location.search).get("debug") === "shake",
+    () => false,
+  )
+  useEffect(() => {
+    if (!on) return
+    const id = setInterval(() => tick((n) => n + 1), 200)
+    return () => clearInterval(id)
+  }, [on])
+  if (!on) return null
+
+  const rows: [string, string][] = [
+    ["secure page", String(window.isSecureContext)],
+    ["motion api", String(!!motionApi())],
+    ["permission", motionPermission()],
+    ["listening", String(enabled)],
+    ["events", String(shakeStats.events)],
+    ["force now", shakeStats.lastForce.toFixed(1)],
+    ["force max", `${shakeStats.maxForce.toFixed(1)} (need ${SPIKE})`],
+    ["spikes", String(shakeStats.spikes)],
+    ["shakes", String(shakeStats.shakes)],
+  ]
+  return (
+    <div className="fixed top-2 start-2 z-[9995] bg-bg/90 border border-fg/40 p-2 font-mono text-[10px] text-fg leading-relaxed">
+      {rows.map(([k, v]) => <div key={k}>{k}: <b>{v}</b></div>)}
+      {motionPermission() === "unknown" && (
+        <button
+          type="button"
+          onClick={() => { void requestMotionPermission() }}
+          className="mt-1 border border-fg px-2 py-1"
+        >
+          ask permission
+        </button>
+      )}
+    </div>
+  )
 }

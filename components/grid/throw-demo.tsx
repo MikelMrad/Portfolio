@@ -16,7 +16,7 @@ import { motionPermission, requestMotionPermission, shakeAvailable } from "./sha
  *   2. tapping a card open — EXPERIENCE or a project grows to the whole grid;
  *   3. dragging one card onto another — the two trade places (ModuleCard);
  *   4. flinging a card — off along its flight vector and back (throw.ts);
- *   5. on a touch screen, shaking to reset (shake.ts).
+ *   5. on a touch screen, shaking to reset (shake.tsx).
  *
  * It is a ghost, on purpose — outlines of the cards and tabs, never the real
  * ones. Nothing it shows changes the page, so it can play over a visitor who is
@@ -410,7 +410,7 @@ export function ThrowDemo({
       // 8 — phones only: shake to reset. The finger has nothing to point at
       // for this one, so it gives way to a phone glyph mid-screen, and every
       // card's outline shakes in time with it.
-      // Only where it can work: a touch screen on a secure page (see shake.ts).
+      // Only where it can work: a touch screen on a secure page (see shake.tsx).
       if (touch && shakeAvailable()) {
         setAll(cards.map(([id]) => rectOf(id)).filter((r): r is Rect => !!r))
         setCaption("")

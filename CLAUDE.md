@@ -349,10 +349,14 @@ appears once a tab has been rearranged.
   — outlines drawn over the grid, never the real cards or tabs — so it can play
   over a visitor who is already exploring. Only SKIP DEMO ends it; a tab switch
   or an opened card stops it too, since the outlines belong to this layout.
-- **Shake to reset** (`shake.ts`, phone grid only): a shake bumps `shakeGen`,
+- **Shake to reset** (`shake.tsx`, any touch screen): a shake bumps `shakeGen`,
   which is in every card's key, so the set scatters and gathers back into the
   tab's original layout. iOS gates motion behind a permission that is armed on
   the first swap or fling and asked on the tap after.
+  On iOS it needs https, a permission asked from a tap (the tour's shake step
+  offers a button), and a listener attached after that answer. **`?debug=shake`
+  shows a live readout** — secure page, permission, events, forces, spikes —
+  for a phone that won't shake.
 - Drag starts manually (`dragListener={false}`) so form fields are exempt, and a
   drag that ends on a button swallows the click. Disabled while `busy` and in
   an expanded view.
