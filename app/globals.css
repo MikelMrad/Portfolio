@@ -14,10 +14,41 @@
   --font-display: var(--font-barlow-condensed), var(--font-kufi-arabic), ui-sans-serif, sans-serif;
 
   /* White glow replaces an accent colour — used for active, hover, live. */
-  --shadow-glow-sm: 0 0 10px 0 rgba(240, 240, 240, 0.28);
-  --shadow-glow:    0 0 18px 2px rgba(240, 240, 240, 0.34), 0 0 46px 8px rgba(240, 240, 240, 0.09);
-  --shadow-glow-lg: 0 0 26px 4px rgba(240, 240, 240, 0.42), 0 0 70px 14px rgba(240, 240, 240, 0.13);
+  --shadow-glow-sm: 0 0 10px 0 rgb(var(--glow) / calc(0.28 * var(--glow-k)));
+  --shadow-glow:    0 0 18px 2px rgb(var(--glow) / calc(0.34 * var(--glow-k))), 0 0 46px 8px rgb(var(--glow) / calc(0.09 * var(--glow-k)));
+  --shadow-glow-lg: 0 0 26px 4px rgb(var(--glow) / calc(0.42 * var(--glow-k))), 0 0 70px 14px rgb(var(--glow) / calc(0.13 * var(--glow-k)));
 }
+
+/*
+  ── Inverted mode ────────────────────────────────────────────────────────────
+  Still monochrome: the same six tokens, flipped. The one accent is "light
+  coming off the foreground" — `--glow` is that light's colour and `--glow-k`
+  its strength — so every glow on the site is written as
+  rgb(var(--glow) / calc(alpha * var(--glow-k))), never as a literal white.
+  In light mode the light is dark and at half strength: on white, a white glow
+  is invisible, and a full-strength black one is a smudge — half reads as a
+  soft shadow, the same lift the glow gives on black.
+
+  Set by data-theme on <html> — before first paint by PREFS_BOOT
+  (lib/lang-boot.ts), from the toggle afterwards (lib/theme.tsx).
+*/
+:root {
+  --glow: 240 240 240;
+  --glow-k: 1;
+  --grain: 0.055;
+}
+:root[data-theme="light"] {
+  --color-bg:       #f3f3f1;
+  --color-fg:       #111111;
+  --color-mid:      #4f4f4f;
+  --color-dim:      #8d8d8d;
+  --color-hairline: #dcdcda;
+  --color-card:     #fbfbfa;
+  --glow: 17 17 17;
+  --glow-k: 0.5;
+  --grain: 0.035;
+}
+
 
 @layer base {
   html, body {
@@ -41,6 +72,10 @@
 
   ::selection { background-color: var(--color-fg); color: var(--color-bg); }
 
+  /* Keyboard focus in the site's own colour — the browser's blue is the one
+     hue on the page otherwise, and it inverts with the theme this way. */
+  :focus-visible { outline: 1px solid var(--color-fg); outline-offset: 2px; }
+
   /* Hide the native cursor on pointer devices — <Cursor /> takes over. */
   @media (pointer: fine) {
     *, *::before, *::after { cursor: none !important; }
@@ -55,7 +90,7 @@
     z-index: 9998;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-size: 200px 200px;
-    opacity: 0.055;
+    opacity: var(--grain);
   }
 }
 
@@ -91,6 +126,28 @@
 */
 :root[lang="ar"] body * { letter-spacing: 0 !important; }
 :root[lang="ar"] .font-display { line-height: 1.15 !important; }
+
+/*
+  The site as plain text (components/static-cv.tsx): in the HTML for crawlers
+  and screen readers, visually hidden while the canvas boots. The stage sets
+  `hidden` on it once the grid mounts; with JavaScript off, a <noscript> rule
+  in page.tsx shows it instead.
+*/
+.static-cv {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.static-cv { font-family: var(--font-mono); font-size: 13px; line-height: 1.6; padding: 2rem; max-width: 46rem; color: var(--color-fg); }
+.static-cv h1 { font-family: var(--font-display); font-size: 3rem; line-height: 1; margin-bottom: 0.5rem; }
+.static-cv h2 { font-family: var(--font-display); font-size: 1.75rem; margin: 2rem 0 0.5rem; }
+.static-cv h3 { margin-top: 1rem; color: var(--color-fg); }
+.static-cv p, .static-cv li { color: var(--color-mid); }
+.static-cv a { text-decoration: underline; }
 
 /* Vertical filmstrip. The track holds the images twice, so -50% is exactly
    one full set and the loop is seamless. */
@@ -222,7 +279,7 @@
 
 .boot-line {
   fill: none;
-  stroke: rgba(240, 240, 240, 0.55);
+  stroke: rgb(var(--glow) / calc(0.55 * var(--glow-k) + 0.2 * (1 - var(--glow-k))));
   stroke-width: 1;
   /* pathLength=100 on the rect, so this is "the whole perimeter" at any size. */
   stroke-dasharray: 100;
@@ -254,8 +311,8 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px 0 rgba(240, 240, 240, 0.35); }
-  50%      { box-shadow: 0 0 16px 3px rgba(240, 240, 240, 0.65); }
+  0%, 100% { box-shadow: 0 0 8px 0 rgb(var(--glow) / calc(0.35 * var(--glow-k))); }
+  50%      { box-shadow: 0 0 16px 3px rgb(var(--glow) / calc(0.65 * var(--glow-k))); }
 }
 
 @media (prefers-reduced-motion: reduce) {

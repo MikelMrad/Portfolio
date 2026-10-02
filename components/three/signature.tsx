@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { useThemeStore } from "@/lib/theme"
 import * as THREE from "three"
 
 /**
@@ -31,6 +32,9 @@ const SHAPE: [number, number][][] = [
 ]
 
 function Arrows({ paused }: { paused: boolean }) {
+  // The one colour CSS can't reach: lines drawn by WebGL. Inverts with the
+  // rest of the site (lib/theme.tsx).
+  const theme = useThemeStore()
   const lines = useRef<THREE.LineSegments>(null)
   const gl = useThree((s) => s.gl)
 
@@ -129,7 +133,7 @@ function Arrows({ paused }: { paused: boolean }) {
 
   return (
     <lineSegments ref={lines} geometry={geometry}>
-      <lineBasicMaterial color="#ffffff" />
+      <lineBasicMaterial color={theme === "light" ? "#111111" : "#ffffff"} />
     </lineSegments>
   )
 }

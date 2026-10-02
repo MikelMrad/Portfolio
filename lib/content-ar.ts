@@ -212,8 +212,8 @@ export const AR: Content = {
     dock: {
       hints: "اسحب · ارمِ · 1—4 · ← → · ESC",
       reset: "إعادة الترتيب", resetAria: "أعد البطاقات إلى أماكنها",
-      toDesktop: "عرض تخطيط سطح المكتب", toPhone: "عرض تخطيط الهاتف",
       lang: "EN", langAria: "Switch to English",
+      toLight: "التبديل إلى الوضع الفاتح", toDark: "التبديل إلى الوضع الداكن",
     },
     demo: {
       tabsPhone: "اضغط على تبويب لتغيير الصفحة",

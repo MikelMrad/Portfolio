@@ -109,12 +109,11 @@ module that breaks when the measurement is stale. Four traps if you touch this:
 - Springs only when the *placement* changed; a resize must snap, or the card
   lags behind the window.
 - **The ResizeObserver is attached through a ref callback (`attachGrid`), not an
-  effect.** The grid's wrapper changes element type when the scaled view comes
-  and goes — a plain `div` becomes a `PinchPan` — so React discards the grid's
-  DOM node. An effect keyed on `[cols, rows]` does not re-run for that (a
-  phone toggling the scaled view keeps the same 12x8), and
-  the observer sits watching a detached node forever. That put the identity card
-  at 264x132 in a slot 581x393.
+  effect.** If React ever discards the grid's DOM node — it did when a scaled
+  desktop view (since removed) swapped the grid's wrapper element — an effect
+  keyed on `[cols, rows]` does not re-run, and the observer sits watching a
+  detached node forever. That put the identity card at 264x132 in a slot
+  581x393.
 - **The identity effect reads `geomRef`, not the `geom` state.** Switching grids
   changes the grid's size and the card's placement in the *same* commit, and
   state lands a render later — so `geom` there is the previous grid's cell size
@@ -165,8 +164,8 @@ One thing that *is* deliberate: **every card's key carries the grid and the
 expansion state** (`` `${id}:${phoneGrid ? "m" : "d"}:${open ? "o" : zoom ? "z" : "l"}` ``).
 A module present in both the outgoing and incoming layout would otherwise
 persist and snap straight from one cell to the other while everything around it
-flew — EXPERIENCE expanding into its own zoom, or any card when the desktop view
-is toggled. Remounting turns that into a proper scatter and gather.
+flew — EXPERIENCE expanding into its own zoom, or any card when the device
+rotates between grids. Remounting turns that into a proper scatter and gather.
 
 ### Nothing renders until the viewport is known
 
@@ -313,31 +312,17 @@ Things worth knowing before changing it:
   desktop equivalent is narrow but tall. Gate optional content on `min-height`,
   not `min-width` — see the `.cq-h*` utilities under Layout rules.
 
-### The desktop view is an escape hatch, and a fallback
+### There is no scaled desktop view
 
-A phone can also be shown the **real 12x8**, laid out at its full 1440x900 inside
-`components/grid/pinch-pan.tsx` and scaled to fit, with drag to pan and pinch to
-zoom. The nav dock carries the toggle (phone only, icon-only — the four tab
-labels already take 267 of a 393px screen).
+A portrait phone used to be able to toggle a pinch-and-pan view of the real
+12x8 scaled to fit (~0.27 on a 393px phone). It was removed: landscape already
+gives the real desktop grid at real size, with everything live, and the dock's
+bottom-right slot went to the theme toggle. It is in git history
+(`components/grid/pinch-pan.tsx`) if it is ever wanted back.
 
-Be honest about what this mode is. Fit on a 393px phone is **0.27**, so a 9px
-label lands at 2.4px: it shows you the composition, and you pinch in to read
-anything. That is why the gestures are advertised in a chip on first view.
-
-It is opt-in only: offered on the portrait grid of a touch screen, never
-forced. (It used to be forced on short landscape phones, where nothing on it
-could be dragged, thrown or shaken; those now get the real 12x8 instead.)
-
-Two things that break if you touch it:
-- **The scaled canvas paints its own `bg-bg grid-bg` and border.** Left to the
-  `<main>` background, the hairline grid draws at full screen scale behind a 0.27
-  page, which reads as broken rather than as a scaled-down desktop.
-- **The WebGL canvas needs `resize={{ offsetSize: true }}`.** R3F measures with
-  `getBoundingClientRect`, which is transform-aware, so inside the scaled stage
-  the canvas sized itself to the *visual* box — a quarter size, tucked in the
-  corner of its card. `offsetWidth/offsetHeight` are not. The per-frame pointer
-  maths in `signature.tsx` still reads the rect, and still should: it normalises
-  by rect width, so the ratio holds at any scale.
+The WebGL canvas keeps `resize={{ offsetSize: true }}` from that era — R3F
+measures with `getBoundingClientRect`, which is transform-aware, and offset
+size is correct inside any transformed ancestor.
 
 ### Throwable cards
 
@@ -369,8 +354,8 @@ appears once a tab has been rearranged.
   tab's original layout. iOS gates motion behind a permission that is armed on
   the first swap or fling and asked on the tap after.
 - Drag starts manually (`dragListener={false}`) so form fields are exempt, and a
-  drag that ends on a button swallows the click. Disabled while `busy`, in an
-  expanded view, and in the scaled phone canvas (whose drag is pan).
+  drag that ends on a button swallows the click. Disabled while `busy` and in
+  an expanded view.
 
 ### English and Arabic
 
@@ -401,6 +386,41 @@ the rules worth knowing before touching anything:
   letters, and Latin-tight leading clips its dots.
 - Card keys carry the language, so switching scatters the set and gathers it
   into the mirrored grid while the identity card glides across.
+
+### Inverted mode
+
+The dock's ◐ toggle flips the site black-on-white — still strictly monochrome:
+the six colour tokens swap (`:root[data-theme="light"]` in `globals.css`).
+**Every visit starts dark** — the choice is deliberately not saved (the language
+is); `?theme=light` opens it on purpose, applied before first paint by
+`PREFS_BOOT` (`lib/lang-boot.ts`); `lib/theme.tsx` holds
+the store and the switch: a disc of the new background scales out from the
+button, the theme flips under it, and it fades. Transform and opacity only —
+an earlier clip-path reveal juddered, because clip-path repaints every frame
+and the area grows with the square of the radius.
+
+- **Never write a literal white.** The site's one accent is light coming off
+  the foreground: every glow is `rgb(var(--glow) / calc(α * var(--glow-k)))`
+  and every stroke or rule is `var(--color-fg)`. In light mode `--glow` is near
+  black at half strength (`--glow-k: 0.5`) — on white, a white glow vanishes
+  and a full-strength black one is a smudge; half reads as the same lift.
+- **WebGL is the exception CSS can't reach** — `signature.tsx` reads
+  `useThemeStore()` for its line colour. Anything else drawn outside the DOM
+  needs the same.
+- The link preview (`opengraph-image.tsx`) stays dark: it is one image for
+  everyone.
+
+### What crawlers see
+
+The grid mounts after JavaScript, so without help a crawler sees an empty page.
+`lib/seo.ts` derives, from `content.ts`, per-tab titles/descriptions with
+`?lang=ar` alternates (`generateMetadata` in `page.tsx`) and a schema.org
+ProfilePage → Person (JSON-LD); `app/sitemap.ts` and `app/robots.ts` list the
+four tabs. `components/static-cv.tsx` server-renders the whole CV as semantic
+HTML: visually hidden during boot, given `hidden` by the stage once the grid
+mounts (so screen readers get one copy), and shown as the page itself when
+JavaScript is off (`<noscript>` in `page.tsx`). **New content in `content.ts`
+belongs in the static CV too** if it matters to a recruiter.
 
 ### Routing
 
@@ -449,9 +469,7 @@ as HTML.
   `justify-center` overflows in *both* directions; EDUCATION's first school rode
   up over its own label on a 360px phone. `[justify-content:safe_center]` falls
   back to flex-start and clips off the bottom like everything else.
-- **Nothing scrolls, on any screen** — no vertical scroll, no horizontal pan. The
-  one exception is the desktop view's pan/pinch surface, which is a transform,
-  not a scroller.
+- **Nothing scrolls, on any screen** — no vertical scroll, no horizontal pan.
 
 ## Imagery rules
 

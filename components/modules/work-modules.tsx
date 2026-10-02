@@ -280,7 +280,7 @@ export function DetailNav({
               {active && (
                 <span
                   className="cq-h160 ms-auto w-4 h-px bg-fg shrink-0"
-                  style={{ boxShadow: "0 0 8px 1px rgba(240,240,240,0.6)" }}
+                  style={{ boxShadow: "0 0 8px 1px rgb(var(--glow) / calc(0.6 * var(--glow-k)))" }}
                 />
               )}
             </button>

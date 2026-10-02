@@ -2,26 +2,60 @@
 import { TABS, type TabId } from "@/lib/grid"
 import { Magnetic } from "@/components/ui/magnetic"
 import { useContent } from "@/lib/i18n"
+import { toggleTheme, useThemeStore } from "@/lib/theme"
 
 /**
  * Fixed furniture. Lives outside the pan container so it stays reachable while
  * the desktop view is being dragged around underneath it.
  */
 export function NavDock({
-  tab, onSelect, detailOpen, desktopView, onToggleView, onReset, onToggleLang,
+  tab, onSelect, detailOpen, onReset, onToggleLang,
 }: {
   tab: TabId
   onSelect: (t: TabId) => void
   detailOpen: boolean
-  desktopView?: boolean
-  /** Omitted when there is no choice to offer — desktop, or a phone too short
-   *  for the portrait grid, where the scaled view is the only thing that fits. */
-  onToggleView?: () => void
   /** Present only once this tab's cards have been rearranged. */
   onReset?: () => void
   onToggleLang: () => void
 }) {
   const { UI } = useContent()
+  const theme = useThemeStore()
+
+  const resetButton = (className: string) => onReset && (
+    <button
+      onClick={onReset}
+      aria-label={UI.dock.resetAria}
+      className={`p-2 md:p-2.5 items-center gap-2 group ${className}`}
+    >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden className="text-fg">
+        <path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" stroke="currentColor" />
+      </svg>
+      <span className="hidden md:inline font-mono text-[8px] uppercase tracking-[0.22em] text-mid group-hover:text-fg transition-colors">
+        {UI.dock.reset}
+      </span>
+    </button>
+  )
+
+  const themeButton = (className: string) => (
+    <button
+      // The wipe grows from the button itself (lib/theme.tsx).
+      onClick={(e) => {
+        const r = e.currentTarget.getBoundingClientRect()
+        toggleTheme({ x: r.left + r.width / 2, y: r.top + r.height / 2 })
+      }}
+      aria-label={theme === "light" ? UI.dock.toDark : UI.dock.toLight}
+      aria-pressed={theme === "light"}
+      className={`p-2 md:p-2.5 text-mid hover:text-fg transition-colors ${className}`}
+    >
+      {/* Half-filled: the same mark either way, since the site is the same two
+          colours either way — only which one is the ground. */}
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <circle cx="8" cy="8" r="6.5" stroke="currentColor" />
+        <path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" />
+      </svg>
+    </button>
+  )
+
   return (
     <nav
       aria-label="Sections"
@@ -54,7 +88,7 @@ export function NavDock({
                 style={{
                   width: active ? "100%" : 0,
                   opacity: active ? 1 : 0,
-                  boxShadow: active ? "0 0 12px 2px rgba(240,240,240,0.65)" : "none",
+                  boxShadow: active ? "0 0 12px 2px rgb(var(--glow) / calc(0.65 * var(--glow-k)))" : "none",
                 }}
               />
               <span className="sr-only"> (press {t.key})</span>
@@ -65,11 +99,11 @@ export function NavDock({
 
       {/*
         The start margin — left in English, right in Arabic — holds the language
-        toggle and, once a tab has been rearranged, the reset beside it. The end
-        margin has the view toggle on a phone and the key hints on a desktop.
+        and on a desktop the theme toggle and the reset beside it. On a phone the
+        theme toggle and the reset sit in the end margin instead (bottom-right in
+        English): the start margin is ~71px there, and language + theme + reset
+        would be ~90. The end margin has the key hints on a desktop.
       */}
-      {/* Tight on a phone: in English "عربي" plus the reset is ~64px, and the
-          INDEX tab starts at 71. */}
       <div className="absolute start-1 md:start-6 flex items-center">
         <button
           onClick={onToggleLang}
@@ -81,20 +115,8 @@ export function NavDock({
         >
           {UI.dock.lang}
         </button>
-      {onReset && (
-        <button
-          onClick={onReset}
-          aria-label={UI.dock.resetAria}
-          className="p-2 md:p-2.5 flex items-center gap-2 group"
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden className="text-fg">
-            <path d="M3 8a5 5 0 1 0 1.6-3.7M3 2.5v2.8h2.8" stroke="currentColor" />
-          </svg>
-          <span className="hidden md:inline font-mono text-[8px] uppercase tracking-[0.22em] text-mid group-hover:text-fg transition-colors">
-            {UI.dock.reset}
-          </span>
-        </button>
-      )}
+        {themeButton("hidden md:block")}
+        {resetButton("hidden md:flex")}
       </div>
 
       <span className="hidden lg:block absolute end-6 font-mono text-[8px] uppercase tracking-[0.22em] text-dim">
@@ -106,28 +128,10 @@ export function NavDock({
         267 of a 393px screen, which leaves room for a glyph and not a word.
         Sits in the dock's end margin, clear of the centred tabs.
       */}
-      {onToggleView && (
-        <button
-          onClick={onToggleView}
-          aria-pressed={desktopView}
-          aria-label={desktopView ? UI.dock.toPhone : UI.dock.toDesktop}
-          className="absolute end-2 p-2.5"
-        >
-          {desktopView ? (
-            // A phone: tap to come back to the portrait grid.
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="text-fg">
-              <rect x="4.5" y="1.5" width="7" height="13" stroke="currentColor" />
-              <path d="M4.5 4.5h7M6.5 12.5h3" stroke="currentColor" />
-            </svg>
-          ) : (
-            // The 12x8 grid, abbreviated: tap to see the real thing.
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className="text-dim">
-              <rect x="1.5" y="2.5" width="13" height="11" stroke="currentColor" />
-              <path d="M1.5 6.5h13M6.5 6.5v7M10.5 2.5v11" stroke="currentColor" />
-            </svg>
-          )}
-        </button>
-      )}
+      <div className="absolute end-1 md:hidden flex items-center">
+        {resetButton("flex")}
+        {themeButton("block")}
+      </div>
     </nav>
   )
 }

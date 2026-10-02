@@ -10,7 +10,7 @@ import { LANG_KEY } from "./lang-boot"
  * The language lives on <html> — `lang` and `dir` — and that attribute is the
  * store. Three reasons it isn't React state:
  *
- * - It has to be right *before* React exists. LANG_BOOT (lib/lang-boot.ts),
+ * - It has to be right *before* React exists. PREFS_BOOT (lib/lang-boot.ts),
  *   inlined in <head>,
  *   sets it from `?lang=` or the remembered choice, so the boot drawing — CSS
  *   grid, server-rendered — is already mirrored on the first frame.

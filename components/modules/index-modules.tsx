@@ -153,7 +153,7 @@ export function Experience({ onOpen }: { onOpen?: () => void }) {
                 className="block h-px bg-fg transition-all duration-300"
                 style={{
                   width: 8 + r.level * 7,
-                  boxShadow: r.level === 3 ? "0 0 10px 1px rgba(240,240,240,0.6)" : "none",
+                  boxShadow: r.level === 3 ? "0 0 10px 1px rgb(var(--glow) / calc(0.6 * var(--glow-k)))" : "none",
                   opacity: 0.35 + r.level * 0.22,
                 }}
               />
@@ -227,7 +227,7 @@ export function ExperienceDetail() {
                 className="block h-px bg-fg"
                 style={{
                   width: 12 + r.level * 9,
-                  boxShadow: r.level === 3 ? "0 0 10px 1px rgba(240,240,240,0.6)" : "none",
+                  boxShadow: r.level === 3 ? "0 0 10px 1px rgb(var(--glow) / calc(0.6 * var(--glow-k)))" : "none",
                   opacity: 0.35 + r.level * 0.22,
                 }}
               />

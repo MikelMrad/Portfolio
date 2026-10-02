@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { JetBrains_Mono, Barlow_Condensed } from "next/font/google"
 import localFont from "next/font/local"
 import { CONTACT } from "@/lib/content"
-import { LANG_BOOT } from "@/lib/lang-boot"
+import { PREFS_BOOT } from "@/lib/lang-boot"
 import "./globals.css"
 
 const jetbrains = JetBrains_Mono({
@@ -73,15 +73,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // suppressHydrationWarning: LANG_BOOT may set lang/dir before hydration —
-    // the one deliberate difference from the server markup.
+    // suppressHydrationWarning: PREFS_BOOT may set lang/dir/data-theme before
+    // hydration — the one deliberate difference from the server markup.
     <html
       lang="en"
       className={`${jetbrains.variable} ${barlow.variable} ${plexArabic.variable} ${kufiArabic.variable}`}
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: LANG_BOOT }} />
+        <script dangerouslySetInnerHTML={{ __html: PREFS_BOOT }} />
       </head>
       <body>{children}</body>
     </html>

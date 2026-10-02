@@ -346,9 +346,9 @@ export const UI = {
   dock: {
     hints: "DRAG · FLING · 1—4 · ← → · ESC",
     reset: "RESET GRID", resetAria: "Put the cards back",
-    toDesktop: "Switch to the desktop layout", toPhone: "Switch to the phone layout",
     /** The *other* language, named in itself — what the toggle switches to. */
     lang: "عربي", langAria: "التبديل إلى العربية",
+    toLight: "Switch to light mode", toDark: "Switch to dark mode",
   },
   demo: {
     tabsPhone: "TAP A TAB TO SWITCH PAGE",

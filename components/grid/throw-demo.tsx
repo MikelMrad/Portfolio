@@ -445,7 +445,7 @@ export function ThrowDemo({
         type="button"
         onClick={() => cancel.current?.()}
         aria-label={UI.demo.skipAria}
-        className="pointer-events-auto absolute top-3 right-3 md:top-4 md:right-4 z-10 flex items-center gap-2 px-3 py-2 border border-fg/50 bg-bg/80 backdrop-blur-sm text-fg shadow-glow-sm hover:border-fg hover:shadow-glow transition-[border-color,box-shadow] duration-300 [text-shadow:0_0_8px_rgba(240,240,240,0.5)]"
+        className="pointer-events-auto absolute top-3 right-3 md:top-4 md:right-4 z-10 flex items-center gap-2 px-3 py-2 border border-fg/50 bg-bg/80 backdrop-blur-sm text-fg shadow-glow-sm hover:border-fg hover:shadow-glow transition-[border-color,box-shadow] duration-300 [text-shadow:0_0_8px_rgb(var(--glow)/calc(0.5*var(--glow-k)))]"
         style={{ opacity: fo }}
       >
         <span className="font-mono text-[9px] uppercase tracking-[0.22em]">{UI.demo.skip}</span>
@@ -470,7 +470,7 @@ export function ThrowDemo({
       >
         <motion.svg
           width="46" height="76" viewBox="0 0 46 76" fill="none"
-          className="text-mid/70 drop-shadow-[0_0_8px_rgba(170,170,170,0.3)]"
+          className="text-mid/70 [filter:drop-shadow(0_0_8px_rgb(var(--glow)/calc(0.3*var(--glow-k))))]"
           style={{ rotate: pr }}
           stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"
         >
@@ -479,7 +479,7 @@ export function ThrowDemo({
           <circle cx="23" cy="66" r="2.5" />
         </motion.svg>
         {/* Backed: mid-screen it lands on top of card copy. */}
-        <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-fg/90 whitespace-nowrap px-2.5 py-1.5 bg-bg/85 [text-shadow:0_0_8px_rgba(240,240,240,0.45)]">
+        <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-fg/90 whitespace-nowrap px-2.5 py-1.5 bg-bg/85 [text-shadow:0_0_8px_rgb(var(--glow)/calc(0.45*var(--glow-k)))]">
           {UI.demo.shake}
         </span>
       </motion.div>
@@ -498,12 +498,12 @@ export function ThrowDemo({
           style={{
             opacity: ho,
             scale: hs,
-            background: "radial-gradient(circle, rgba(240,240,240,0.55) 0%, rgba(240,240,240,0.18) 42%, transparent 70%)",
+            background: `radial-gradient(circle, rgb(var(--glow) / calc(0.55 * var(--glow-k))) 0%, rgb(var(--glow) / calc(0.18 * var(--glow-k))) 42%, transparent 70%)`,
           }}
         />
         <motion.svg
           width="40" height="40" viewBox="0 0 24 24" fill="none"
-          className="text-fg/85 -translate-x-[13px] -translate-y-[3px] origin-[13px_3px] [filter:drop-shadow(0_0_4px_rgba(240,240,240,0.75))_drop-shadow(0_0_14px_rgba(240,240,240,0.35))]"
+          className="text-fg/85 -translate-x-[13px] -translate-y-[3px] origin-[13px_3px] [filter:drop-shadow(0_0_4px_rgb(var(--glow)/calc(0.75*var(--glow-k))))_drop-shadow(0_0_14px_rgb(var(--glow)/calc(0.35*var(--glow-k))))]"
           style={{ scale: fs, rotate: fr }}
           stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round"
         >
@@ -523,7 +523,7 @@ export function ThrowDemo({
           ref={captionRef}
           // Near-white and lit like the finger it belongs to, on a light dark
           // backing so it still reads where it crosses card copy.
-          className={`absolute left-0 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.24em] text-fg/90 px-1.5 py-0.5 bg-bg/60 [text-shadow:0_0_8px_rgba(240,240,240,0.45)] ${
+          className={`absolute left-0 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.24em] text-fg/90 px-1.5 py-0.5 bg-bg/60 [text-shadow:0_0_8px_rgb(var(--glow)/calc(0.45*var(--glow-k)))] ${
             // Clear of what the finger is touching: above, it sits over the
             // dock's top edge rather than across the tab labels.
             captionAbove ? "-top-14" : "top-11"

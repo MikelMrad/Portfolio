@@ -14,7 +14,7 @@ export function Headline() {
       <h2 className="font-display text-fg leading-[0.82] tracking-tight text-[clamp(2rem,min(20cqw,26cqh),8rem)]">
         {UI.contact.headline[0]}
         <br />
-        <span style={{ WebkitTextStroke: "2px #f0f0f0", color: "transparent" }}>{UI.contact.headline[1]}</span>
+        <span style={{ WebkitTextStroke: "2px var(--color-fg)", color: "transparent" }}>{UI.contact.headline[1]}</span>
       </h2>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim leading-relaxed">
         {IDENTITY.availability.long}
@@ -34,7 +34,7 @@ export function EmailCard() {
         href={`mailto:${CONTACT.email}`}
         className="font-mono text-[11px] @[400px]:text-sm uppercase tracking-[0.14em] text-fg hover:text-mid transition-colors flex items-center gap-3 min-w-0"
       >
-        <span className="inline-block w-4 h-px bg-fg shrink-0" style={{ boxShadow: "0 0 8px 1px rgba(240,240,240,0.5)" }} />
+        <span className="inline-block w-4 h-px bg-fg shrink-0" style={{ boxShadow: "0 0 8px 1px rgb(var(--glow) / calc(0.5 * var(--glow-k)))" }} />
         <span dir="ltr" className="min-w-0"><ScrambleText text={CONTACT.email.toUpperCase()} speed={5} /></span>
       </a>
       <GlowRule />

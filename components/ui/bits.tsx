@@ -69,8 +69,8 @@ export function GlowRule({ className = "" }: { className?: string }) {
     <div
       className={`w-full h-px shrink-0 ${className}`}
       style={{
-        background: "linear-gradient(to right, transparent, #f0f0f0 18%, #f0f0f0 82%, transparent)",
-        boxShadow: "0 0 18px 3px rgba(240,240,240,0.28), 0 0 55px 8px rgba(240,240,240,0.08)",
+        background: "linear-gradient(to right, transparent, var(--color-fg) 18%, var(--color-fg) 82%, transparent)",
+        boxShadow: "0 0 18px 3px rgb(var(--glow) / calc(0.28 * var(--glow-k))), 0 0 55px 8px rgb(var(--glow) / calc(0.08 * var(--glow-k)))",
       }}
     />
   )

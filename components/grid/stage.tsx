@@ -15,7 +15,6 @@ import { CONTENT, LangProvider, setLang, useLangStore } from "@/lib/i18n"
 
 import { ModuleCard } from "./module-card"
 import { NavDock } from "./nav-dock"
-import { PinchPan } from "./pinch-pan"
 import { captureBoxes } from "./throw"
 import { armMotionPermission, useShake } from "./shake"
 import { ThrowDemo } from "./throw-demo"
@@ -138,7 +137,7 @@ const BOOT_OVERLAP_MS = 180
  * It used to be width alone (under 768px), which got two devices wrong. An
  * iPad held upright is 768-1024px wide and much taller than wide, and got the
  * 16:9 desktop grid squeezed into a portrait screen. And a landscape phone
- * under 768px wide (an SE, 667x375) was forced into the scaled desktop canvas,
+ * under 768px wide (an SE, 667x375) was forced into a scaled desktop canvas,
  * where nothing can be dragged, thrown or shaken.
  *
  * Now: any screen taller than 5:4 gets the portrait grid — phones and tablets
@@ -156,9 +155,6 @@ const PORTRAIT_Q = "(max-aspect-ratio: 4/5), (max-width: 767px) and (min-height:
  */
 const TOUCH_Q = "(pointer: coarse)"
 
-/** The window the desktop grid is composed for; what the scaled view shows. */
-const DESKTOP_W = 1440
-const DESKTOP_H = 900
 
 /**
  * Which grid to draw, and whether that's been decided yet.
@@ -233,16 +229,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   /** The card another card is currently being dragged over. */
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   const { portrait, touch, resolved } = useViewportMode()
-
-  /**
-   * The portrait grid's escape hatch: draw the real 12x8 at its full size and
-   * scale it to fit, then let the viewer drag and pinch into it. Opt-in only —
-   * a landscape phone gets the real desktop grid at real size instead, so
-   * everything on it still works.
-   */
-  const [desktopView, setDesktopView] = useState(false)
-  const scaled    = portrait && desktopView
-  const phoneGrid = portrait && !scaled
+  const phoneGrid = portrait
 
   const cols   = phoneGrid ? MOBILE_COLS : GRID_COLS
   const rows   = phoneGrid ? MOBILE_ROWS : GRID_ROWS
@@ -338,6 +325,10 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       if (settled) return
       settled = true
       document.documentElement.dataset.booted = "1"
+      // The plain-text version (components/static-cv.tsx) has done its job —
+      // the real modules are mounting. `hidden` takes it out of the
+      // accessibility tree too, so a screen reader doesn't get everything twice.
+      document.getElementById("static-cv")?.setAttribute("hidden", "")
       setBooted(true)
     }
 
@@ -420,10 +411,6 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     setOpen(PROJECTS[(i + dir + PROJECTS.length) % PROJECTS.length].num)
   }, [beginTransition, open])
 
-  const toggleView = useCallback(() => {
-    beginTransition()
-    setDesktopView((v) => !v)
-  }, [beginTransition])
 
   /**
    * Switch language. The cards' keys carry the language, so the whole set
@@ -501,13 +488,11 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   /**
    * Attach the observer through the ref, not an effect.
    *
-   * The grid's wrapper changes element type when the scaled view comes and goes
-   * — a plain div becomes a PinchPan — so React discards the grid's DOM node and
-   * mounts a new one. An effect keyed on [cols, rows] doesn't re-run for that
-   * (a landscape phone resolves straight into the scaled view with the same 12x8),
-   * leaving the observer watching a detached node and `geom` holding the
-   * measurements of a grid that no longer exists. That put the identity card at
-   * 264x132 in a slot 581x393.
+   * If React ever discards the grid's DOM node — it did when a scaled desktop
+   * view (since removed) swapped the grid's wrapper element — an effect keyed
+   * on [cols, rows] doesn't re-run, leaving the observer watching a detached
+   * node and `geom` holding the measurements of a grid that no longer exists.
+   * That put the identity card at 264x132 in a slot 581x393.
    *
    * A ref callback re-runs whenever the node OR `measure` changes, which is
    * exactly when the geometry can be wrong. Refs are set before layout effects,
@@ -567,7 +552,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   }, [activeMap, baseMap, layoutKey])
 
   /** Only a settled, unexpanded grid at real size can be rearranged. */
-  const canThrow = !busy && !open && !zoom && !scaled
+  const canThrow = !busy && !open && !zoom
 
   /**
    * Shake to reset, on the phone grid. Unlike RESET GRID's slide home it is a
@@ -692,19 +677,8 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   const grid = (
     <div
       ref={attachGrid}
-      className={
-        scaled
-          // Desktop paddings by hand: the `md:` variants read the *window*,
-          // which on a phone is small, so they'd apply the phone's spacing to a
-          // 1440px canvas.
-          // Its own background and border: at 0.27 the page would otherwise
-          // float on a hairline grid drawn at full screen scale, which reads
-          // as broken rather than as a scaled-down desktop.
-          ? "relative bg-bg grid-bg border border-hairline p-4 pb-[5.5rem] grid gap-2.5"
-          : "relative h-dvh w-full p-3 md:p-4 pb-[4.5rem] md:pb-[5.5rem] grid gap-2 md:gap-2.5"
-      }
+      className="relative h-dvh w-full p-3 md:p-4 pb-[4.5rem] md:pb-[5.5rem] grid gap-2 md:gap-2.5"
       style={{
-        ...(scaled ? { width: DESKTOP_W, height: DESKTOP_H } : null),
         gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
         gridTemplateRows:    `repeat(${rows}, minmax(0, 1fr))`,
       }}
@@ -797,22 +771,17 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
   return (
     <LangProvider lang={lang}>
-    <main className={`fixed inset-0 bg-bg ${scaled ? "" : "grid-bg"}`}>
+    <main className="fixed inset-0 bg-bg grid-bg">
       <Cursor />
 
       {/* Nothing scrolls, on any screen. The phone grid fits because it is a
-          portrait grid, not a squeezed landscape one; the scaled view fits
-          because it is scaled. */}
-      {scaled
-        // Fit above the dock, not behind it: on a landscape phone the canvas is
-        // height-bound, so anything the dock covers is content you cannot reach.
-        ? <div className="h-dvh w-full pb-14"><PinchPan width={DESKTOP_W} height={DESKTOP_H}>{grid}</PinchPan></div>
-        : <div className="h-dvh w-full overflow-hidden">{grid}</div>}
+          portrait grid, not a squeezed landscape one. */}
+      <div className="h-dvh w-full overflow-hidden">{grid}</div>
 
       {/* Shows the throwable cards off, once, after the first settle. */}
       {resolved && booted && (
         <ThrowDemo
-          ready={!open && !zoom && !scaled && !reduced}
+          ready={!open && !zoom && !reduced}
           cards={entries}
           flight={flight}
           touch={touch}
@@ -825,10 +794,6 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
         onSelect={goTab}
         detailOpen={!!open || !!zoom}
         onReset={swaps[layoutKey] && !open && !zoom ? resetCards : undefined}
-        desktopView={scaled}
-        // Only where there's a choice to make: the portrait grid on a touch
-        // screen. Landscape already *is* the desktop grid.
-        onToggleView={portrait && touch ? toggleView : undefined}
         onToggleLang={toggleLang}
       />
     </main>

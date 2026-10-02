@@ -44,7 +44,7 @@ export function Identity({ onHome }: { onHome?: () => void }) {
             line its trailing period jumps to the front (".MRAD"). */}
         <h1 dir="ltr" className="font-display text-fg leading-[0.86] tracking-tight text-[clamp(1.1rem,min(13cqw,26cqh),4rem)] @[420px]:text-[clamp(1.5rem,min(13cqw,19cqh),7rem)]">
           <span className="inline @[420px]:block">MIKEL</span>{" "}
-          <span className="inline @[420px]:block @[420px]:text-transparent @[420px]:[-webkit-text-stroke:2px_#f0f0f0]">
+          <span className="inline @[420px]:block @[420px]:text-transparent @[420px]:[-webkit-text-stroke:2px_var(--color-fg)]">
             MRAD.
           </span>
         </h1>
