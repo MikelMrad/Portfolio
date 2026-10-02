@@ -205,12 +205,13 @@
 
 /*
   Both placement maps are in the markup and CSS picks one, because the server
-  can't know the viewport. The query is the stage's own: below 768px, but not on
-  a landscape phone, which resolves straight into the scaled desktop canvas.
+  can't know the viewport. The query is the stage's own (PORTRAIT_Q in
+  stage.tsx): any screen taller than 5:4 — phones and tablets held upright — or
+  a narrow window that isn't landscape-phone short.
 */
 .boot-m { display: none; }
 
-@media (max-width: 767px) and (min-height: 541px) {
+@media (max-aspect-ratio: 4/5), (max-width: 767px) and (min-height: 541px) {
   .boot {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-template-rows: repeat(12, minmax(0, 1fr));

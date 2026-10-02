@@ -15,7 +15,7 @@ import { flightVector, rankByRadius, type FlightGrid } from "@/lib/scatter"
  *   2. tapping a card open — EXPERIENCE or a project grows to the whole grid;
  *   3. dragging one card onto another — the two trade places (ModuleCard);
  *   4. flinging a card — off along its flight vector and back (throw.ts);
- *   5. on a phone, shaking to reset (shake.ts).
+ *   5. on a touch screen, shaking to reset (shake.ts).
  *
  * It is a ghost, on purpose — outlines of the cards and tabs, never the real
  * ones. Nothing it shows changes the page, so it can play over a visitor who is
@@ -63,19 +63,32 @@ function GhostBox({ g }: { g: Ghost }) {
 }
 
 export function ThrowDemo({
-  ready, cards, flight, shake = false,
+  ready, cards, flight, touch = false, portrait = false,
 }: {
   /** Modules mounted, nothing expanded, full-size, motion allowed. Not
    *  gated on the intro transition finishing — see START_DELAY_MS. */
   ready: boolean
   cards: [ModuleId, Placement][]
   flight: FlightGrid
-  /** Phone grid: end with shake-to-reset (see shake.ts). */
-  shake?: boolean
+  /** A touch screen: tap-worded captions, and the tour ends with shake-to-reset. */
+  touch?: boolean
+  /**
+   * The portrait grid. The fling goes up instead of along the card's vector —
+   * see step 6. Changing it mid-tour (a rotation) restarts the tour on the new
+   * grid, since every outline belongs to the old one.
+   */
+  portrait?: boolean
 }) {
   const { UI } = useContent()
   const [active, setActive] = useState(false)
   const played = useRef(false)
+  /** A tour is on screen (between its start and stop()). */
+  const runningTour = useRef(false)
+  /** Bumped to replay the tour — on rotation, see below. */
+  const [replay, setReplay] = useState(0)
+  /** Delay before the finger appears; longer for a replay, which has to wait
+   *  for the rotation's own scatter and gather to land. */
+  const startDelay = useRef(START_DELAY_MS)
   const cancel = useRef<(() => void) | null>(null)
 
   const fx = useMotionValue(0)
@@ -129,9 +142,26 @@ export function ThrowDemo({
     if (!ready) cancel.current?.()
   }, [ready])
 
+  /**
+   * Rotation mid-tour: the outlines it was drawing belong to the previous grid,
+   * so stop and play it again on the new one. A tour that already finished, or
+   * was skipped, stays finished.
+   */
+  const lastPortrait = useRef(portrait)
+  useEffect(() => {
+    if (lastPortrait.current === portrait) return
+    lastPortrait.current = portrait
+    if (!runningTour.current) return
+    cancel.current?.()
+    played.current = false
+    startDelay.current = 1100
+    setReplay((n) => n + 1)
+  }, [portrait])
+
   useEffect(() => {
     if (!ready || played.current) return
     played.current = true
+    runningTour.current = true
 
     let stopped = false
     const running: { stop: () => void }[] = []
@@ -142,6 +172,7 @@ export function ThrowDemo({
     const stop = () => {
       if (stopped) return
       stopped = true
+      runningTour.current = false
       running.forEach((r) => r.stop())
       // Fade out from wherever it got to, however it was interrupted.
       Promise.all([fo, co, po, go, a.o, b.o, c.o].map((v) => animate(v, 0, { duration: 0.25 })))
@@ -159,7 +190,7 @@ export function ThrowDemo({
       Promise.all([run(animate(fx, p.x, t)), run(animate(fy, p.y, t))])
 
     const script = async () => {
-      await wait(START_DELAY_MS); alive()
+      await wait(startDelay.current); alive()
 
       // Centre-most card, its nearest neighbour, and the outermost of the rest.
       const { inward, outward } = rankByRadius(cards, flight)
@@ -182,7 +213,9 @@ export function ThrowDemo({
       if (!rC) return stop()
 
       setActive(true)
-      const phone = window.matchMedia("(max-width: 767px)").matches
+      // Captions and the shake step follow the input; the fling's direction
+      // follows the grid (see the props).
+      const phone = portrait
       const glide = { duration: 0.8, ease: [0.45, 0, 0.2, 1] as const }
       /**
        * Appear mid-screen, hold a beat, then travel. Starting where the eye
@@ -234,7 +267,7 @@ export function ThrowDemo({
         // From the middle of the screen, down to the first tab.
         await enter(centre(tabs[0]))
         place(a, tabs[0])
-        say(phone ? UI.demo.tabsPhone : UI.demo.tabsDesktop, true)
+        say(touch ? UI.demo.tabsPhone : UI.demo.tabsDesktop, true)
         await Promise.all([run(animate(a.o, 1, { duration: 0.2 })), run(animate(co, 1, { duration: 0.3 })), click()]); alive()
         await wait(200); alive()
         // Along the dock, the outline riding from tab to tab with the finger.
@@ -370,7 +403,7 @@ export function ThrowDemo({
       // 8 — phones only: shake to reset. The finger has nothing to point at
       // for this one, so it gives way to a phone glyph mid-screen, and every
       // card's outline shakes in time with it.
-      if (shake) {
+      if (touch) {
         setAll(cards.map(([id]) => rectOf(id)).filter((r): r is Rect => !!r))
         setCaption("")
         await Promise.all([
@@ -393,10 +426,11 @@ export function ThrowDemo({
     }
 
     script().catch(() => { /* stopped mid-step */ })
-    // Deliberately keyed on `ready` alone: it runs once, on the first settled
-    // grid, and `cards`/`flight` are read at that moment.
+    // Deliberately keyed on `ready` and `replay` alone: it runs once, on the
+    // first settled grid (and again after a rotation), reading `cards`,
+    // `flight` and the rest at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready])
+  }, [ready, replay])
 
   if (!active) return null
 

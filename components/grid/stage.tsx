@@ -132,13 +132,29 @@ const BOOT_MIN_MS    = 700
  */
 const BOOT_OVERLAP_MS = 180
 
-/** Below this the grid becomes the portrait 4x12. */
-const MOBILE_Q = "(max-width: 767px)"
 /**
- * Too short for the portrait grid — twelve rows would be ~18px each. This is a
- * landscape phone, and the scaled desktop view is the only thing that fits it.
+ * When the grid is the portrait 4x12 — decided by *shape*, not width.
+ *
+ * It used to be width alone (under 768px), which got two devices wrong. An
+ * iPad held upright is 768-1024px wide and much taller than wide, and got the
+ * 16:9 desktop grid squeezed into a portrait screen. And a landscape phone
+ * under 768px wide (an SE, 667x375) was forced into the scaled desktop canvas,
+ * where nothing can be dragged, thrown or shaken.
+ *
+ * Now: any screen taller than 5:4 gets the portrait grid — phones and tablets
+ * held upright, at any width. The narrow-window clause keeps a slim desktop
+ * browser window on it too, but not a landscape phone, which is too short for
+ * twelve rows (~18px each) and gets the real desktop grid instead.
+ *
+ * MUST match `.boot` in globals.css, which draws the grid before this runs.
  */
-const SHORT_Q = "(max-height: 540px)"
+const PORTRAIT_Q = "(max-aspect-ratio: 4/5), (max-width: 767px) and (min-height: 541px)"
+/**
+ * Touch, as a separate question from layout. Shake, the shake step of the
+ * tour and tap-worded captions follow the finger, not the grid: a landscape
+ * phone and an iPad are touch devices on the desktop grid.
+ */
+const TOUCH_Q = "(pointer: coarse)"
 
 /** The window the desktop grid is composed for; what the scaled view shows. */
 const DESKTOP_W = 1440
@@ -154,17 +170,18 @@ const DESKTOP_H = 900
  * `resolved` lets the stage stay hidden until the answer is in.
  */
 function useViewportMode() {
-  const [mode, setMode] = useState({ mobile: false, short: false, resolved: false })
+  const [mode, setMode] = useState({ portrait: false, touch: false, resolved: false })
   useLayoutEffect(() => {
-    const mq = window.matchMedia(MOBILE_Q)
-    const sq = window.matchMedia(SHORT_Q)
-    const sync = () => setMode({ mobile: mq.matches, short: sq.matches, resolved: true })
+    const pq = window.matchMedia(PORTRAIT_Q)
+    const tq = window.matchMedia(TOUCH_Q)
+    const sync = () => setMode({ portrait: pq.matches, touch: tq.matches, resolved: true })
     sync()
-    mq.addEventListener("change", sync)
-    sq.addEventListener("change", sync)
+    // Fires on rotation: the grid switches, with a transition (see below).
+    pq.addEventListener("change", sync)
+    tq.addEventListener("change", sync)
     return () => {
-      mq.removeEventListener("change", sync)
-      sq.removeEventListener("change", sync)
+      pq.removeEventListener("change", sync)
+      tq.removeEventListener("change", sync)
     }
   }, [])
   return mode
@@ -215,16 +232,17 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   const [shakeGen, setShakeGen] = useState(0)
   /** The card another card is currently being dragged over. */
   const [dropTarget, setDropTarget] = useState<string | null>(null)
-  const { mobile: isMobile, short: isShort, resolved } = useViewportMode()
+  const { portrait, touch, resolved } = useViewportMode()
 
   /**
-   * The phone's escape hatch: draw the real 12x8 at its full size and scale it
-   * to fit, then let the viewer drag and pinch into it. Forced on a landscape
-   * phone, where the portrait grid has no room to exist.
+   * The portrait grid's escape hatch: draw the real 12x8 at its full size and
+   * scale it to fit, then let the viewer drag and pinch into it. Opt-in only —
+   * a landscape phone gets the real desktop grid at real size instead, so
+   * everything on it still works.
    */
   const [desktopView, setDesktopView] = useState(false)
-  const scaled    = isMobile && (isShort || desktopView)
-  const phoneGrid = isMobile && !scaled
+  const scaled    = portrait && desktopView
+  const phoneGrid = portrait && !scaled
 
   const cols   = phoneGrid ? MOBILE_COLS : GRID_COLS
   const rows   = phoneGrid ? MOBILE_ROWS : GRID_ROWS
@@ -568,7 +586,22 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     navigator.vibrate?.(40)
   }, [beginTransition, layoutKey])
 
-  useShake(shakeReset, phoneGrid && canThrow && !reduced)
+  // Any touch screen, any orientation — not just the portrait grid.
+  useShake(shakeReset, touch && canThrow && !reduced)
+
+  /**
+   * Rotation. Turning the device switches grids, which remounts every card
+   * (the key carries the grid), so it gets the same treatment as any other
+   * re-layout: a transition, with throwing locked until the gather lands.
+   * The identity card morphs to its new slot on its own (its placement
+   * changed). Skipped on the first resolve, which is the intro's job.
+   */
+  const lastGrid = useRef<boolean | null>(null)
+  useEffect(() => {
+    if (!booted) return
+    if (lastGrid.current !== null && lastGrid.current !== phoneGrid) beginTransition()
+    lastGrid.current = phoneGrid
+  }, [phoneGrid, booted, beginTransition])
 
   const { entries, outward, inward, identityAt } = useMemo(() => {
     const all = Object.entries(activeMap) as [ModuleId, Placement][]
@@ -778,7 +811,13 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
       {/* Shows the throwable cards off, once, after the first settle. */}
       {resolved && booted && (
-        <ThrowDemo ready={!open && !zoom && !scaled && !reduced} cards={entries} flight={flight} shake={phoneGrid} />
+        <ThrowDemo
+          ready={!open && !zoom && !scaled && !reduced}
+          cards={entries}
+          flight={flight}
+          touch={touch}
+          portrait={phoneGrid}
+        />
       )}
 
       <NavDock
@@ -787,9 +826,9 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
         detailOpen={!!open || !!zoom}
         onReset={swaps[layoutKey] && !open && !zoom ? resetCards : undefined}
         desktopView={scaled}
-        // No choice to offer on a desktop, or on a landscape phone where the
-        // portrait grid has no room to exist.
-        onToggleView={isMobile && !isShort ? toggleView : undefined}
+        // Only where there's a choice to make: the portrait grid on a touch
+        // screen. Landscape already *is* the desktop grid.
+        onToggleView={portrait && touch ? toggleView : undefined}
         onToggleLang={toggleLang}
       />
     </main>

@@ -112,7 +112,7 @@ module that breaks when the measurement is stale. Four traps if you touch this:
   effect.** The grid's wrapper changes element type when the scaled view comes
   and goes — a plain `div` becomes a `PinchPan` — so React discards the grid's
   DOM node. An effect keyed on `[cols, rows]` does not re-run for that (a
-  landscape phone resolves straight into the scaled view on the same 12x8), and
+  phone toggling the scaled view keeps the same 12x8), and
   the observer sits watching a detached node forever. That put the identity card
   at 264x132 in a slot 581x393.
 - **The identity effect reads `geomRef`, not the `geom` state.** Switching grids
@@ -258,8 +258,21 @@ line closes 774ms, everything settled 966ms.
 
 ### Two grids, one site
 
-Below 767px (`MOBILE_Q` in `stage.tsx`) the grid becomes **4 columns x 12 rows**
-instead of 12 x 8. That is the entire difference. Same modules, same components,
+On a portrait screen (`PORTRAIT_Q` in `stage.tsx`) the grid becomes **4 columns
+x 12 rows** instead of 12 x 8. That is the entire difference.
+
+**The grid is chosen by shape, the touch features by input — two questions.**
+`PORTRAIT_Q` is any screen taller than 5:4 (phones *and tablets* held upright,
+at any width) plus a narrow window that isn't landscape-phone short. Everything
+else — desktops, tablets on their side, **landscape phones** — gets the 12x8 at
+real size, with everything live. `TOUCH_Q` (`pointer: coarse`) separately turns
+on shake-to-reset, the tour's shake step and its tap-worded captions, so those
+work in landscape and on tablets too. `.boot` in `globals.css` restates
+`PORTRAIT_Q`; change both together.
+
+Rotating mid-session switches grids: the cards' keys carry the grid, so they
+scatter and gather (the stage runs `beginTransition()` on the change), the
+identity card morphs, and a tour that was playing restarts on the new layout. Same modules, same components,
 same content, same scatter — `MOBILE_LAYOUTS` is a second placement map, and
 everything downstream of `activeMap` is shared.
 
@@ -311,9 +324,9 @@ Be honest about what this mode is. Fit on a 393px phone is **0.27**, so a 9px
 label lands at 2.4px: it shows you the composition, and you pinch in to read
 anything. That is why the gestures are advertised in a chip on first view.
 
-It is also not optional in one case. `SHORT_Q` (`max-height: 540px`) is a
-landscape phone, where twelve rows would be ~18px each; there `scaled` is forced
-and the toggle is hidden, because the portrait grid has no room to exist.
+It is opt-in only: offered on the portrait grid of a touch screen, never
+forced. (It used to be forced on short landscape phones, where nothing on it
+could be dragged, thrown or shaken; those now get the real 12x8 instead.)
 
 Two things that break if you touch it:
 - **The scaled canvas paints its own `bg-bg grid-bg` and border.** Left to the
