@@ -1,4 +1,6 @@
+"use client"
 import type { ReactNode } from "react"
+import { useContent } from "@/lib/i18n"
 
 /**
  * Small caps mono label that heads every module.
@@ -34,17 +36,18 @@ export function Label({ children, right }: { children: ReactNode; right?: ReactN
  * 100px tall.
  */
 export function CompactCard({ title, onOpen }: { title: string; onOpen: () => void }) {
+  const { UI } = useContent()
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="group h-full w-full text-left flex flex-col justify-between p-3 @[220px]:p-4 min-h-0 min-w-0 overflow-hidden"
+      className="group h-full w-full text-start flex flex-col justify-between p-3 @[220px]:p-4 min-h-0 min-w-0 overflow-hidden"
     >
       <span className="font-display text-fg leading-[0.9] tracking-tight whitespace-pre-line text-[clamp(0.95rem,min(15cqw,30cqh),3.5rem)]">
         {title}
       </span>
       <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-dim group-hover:text-fg transition-colors self-end">
-        <span className="cq-h100">EXPAND </span>↗
+        <span className="cq-h100">{UI.expand} </span><span aria-hidden className="inline-block rtl:-scale-x-100">↗</span>
       </span>
     </button>
   )
@@ -53,7 +56,8 @@ export function CompactCard({ title, onOpen }: { title: string; onOpen: () => vo
 /** Bordered technology chip. */
 export function Tag({ children }: { children: ReactNode }) {
   return (
-    <span className="font-mono text-[9px] uppercase tracking-[0.16em] border border-hairline text-mid px-2 py-1 whitespace-nowrap transition-colors duration-200 hover:border-fg hover:text-fg">
+    // Technology names — left-to-right in either language (see Category).
+    <span dir="ltr" className="font-mono text-[9px] uppercase tracking-[0.16em] border border-hairline text-mid px-2 py-1 whitespace-nowrap transition-colors duration-200 hover:border-fg hover:text-fg">
       {children}
     </span>
   )
@@ -92,13 +96,14 @@ export function LiveDot() {
 export function ZoomNav({
   label, title, meta, onClose,
 }: { label: string; title: string; meta?: string; onClose: () => void }) {
+  const { UI } = useContent()
   return (
     <div className="chrome h-full flex justify-between p-4 @[260px]:p-5 gap-3 min-h-0 min-w-0">
       <button
         onClick={onClose}
         className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors flex items-center gap-2 self-center shrink-0"
       >
-        <span aria-hidden>←</span> CLOSE <span className="cq-h160 text-dim">ESC</span>
+        <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {UI.close} <span className="cq-h160 text-dim">{UI.esc}</span>
       </button>
 
       <div className="min-w-0">

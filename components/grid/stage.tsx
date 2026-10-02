@@ -10,7 +10,8 @@ import {
 import {
   DESKTOP_FLIGHT, MOBILE_FLIGHT, MORPH_TRANSITION, flightVector, rankByRadius,
 } from "@/lib/scatter"
-import { EMPLOYER, MODULE_TITLES, PROJECTS, STACK } from "@/lib/content"
+import { PROJECTS, type Content } from "@/lib/content"
+import { CONTENT, LangProvider, setLang, useLangStore } from "@/lib/i18n"
 
 import { ModuleCard } from "./module-card"
 import { NavDock } from "./nav-dock"
@@ -96,12 +97,12 @@ function isCramped(id: ModuleId, now: Placement, native: Placement | undefined) 
   return now.col[1] < native.col[1] * 0.8 || now.row[1] < native.row[1] * 0.8
 }
 
-function titleOf(id: ModuleId): string {
-  if (id.startsWith("project-0")) return PROJECTS.find((p) => p.num === id.slice(-2))?.title ?? id
+function titleOf(id: ModuleId, t: Content): string {
+  if (id.startsWith("project-0")) return t.PROJECTS.find((p) => p.num === id.slice(-2))?.title ?? id
   if (id.startsWith("cat-")) {
-    return STACK.find((c) => c.label.toLowerCase().startsWith(id.slice(4)))?.label.replace(" & ", " &\n") ?? id
+    return t.STACK.find((c) => c.id === id.slice(4))?.label.replace(" & ", " &\n") ?? id
   }
-  return MODULE_TITLES[id] ?? id.toUpperCase()
+  return t.MODULE_TITLES[id] ?? id.toUpperCase()
 }
 
 /** How long the scatter runs end to end. Used to park the WebGL loop. */
@@ -227,7 +228,19 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
   const cols   = phoneGrid ? MOBILE_COLS : GRID_COLS
   const rows   = phoneGrid ? MOBILE_ROWS : GRID_ROWS
-  const flight = phoneGrid ? MOBILE_FLIGHT : DESKTOP_FLIGHT
+  /**
+   * English or Arabic — see lib/i18n.tsx. The language is on <html>, where it
+   * also sets `dir`, so the grid and every logical property mirror in CSS. Only
+   * what is positioned by hand needs telling: the identity card's pixel box
+   * (rectFor) and the flight headings (FlightGrid.rtl).
+   */
+  const lang = useLangStore()
+  const rtl  = lang === "ar"
+  const t    = CONTENT[lang]
+  const flight = useMemo(
+    () => ({ ...(phoneGrid ? MOBILE_FLIGHT : DESKTOP_FLIGHT), rtl }),
+    [phoneGrid, rtl],
+  )
 
   const reduced             = !!useReducedMotion()
   const gridRef             = useRef<HTMLDivElement>(null)
@@ -254,6 +267,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   const mW    = useMotionValue(0)
   const mH    = useMotionValue(0)
   const lastPlacement = useRef<Placement | null | undefined>(null)
+  const lastRtl       = useRef(false)
   /** The rect the card is currently headed for, so an unchanged one is a no-op
    *  rather than a set() that the running spring immediately overwrites. */
   const lastRect      = useRef<{ l: number; t: number; w: number; h: number } | null>(null)
@@ -393,6 +407,16 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     setDesktopView((v) => !v)
   }, [beginTransition])
 
+  /**
+   * Switch language. The cards' keys carry the language, so the whole set
+   * scatters and gathers back in the mirrored grid; the identity card, which
+   * never remounts, morphs across to its mirrored slot.
+   */
+  const toggleLang = useCallback(() => {
+    beginTransition()
+    setLang(rtl ? "en" : "ar")
+  }, [beginTransition, rtl])
+
   // Back / forward.
   useEffect(() => {
     const onPop = () => {
@@ -415,8 +439,12 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       if (e.key === "Escape" && open) { e.preventDefault(); closeProject(); return }
 
       if (open) {
-        if (e.key === "ArrowRight") { e.preventDefault(); stepProject(1) }
-        if (e.key === "ArrowLeft")  { e.preventDefault(); stepProject(-1) }
+        // "Next" is the way the page reads: rightward in English, leftward in
+        // Arabic.
+        const next = rtl ? "ArrowLeft" : "ArrowRight"
+        const prev = rtl ? "ArrowRight" : "ArrowLeft"
+        if (e.key === next) { e.preventDefault(); stepProject(1) }
+        if (e.key === prev) { e.preventDefault(); stepProject(-1) }
         return
       }
 
@@ -426,13 +454,13 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
         e.preventDefault()
         const i = TABS.findIndex((t) => t.id === tab)
-        const d = e.key === "ArrowRight" ? 1 : -1
+        const d = (e.key === "ArrowRight") !== rtl ? 1 : -1
         goTab(TABS[(i + d + TABS.length) % TABS.length].id)
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [tab, open, zoom, goTab, closeProject, closeZoom, stepProject])
+  }, [tab, open, zoom, rtl, goTab, closeProject, closeZoom, stepProject])
 
   const measure = useCallback((el: HTMLDivElement) => {
     const cs = getComputedStyle(el)
@@ -561,7 +589,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   useLayoutEffect(() => {
     const g = geomRef.current ?? geom
     if (!g || !identityAt) return
-    const r = rectFor(identityAt, g)
+    const r = rectFor(identityAt, g, cols, rtl)
 
     // Same box as last time — the grid re-measured to the value it already had.
     // Setting the values again would stutter a spring that is mid-flight.
@@ -575,20 +603,22 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     const pairs: [MotionValue<number>, number][] = [
       [mLeft, r.left], [mTop, r.top], [mW, r.width], [mH, r.height],
     ]
-    const isMorph = lastPlacement.current !== null && lastPlacement.current !== identityAt
+    // A language switch is a morph too: the card glides to its mirrored slot.
+    const isMorph = lastPlacement.current !== null &&
+      (lastPlacement.current !== identityAt || lastRtl.current !== rtl)
     lastPlacement.current = identityAt
+    lastRtl.current = rtl
     if (isMorph && !reduced) running.current = pairs.map(([mv, v]) => animate(mv, v, MORPH_TRANSITION))
     else                     pairs.forEach(([mv, v]) => mv.set(v))
-  }, [geom, identityAt, reduced, mLeft, mTop, mW, mH])
+  }, [geom, identityAt, reduced, cols, rtl, mLeft, mTop, mW, mH])
 
   const render = (id: ModuleId): React.ReactNode => {
     if (id.startsWith("project-0")) {
-      const p = PROJECTS.find((x) => x.num === id.slice(-2))!
+      const p = t.PROJECTS.find((x) => x.num === id.slice(-2))!
       return <ProjectCard project={p} onOpen={openProject} />
     }
     if (id.startsWith("cat-")) {
-      const label = id.slice(4)
-      const cat = STACK.find((c) => c.label.toLowerCase().startsWith(label))!
+      const cat = t.STACK.find((c) => c.id === id.slice(4))!
       return <Category cat={cat} />
     }
     switch (id) {
@@ -620,8 +650,8 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       case "detail-nav":     return <DetailNav num={open!} onClose={closeProject} onOpen={openProject} />
       case "zoom-nav":
         return zoom === "experience"
-          ? <ZoomNav label={EMPLOYER.name} title="EXPERIENCE" meta={`${EMPLOYER.span} · 4 ROLES`} onClose={closeZoom} />
-          : <ZoomNav label="EXPANDED" title={titleOf(zoom!).replace(/\n/g, " ")} onClose={closeZoom} />
+          ? <ZoomNav label={t.EMPLOYER.name} title={t.UI.experience.label} meta={`${t.EMPLOYER.span} · ${t.UI.roles(t.ROLES.length)}`} onClose={closeZoom} />
+          : <ZoomNav label={t.UI.expanded} title={titleOf(zoom!, t).replace(/\n/g, " ")} onClose={closeZoom} />
       default:               return null
     }
   }
@@ -695,7 +725,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
               straight from one cell to the other while everything around it
               flew. Remounting turns that into a proper scatter and gather.
             */
-            key={`${id}:${phoneGrid ? "m" : "d"}:${open ? "o" : zoom ? "z" : "l"}:${shakeGen}`}
+            key={`${id}:${phoneGrid ? "m" : "d"}:${open ? "o" : zoom ? "z" : "l"}:${shakeGen}:${lang}`}
             id={id}
             placement={placement}
             throwable={{
@@ -719,7 +749,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
             {!open && !zoom && isCramped(id, placement, baseMap[id])
               ? (
                 <CompactCard
-                  title={titleOf(id)}
+                  title={titleOf(id, t)}
                   onOpen={() => (id.startsWith("project-0") ? openProject(id.slice(-2)) : openZoom(id))}
                 />
               )
@@ -733,6 +763,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   )
 
   return (
+    <LangProvider lang={lang}>
     <main className={`fixed inset-0 bg-bg ${scaled ? "" : "grid-bg"}`}>
       <Cursor />
 
@@ -759,7 +790,9 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
         // No choice to offer on a desktop, or on a landscape phone where the
         // portrait grid has no room to exist.
         onToggleView={isMobile && !isShort ? toggleView : undefined}
+        onToggleLang={toggleLang}
       />
     </main>
+    </LangProvider>
   )
 }

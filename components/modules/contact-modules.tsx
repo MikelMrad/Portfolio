@@ -1,18 +1,20 @@
 "use client"
 import { useState } from "react"
-import { CONTACT, IDENTITY } from "@/lib/content"
+import { CONTACT } from "@/lib/content"
+import { useContent } from "@/lib/i18n"
 import { GlowRule, Label } from "@/components/ui/bits"
 import { Magnetic } from "@/components/ui/magnetic"
 import { ScrambleText } from "@/components/ui/scramble-text"
 
 export function Headline() {
+  const { IDENTITY, UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[300px]:p-6 overflow-hidden">
-      <Label>CONTACT</Label>
+      <Label>{UI.contact.label}</Label>
       <h2 className="font-display text-fg leading-[0.82] tracking-tight text-[clamp(2rem,min(20cqw,26cqh),8rem)]">
-        LET&apos;S
+        {UI.contact.headline[0]}
         <br />
-        <span style={{ WebkitTextStroke: "2px #f0f0f0", color: "transparent" }}>WORK.</span>
+        <span style={{ WebkitTextStroke: "2px #f0f0f0", color: "transparent" }}>{UI.contact.headline[1]}</span>
       </h2>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim leading-relaxed">
         {IDENTITY.availability.long}
@@ -22,15 +24,18 @@ export function Headline() {
 }
 
 export function EmailCard() {
+  const { UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[400px]:p-5 gap-2 min-w-0">
-      <Label right={CONTACT.phone}>DIRECT</Label>
+      {/* The phone number and the address are left-to-right in either
+          language — isolated, or an RTL page reorders "+961" to the end. */}
+      <Label right={<span dir="ltr">{CONTACT.phone}</span>}>{UI.contact.direct}</Label>
       <a
         href={`mailto:${CONTACT.email}`}
         className="font-mono text-[11px] @[400px]:text-sm uppercase tracking-[0.14em] text-fg hover:text-mid transition-colors flex items-center gap-3 min-w-0"
       >
         <span className="inline-block w-4 h-px bg-fg shrink-0" style={{ boxShadow: "0 0 8px 1px rgba(240,240,240,0.5)" }} />
-        <ScrambleText text={CONTACT.email.toUpperCase()} speed={5} />
+        <span dir="ltr" className="min-w-0"><ScrambleText text={CONTACT.email.toUpperCase()} speed={5} /></span>
       </a>
       <GlowRule />
     </div>
@@ -43,6 +48,7 @@ const FIELD =
   "bg-transparent border-0 border-b border-hairline text-fg font-mono text-[10px] uppercase tracking-[0.12em] py-2.5 outline-none w-full placeholder:text-dim focus:border-fg transition-colors duration-200"
 
 export function ContactForm() {
+  const { UI } = useContent()
   const [status, setStatus] = useState<Status>("idle")
   const [name, setName]   = useState("")
   const [email, setEmail] = useState("")
@@ -71,13 +77,13 @@ export function ContactForm() {
 
   return (
     <div className="h-full flex flex-col p-4 @[400px]:p-6 gap-4 min-h-0">
-      <Label right={status === "sent" ? "SENT" : "FORM"}>SEND A MESSAGE</Label>
+      <Label right={status === "sent" ? UI.contact.sentTag : UI.contact.formTag}>{UI.contact.form}</Label>
 
       {status === "sent" ? (
         <div className="flex-1 flex flex-col justify-center gap-2">
-          <span className="font-display text-fg leading-none tracking-tight text-[clamp(1.5rem,min(12cqw,18cqh),3rem)]">RECEIVED.</span>
+          <span className="font-display text-fg leading-none tracking-tight text-[clamp(1.5rem,min(12cqw,18cqh),3rem)]">{UI.contact.received}</span>
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-mid">
-            I&apos;LL BE IN TOUCH SHORTLY.
+            {UI.contact.reply}
           </span>
         </div>
       ) : (
@@ -87,24 +93,26 @@ export function ContactForm() {
               field needs. Two 176px inputs hold a 72px placeholder fine. */}
           <div className="grid grid-cols-1 @[320px]:grid-cols-2 gap-4 @[400px]:gap-5 shrink-0">
             <input
-              placeholder="YOUR NAME" value={name} onChange={(e) => setName(e.target.value)}
+              placeholder={UI.contact.name} value={name} onChange={(e) => setName(e.target.value)}
               required disabled={status === "sending"} className={FIELD}
             />
             <input
-              type="email" placeholder="YOUR EMAIL" value={email} onChange={(e) => setEmail(e.target.value)}
+              // An address is left-to-right — but only once there is one: an
+              // empty LTR field pushes the Arabic placeholder to the wrong side.
+              type="email" dir={email ? "ltr" : undefined} placeholder={UI.contact.email} value={email} onChange={(e) => setEmail(e.target.value)}
               required disabled={status === "sending"} className={FIELD}
             />
           </div>
 
           <textarea
-            placeholder="YOUR MESSAGE" value={msg} onChange={(e) => setMsg(e.target.value)}
+            placeholder={UI.contact.message} value={msg} onChange={(e) => setMsg(e.target.value)}
             required disabled={status === "sending"}
             className={`${FIELD} resize-none flex-1 min-h-0`}
           />
 
           {status === "error" && (
             <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-dim shrink-0">
-              SOMETHING WENT WRONG — EMAIL ME DIRECTLY.
+              {UI.contact.error}
             </span>
           )}
 
@@ -113,7 +121,7 @@ export function ContactForm() {
               type="submit" disabled={status === "sending"}
               className="font-mono text-[10px] uppercase tracking-[0.24em] border border-fg text-fg px-6 py-3 hover:bg-fg hover:text-bg transition-colors duration-150 disabled:opacity-40"
             >
-              {status === "sending" ? "SENDING..." : "SEND MESSAGE →"}
+              {status === "sending" ? UI.contact.sending : <>{UI.contact.send} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span></>}
             </button>
           </Magnetic>
         </form>
@@ -123,10 +131,11 @@ export function ContactForm() {
 }
 
 export function Socials() {
+  const { UI } = useContent()
   const links = [
-    { label: "GITHUB",   href: CONTACT.github },
-    { label: "LINKEDIN", href: CONTACT.linkedin },
-    { label: "CV ↓",     href: CONTACT.cv },
+    { label: UI.contact.github,     href: CONTACT.github },
+    { label: UI.contact.linkedin,   href: CONTACT.linkedin },
+    { label: `${UI.contact.cv} ↓`,  href: CONTACT.cv },
   ]
   return (
     /* Three nowrap labels in a 180px phone cell only fit at the tighter of the
@@ -148,11 +157,12 @@ export function Socials() {
 }
 
 export function Footer() {
+  const { UI } = useContent()
   return (
     <div className="h-full flex items-center justify-between px-3 @[220px]:px-5 gap-3">
-      <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-dim whitespace-nowrap">© 2026 MikelMrad</span>
+      <span dir="ltr" className="font-mono text-[8px] uppercase tracking-[0.2em] text-dim whitespace-nowrap">{UI.contact.footer}</span>
       {/* The colophon is the half that goes when the cell is a phone-width bar. */}
-      <span className="hidden @[220px]:inline font-mono text-[8px] uppercase tracking-[0.2em] text-dim whitespace-nowrap">· NEXT.JS</span>
+      <span className="hidden @[220px]:inline font-mono text-[8px] uppercase tracking-[0.2em] text-dim whitespace-nowrap" dir="ltr">{UI.contact.colophon}</span>
     </div>
   )
 }

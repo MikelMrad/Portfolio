@@ -2,6 +2,12 @@
  * Single source of truth for every piece of copy on the site.
  * Reconciled from Mikel-Mrad-CV-Technical.pdf (Sep 2026) and the v3 portfolio.
  * Modules read from here — never hardcode strings in components.
+ *
+ * Two languages. This file is English and defines the shape (`Content`);
+ * lib/content-ar.ts is the Arabic set of the same shape. Components read the
+ * active one through `useContent()` (lib/i18n.tsx), never these constants
+ * directly — the named exports below remain for the server-side, English-only
+ * consumers (the link preview, metadata).
  */
 
 export const IDENTITY = {
@@ -20,7 +26,7 @@ export const IDENTITY = {
     long:  "AVAILABLE FOR FREELANCE",
     note:  "FREELANCE PROJECTS ONLY",
   },
-} as const
+}
 
 export const CONTACT = {
   email:    "mikelmrad.work@gmail.com",
@@ -32,10 +38,10 @@ export const CONTACT = {
   site:     "https://mikelmrad.dev",
 } as const
 
-export const STATS = [
+export const STATS: { value: number; suffix: string; label: string }[] = [
   { value: 2,  suffix: "+", label: "YEARS SHIPPING" },
   { value: 10, suffix: "+", label: "PROJECTS BUILT" },
-] as const
+]
 
 /**
  * What a module is called when it is too small to show itself.
@@ -82,7 +88,7 @@ export const EMPLOYER = {
   location: "BEIRUT, LEBANON",
   span:     "2024 — PRESENT",
   summary:  "MULTI-TENANT EXAM-REGISTRATION PLATFORM. 5 COUNTRY TENANTS, ONE CODEBASE.",
-} as const
+}
 
 export const ROLES: Role[] = [
   {
@@ -231,14 +237,17 @@ export const PROJECTS: Project[] = [
 
 // ── Stack ─────────────────────────────────────────────────────────────────────
 
-export type StackCategory = { label: string; skills: string[] }
+/** `id` is stable across languages — the stage maps `cat-<id>` modules by it. */
+export type StackCategory = { id: string; label: string; skills: string[] }
 
 export const STACK: StackCategory[] = [
   {
+    id:    "languages",
     label: "LANGUAGES",
     skills: ["TYPESCRIPT", "JAVASCRIPT", "JAVA", "C++", "HTML", "CSS"],
   },
   {
+    id:    "frameworks",
     label: "FRAMEWORKS & LIBRARIES",
     skills: [
       "NEXT.JS", "REACT", "REACT NATIVE", "NODE.JS", "EXPRESS", "REDUX",
@@ -246,13 +255,14 @@ export const STACK: StackCategory[] = [
     ],
   },
   {
+    id:    "tools",
     label: "TOOLS & PLATFORMS",
     skills: [
       "GIT", "DOCKER", "FIGMA", "POSTMAN", "SHOPIFY", "VERCEL",
       "ZUSTAND", "NEXT-INTL", "META PIXEL", "GA4", "PHOTOSHOP",
     ],
   },
-  { label: "DATABASES", skills: ["MONGODB", "FIREBASE"] },
+  { id: "databases", label: "DATABASES", skills: ["MONGODB", "FIREBASE"] },
 ]
 
 export const TECH_COUNT = STACK.reduce((n, c) => n + c.skills.length, 0)
@@ -290,4 +300,70 @@ export const EDUCATION = [
     award:  "LEBANESE BACCALAUREATE — GENERAL SCIENCES",
     years:  "2020 — 2021",
   },
-] as const
+]
+
+/**
+ * Interface copy — every label, button and caption the modules draw that isn't
+ * part of the content above. Arrows are not in these strings: components draw
+ * them as separate glyphs that mirror under RTL (`rtl:-scale-x-100`).
+ */
+export const UI = {
+  identity: { portfolio: "PORTFOLIO — 2026", home: "INDEX", homeAria: "Go to index" },
+  status:   { label: "STATUS", value: "OPEN" },
+  stats:    { label: "BY THE NUMBERS", figures: (n: number) => `${n} FIGURES` },
+  location: { label: "BASED", city: "BEIRUT", note: "GMT+3 · REMOTE-READY" },
+  latest:   { label: "MOST RECENT", cta: "ALL WORK" },
+  experience: { label: "EXPERIENCE", months: "MOS" },
+  workMeta: { label: "SELECTED", line: "PROJECTS · 2022—2026", tags: "SHOPIFY · HEADLESS · COMMERCE" },
+  cv: {
+    label: "CURRICULUM VITAE", top: "2026", bottom: "CV",
+    contents: "EXPERIENCE · STACK · EDUCATION", download: "DOWNLOAD",
+  },
+  project: {
+    label: "WORK", archivedView: "ARCHIVED — VIEW", views: "VIEWS",
+    visit: "VISIT SITE", offline: "ARCHIVED — SITE OFFLINE",
+  },
+  toolbox:   { label: "TOOLBOX", technologies: "TECHNOLOGIES", categories: (n: number) => `${n} CATEGORIES` },
+  education: { label: "EDUCATION" },
+  contact: {
+    label: "CONTACT", headline: ["LET'S", "WORK."] as [string, string],
+    direct: "DIRECT",
+    form: "SEND A MESSAGE", formTag: "FORM", sentTag: "SENT",
+    received: "RECEIVED.", reply: "I'LL BE IN TOUCH SHORTLY.",
+    name: "YOUR NAME", email: "YOUR EMAIL", message: "YOUR MESSAGE",
+    error: "SOMETHING WENT WRONG — EMAIL ME DIRECTLY.",
+    sending: "SENDING...", send: "SEND MESSAGE",
+    github: "GITHUB", linkedin: "LINKEDIN", cv: "CV",
+    footer: "© 2026 MikelMrad", colophon: "· NEXT.JS",
+  },
+  expand: "EXPAND",
+  close: "CLOSE",
+  esc: "ESC",
+  step: "TO STEP THROUGH",
+  expanded: "EXPANDED",
+  roles: (n: number) => `${n} ROLES`,
+  tabs: { index: "INDEX", work: "WORK", stack: "STACK", contact: "CONTACT" },
+  dock: {
+    hints: "DRAG · FLING · 1—4 · ← → · ESC",
+    reset: "RESET GRID", resetAria: "Put the cards back",
+    toDesktop: "Switch to the desktop layout", toPhone: "Switch to the phone layout",
+    /** The *other* language, named in itself — what the toggle switches to. */
+    lang: "عربي", langAria: "التبديل إلى العربية",
+  },
+  demo: {
+    tabsPhone: "TAP A TAB TO SWITCH PAGE",
+    tabsDesktop: "TABS SWITCH PAGE · OR PRESS 1–4",
+    open: "TAP A CARD TO OPEN IT",
+    swap: "DRAG ONTO ANOTHER TO SWAP",
+    fling: "FLING TO THROW",
+    shake: "SHAKE TO RESET",
+    skip: "SKIP DEMO", skipAria: "Close the demonstration",
+  },
+}
+
+/** Everything a language supplies. lib/content-ar.ts implements this. */
+export const EN = {
+  IDENTITY, STATS, MODULE_TITLES, EMPLOYER, ROLES, PROJECTS, STACK, TECH_COUNT,
+  STATS_DETAIL, EDUCATION, UI,
+}
+export type Content = typeof EN

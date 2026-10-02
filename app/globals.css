@@ -9,8 +9,9 @@
   --color-hairline: #1f1f1f;
   --color-card:     #0d0d0d;
 
-  --font-mono:    var(--font-jetbrains-mono), ui-monospace, monospace;
-  --font-display: var(--font-barlow-condensed), ui-sans-serif, sans-serif;
+  /* Arabic fonts sit behind the Latin ones: per-glyph fallback, see layout.tsx. */
+  --font-mono:    var(--font-jetbrains-mono), var(--font-plex-arabic), ui-monospace, monospace;
+  --font-display: var(--font-barlow-condensed), var(--font-kufi-arabic), ui-sans-serif, sans-serif;
 
   /* White glow replaces an accent colour — used for active, hover, live. */
   --shadow-glow-sm: 0 0 10px 0 rgba(240, 240, 240, 0.28);
@@ -77,6 +78,19 @@
 /* A card mid-swap (ModuleCard's morph) stays above its neighbours while it
    passes over them. Inline z-index from the drag still wins while it is held. */
 .module[data-morphing] { z-index: 25; }
+
+/*
+  ── Arabic ───────────────────────────────────────────────────────────────────
+  Letter-spacing pulls Arabic's joined letters apart — it is cursive, the
+  tracking that makes a Latin label read as a label breaks every word. The
+  site's type is tracked everywhere, so it is undone wholesale.
+
+  And the display leading: 0.82-0.9 is set for Latin capitals, which have no
+  descenders. Arabic sits lower and reaches higher, and the cards clip — at
+  that leading the dots under ب and ي were cut off.
+*/
+:root[lang="ar"] body * { letter-spacing: 0 !important; }
+:root[lang="ar"] .font-display { line-height: 1.15 !important; }
 
 /* Vertical filmstrip. The track holds the images twice, so -50% is exactly
    one full set and the loop is seamless. */

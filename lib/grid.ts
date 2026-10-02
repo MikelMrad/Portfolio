@@ -196,11 +196,16 @@ export type GridGeom = {
  * snap to the new size instantly while the box was still visually travelling.
  * Animating width/height for real keeps the contents in step with the box.
  */
-export function rectFor(p: Placement, g: GridGeom) {
+export function rectFor(p: Placement, g: GridGeom, cols: number, rtl = false) {
+  const width = g.cellW * p.col[1] + g.gapX * (p.col[1] - 1)
+  const fromStart = (g.cellW + g.gapX) * (p.col[0] - 1)
+  // Under dir="rtl" CSS grid counts columns from the right, so the card has to
+  // as well — mirrored inside the content box (the padding is symmetric).
+  const content = g.cellW * cols + g.gapX * (cols - 1)
   return {
-    left:   g.padL + (g.cellW + g.gapX) * (p.col[0] - 1),
+    left:   g.padL + (rtl ? content - fromStart - width : fromStart),
     top:    g.padT + (g.cellH + g.gapY) * (p.row[0] - 1),
-    width:  g.cellW * p.col[1] + g.gapX * (p.col[1] - 1),
+    width,
     height: g.cellH * p.row[1] + g.gapY * (p.row[1] - 1),
   }
 }

@@ -1,43 +1,46 @@
 "use client"
 import Image from "next/image"
-import { CONTACT, PROJECTS, type Project } from "@/lib/content"
+import { CONTACT, type Project } from "@/lib/content"
+import { useContent } from "@/lib/i18n"
 import { GlowRule, Label, Tag } from "@/components/ui/bits"
 import { Magnetic } from "@/components/ui/magnetic"
 
 export function WorkMeta() {
+  const { UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5">
-      <Label>SELECTED</Label>
+      <Label>{UI.workMeta.label}</Label>
       <div>
         <span className="font-display text-fg leading-none block text-[clamp(1.5rem,min(22cqw,26cqh),3.75rem)]">04</span>
         <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim block mt-1">
-          PROJECTS · 2022—2026
+          {UI.workMeta.line}
         </span>
       </div>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-mid leading-relaxed">
-        SHOPIFY · HEADLESS · COMMERCE
+        {UI.workMeta.tags}
       </span>
     </div>
   )
 }
 
 export function CvCard() {
+  const { UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5">
-      <Label right="PDF">CURRICULUM VITAE</Label>
+      <Label right="PDF">{UI.cv.label}</Label>
       <div className="flex flex-col gap-2">
         {/* One line in the phone's full-width bar, two in the desktop card's
             portrait box — the break is gated on the same height as the contents
             line below it. */}
         <span className="font-display text-fg leading-[0.88] block tracking-tight text-[clamp(1.25rem,min(20cqw,20cqh),3rem)]">
-          2026{" "}
+          {UI.cv.top}{" "}
           <br className="cq-h160" />
-          CV
+          {UI.cv.bottom}
         </span>
         {/* First thing to go when the card is short — the CV itself says this,
             and DOWNLOAD is the only line here that has to survive. */}
         <span className="cq-h160 font-mono text-[9px] uppercase tracking-[0.16em] text-dim leading-relaxed">
-          EXPERIENCE · STACK · EDUCATION
+          {UI.cv.contents}
         </span>
       </div>
       <div className="flex flex-col gap-2">
@@ -49,7 +52,7 @@ export function CvCard() {
             rel="noopener noreferrer"
             className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors flex items-center gap-2"
           >
-            DOWNLOAD <span aria-hidden>↓</span>
+            {UI.cv.download} <span aria-hidden>↓</span>
           </a>
         </Magnetic>
       </div>
@@ -59,10 +62,11 @@ export function CvCard() {
 
 /** A project tile. Click expands it — handled by the stage, not here. */
 export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (num: string) => void }) {
+  const { UI } = useContent()
   return (
     <button
       onClick={() => onOpen(project.num)}
-      className="group h-full w-full text-left relative overflow-hidden"
+      className="group h-full w-full text-start relative overflow-hidden"
     >
       <Image
         src={project.images[0]}
@@ -80,14 +84,14 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (nu
       {/* Ghost number, echoing v3's oversized section numerals. */}
       <span
         aria-hidden
-        className="absolute font-display leading-none text-fg pointer-events-none select-none right-[-0.04em] bottom-[-0.14em]"
+        className="absolute font-display leading-none text-fg pointer-events-none select-none end-[-0.04em] bottom-[-0.14em]"
         style={{ fontSize: "clamp(5rem, 22cqw, 16rem)", opacity: 0.05 }}
       >
         {project.num}
       </span>
 
       <div className="relative h-full flex flex-col justify-between p-4 @[300px]:p-5">
-        <Label right={project.year}>WORK — {project.num}</Label>
+        <Label right={project.year}>{UI.project.label} — {project.num}</Label>
 
         <h3 className="font-display text-fg leading-[0.86] tracking-tight whitespace-pre-line text-[clamp(1.35rem,min(11cqw,22cqh),4rem)]">
           {project.title}
@@ -101,7 +105,7 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (nu
             {project.stack.slice(0, 4).map((s) => <Tag key={s}>{s}</Tag>)}
           </div>
           <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-dim group-hover:text-fg transition-colors flex items-center gap-2">
-            {project.archived ? "ARCHIVED — VIEW" : "EXPAND"} <span aria-hidden>↗</span>
+            {project.archived ? UI.project.archivedView : UI.expand} <span aria-hidden className="inline-block rtl:-scale-x-100">↗</span>
           </span>
         </div>
       </div>
@@ -119,6 +123,7 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (nu
  * twice so the -50% translate in @keyframes marquee-y loops seamlessly.
  */
 function VerticalReel({ images, alt }: { images: string[]; alt: string }) {
+  const { UI } = useContent()
   const loop = [...images, ...images]
 
   return (
@@ -153,14 +158,15 @@ function VerticalReel({ images, alt }: { images: string[]; alt: string }) {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-card to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-card to-transparent" />
 
-      <span className="pointer-events-none absolute bottom-3 right-4 font-mono text-[8px] uppercase tracking-[0.22em] text-dim">
-        {String(images.length).padStart(2, "0")} VIEWS
+      <span className="pointer-events-none absolute bottom-3 end-4 font-mono text-[8px] uppercase tracking-[0.22em] text-dim">
+        {String(images.length).padStart(2, "0")} {UI.project.views}
       </span>
     </div>
   )
 }
 
 export function ProjectDetail({ num }: { num: string }) {
+  const { PROJECTS, UI } = useContent()
   const project = PROJECTS.find((p) => p.num === num)!
   const title = project.title.replace("\n", " ")
 
@@ -179,13 +185,13 @@ export function ProjectDetail({ num }: { num: string }) {
     <div className="h-full min-h-0 overflow-y-auto @[700px]:overflow-hidden flex flex-col @[700px]:flex-row">
       {/* Reel — full-bleed and uncropped. Definite height on a phone so it
           can't eat the column; fills the row on desktop. */}
-      <div className="relative shrink-0 h-[45cqh] @[700px]:h-auto @[700px]:flex-1 @[700px]:min-h-0 min-w-0 border-b @[700px]:border-b-0 @[700px]:border-r border-hairline">
+      <div className="relative shrink-0 h-[45cqh] @[700px]:h-auto @[700px]:flex-1 @[700px]:min-h-0 min-w-0 border-b @[700px]:border-b-0 @[700px]:border-e border-hairline">
         <VerticalReel images={project.images} alt={title} />
       </div>
 
       {/* Copy */}
       <div className="w-full @[700px]:w-[36%] shrink-0 flex flex-col gap-4 p-5 @[700px]:p-6 @[700px]:min-h-0 @[700px]:overflow-y-auto">
-        <Label right={project.year}>WORK — {project.num}</Label>
+        <Label right={project.year}>{UI.project.label} — {project.num}</Label>
 
         <h2 className="font-display text-fg leading-[0.86] tracking-tight whitespace-pre-line text-4xl @[700px]:text-6xl">
           {project.title}
@@ -216,12 +222,12 @@ export function ProjectDetail({ num }: { num: string }) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-fg border border-fg px-5 py-3 hover:bg-fg hover:text-bg transition-colors duration-150"
             >
-              VISIT SITE <span aria-hidden>→</span>
+              {UI.project.visit} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span>
             </a>
           </Magnetic>
         ) : (
           <span className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-dim border border-hairline px-5 py-3 self-start">
-            ARCHIVED — SITE OFFLINE
+            {UI.project.offline}
           </span>
         )}
       </div>
@@ -240,13 +246,14 @@ export function ProjectDetail({ num }: { num: string }) {
 export function DetailNav({
   num, onClose, onOpen,
 }: { num: string; onClose: () => void; onOpen: (n: string) => void }) {
+  const { PROJECTS, UI } = useContent()
   return (
     <div className="chrome h-full flex justify-between p-4 @[260px]:p-5 gap-3 min-h-0 min-w-0">
       <button
         onClick={onClose}
         className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors flex items-center gap-2 self-center shrink-0"
       >
-        <span aria-hidden>←</span> CLOSE <span className="cq-h160 text-dim">ESC</span>
+        <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {UI.close} <span className="cq-h160 text-dim">{UI.esc}</span>
       </button>
 
       {/* Rows share the column evenly, matching the STACK spec sheets, so the
@@ -258,7 +265,7 @@ export function DetailNav({
             <button
               key={p.num}
               onClick={() => onOpen(p.num)}
-              className="chrome-item text-left group flex flex-1 min-h-0 min-w-0 items-center gap-2 border-hairline"
+              className="chrome-item text-start group flex flex-1 min-h-0 min-w-0 items-center gap-2 border-hairline"
             >
               <span className={`font-mono text-[9px] tracking-[0.2em] ${active ? "text-fg" : "text-dim"}`}>
                 {p.num}
@@ -272,7 +279,7 @@ export function DetailNav({
               </span>
               {active && (
                 <span
-                  className="cq-h160 ml-auto w-4 h-px bg-fg shrink-0"
+                  className="cq-h160 ms-auto w-4 h-px bg-fg shrink-0"
                   style={{ boxShadow: "0 0 8px 1px rgba(240,240,240,0.6)" }}
                 />
               )}
@@ -282,7 +289,7 @@ export function DetailNav({
       </div>
 
       <span className="cq-h160 font-mono text-[8px] uppercase tracking-[0.2em] text-dim leading-relaxed">
-        ← → TO STEP THROUGH
+        ← → {UI.step}
       </span>
     </div>
   )

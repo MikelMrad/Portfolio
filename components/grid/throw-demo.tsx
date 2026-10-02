@@ -1,23 +1,29 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
-import { animate, motion, useMotionValue, type MotionValue } from "motion/react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { animate, motion, useMotionValue, useTransform, type MotionValue } from "motion/react"
 import type { ModuleId, Placement } from "@/lib/grid"
+import { useContent } from "@/lib/i18n"
 import { flightVector, rankByRadius, type FlightGrid } from "@/lib/scatter"
 
 /**
- * The one-time demonstration of throwable cards (see ModuleCard / throw.ts).
+ * The guided tour that plays once the intro has settled.
  *
- * Nothing on the page tells you the cards can be picked up, so once the intro
- * has settled a faint grey finger does it for you: it lifts the centre-most
- * card onto a neighbour and the two trade places, then flicks an outer card
- * off along its real flight vector and lets it spring back.
+ * A non-scrolling bento with draggable cards explains itself badly, so a faint
+ * grey finger walks through it, in the order a visitor needs it:
  *
- * It is a ghost, on purpose — outlines of the cards, never the cards. The real
- * layout is not touched, so interrupting it can't leave anything half-swapped,
- * and it can stop the instant the visitor does anything at all.
+ *   1. the tabs in the dock — how to move between pages;
+ *   2. tapping a card open — EXPERIENCE or a project grows to the whole grid;
+ *   3. dragging one card onto another — the two trade places (ModuleCard);
+ *   4. flinging a card — off along its flight vector and back (throw.ts);
+ *   5. on a phone, shaking to reset (shake.ts).
  *
- * Every load, since it is the only thing that tells anyone the cards move. The
- * close button in the top-right corner, Esc, or any touch of the page ends it.
+ * It is a ghost, on purpose — outlines of the cards and tabs, never the real
+ * ones. Nothing it shows changes the page, so it can play over a visitor who is
+ * already exploring, and stopping it can't leave anything half-done.
+ *
+ * Every load. Only SKIP DEMO ends it — a touch or a keypress doesn't, so the
+ * tour isn't lost to the first accidental tap. A tab switch or an opened card
+ * does stop it, because the outlines are drawn over this layout.
  */
 
 /**
@@ -67,6 +73,7 @@ export function ThrowDemo({
   /** Phone grid: end with shake-to-reset (see shake.ts). */
   shake?: boolean
 }) {
+  const { UI } = useContent()
   const [active, setActive] = useState(false)
   const played = useRef(false)
   const cancel = useRef<(() => void) | null>(null)
@@ -75,11 +82,37 @@ export function ThrowDemo({
   const fy = useMotionValue(0)
   const fo = useMotionValue(0)
   const fs = useMotionValue(1)
+  /** The finger's tilt, about its tip — the rock of a press. */
+  const fr = useMotionValue(0)
+  /** The light under the fingertip: dark until a press, then a flash that
+   *  spreads and fades, like a ripple from the point of contact. */
+  const ho = useMotionValue(0)
+  const hs = useMotionValue(0.6)
   const co = useMotionValue(0)
   const [caption, setCaption] = useState("")
-  /** Caption on the finger's left — for a finger near the right edge, where
-   *  the caption would otherwise run off a phone screen. */
-  const [captionLeft, setCaptionLeft] = useState(false)
+  /**
+   * Where the caption sits, kept fully on screen.
+   *
+   * It used to pick a side from a fixed guess — flip left within 170px of the
+   * right edge — but captions run from ~120px to ~230px and differ again in
+   * Arabic, so on a phone the longer ones ran off the right edge. Now its real
+   * width is measured and its x is worked out from the finger every frame:
+   * beside the finger when it fits, the other side when it doesn't, clamped to
+   * the screen either way.
+   */
+  const captionRef = useRef<HTMLSpanElement>(null)
+  const capW = useMotionValue(0)
+  const capX = useTransform([fx, capW], ([x, w]: number[]) => {
+    const vw = window.innerWidth, edge = 8, gap = 28
+    const beside = x + gap + w <= vw - edge ? x + gap : x - gap - w
+    return Math.min(Math.max(beside, edge), Math.max(edge, vw - edge - w))
+  })
+  // Measured after each caption change, before it paints.
+  useLayoutEffect(() => {
+    if (captionRef.current) capW.set(captionRef.current.offsetWidth)
+  })
+  /** Caption above the fingertip — for the dock, at the bottom of the screen. */
+  const [captionAbove, setCaptionAbove] = useState(false)
   // The shake step: a phone glyph, and every card's outline shaking with it.
   const po = useMotionValue(0)
   const pr = useMotionValue(0)
@@ -106,23 +139,15 @@ export function ThrowDemo({
     const wait = (ms: number) => new Promise<void>((res) => setTimeout(res, ms))
     const alive = () => { if (stopped) throw new Error("stopped") }
 
-    // Anything the visitor does ends it: they have found the page.
-    const events = ["pointerdown", "keydown", "wheel", "touchstart"] as const
-
     const stop = () => {
       if (stopped) return
       stopped = true
-      // Removed here rather than in an effect cleanup: StrictMode's rehearsal
-      // unmount would otherwise take them away while the script kept running.
-      events.forEach((e) => window.removeEventListener(e, stop))
       running.forEach((r) => r.stop())
       // Fade out from wherever it got to, however it was interrupted.
       Promise.all([fo, co, po, go, a.o, b.o, c.o].map((v) => animate(v, 0, { duration: 0.25 })))
         .then(() => setActive(false))
     }
     cancel.current = stop
-
-    events.forEach((e) => window.addEventListener(e, stop, { passive: true }))
 
     const place = (g: Ghost, r: Rect) => { g.x.set(r.x); g.y.set(r.y); g.w.set(r.w); g.h.set(r.h); g.r.set(0) }
     const to = (g: Ghost, r: Rect, t: object) => Promise.all([
@@ -157,24 +182,112 @@ export function ThrowDemo({
       if (!rC) return stop()
 
       setActive(true)
+      const phone = window.matchMedia("(max-width: 767px)").matches
+      const glide = { duration: 0.8, ease: [0.45, 0, 0.2, 1] as const }
+      /**
+       * Appear mid-screen, hold a beat, then travel. Starting where the eye
+       * already is — the middle — and moving from there is what gets the
+       * finger noticed; appearing at its destination, it was missed even by
+       * someone who knew where to look.
+       */
+      const enter = async (dest: { x: number; y: number }) => {
+        fx.set(window.innerWidth / 2); fy.set(window.innerHeight / 2)
+        await run(animate(fo, 1, { duration: 0.35 })); alive()
+        await wait(380); alive()
+        await point(dest, { duration: 0.95, ease: [0.45, 0, 0.2, 1] }); alive()
+      }
+      /** The touch itself: the light flashes out from the tip, the hand dips
+       *  and rocks. */
+      const flash = () => Promise.all([
+        run(animate(ho, [0, 1, 0], { duration: 0.65, times: [0, 0.18, 1], ease: "easeOut" })),
+        run(animate(hs, [0.5, 1.7], { duration: 0.65, ease: "easeOut" })),
+      ])
+      /** A tap: press and let go. */
+      const click = () => Promise.all([
+        flash(),
+        run(animate(fr, [0, 10, 0], { duration: 0.34, ease: "easeInOut" })),
+        run(animate(fs, [1, 0.84, 1], { duration: 0.3, ease: "easeInOut" })),
+      ])
+      /** Press and hold — a grab. The hand stays tilted until release(). */
+      const press = () => Promise.all([
+        flash(),
+        run(animate(fr, 10, { duration: 0.16, ease: "easeOut" })),
+        run(animate(fs, 0.84, { duration: 0.14 })),
+      ])
+      const release = (duration = 0.16) => Promise.all([
+        run(animate(fr, 0, { duration, ease: "easeOut" })),
+        run(animate(fs, 1, { duration })),
+      ])
+      const say = (text: string, above = false) => {
+        setCaptionAbove(above)
+        setCaption(text)
+      }
 
-      // 1 — drift in from below and settle on the first card.
-      fx.set(cA.x + 60); fy.set(window.innerHeight + 40)
-      await Promise.all([
-        run(animate(fo, 1, { duration: 0.4 })),
-        point({ x: cA.x, y: cA.y + rA.h * 0.1 }, { duration: 0.9, ease: [0.22, 1, 0.36, 1] }),
-      ]); alive()
+      // ── Tour 1 — the tabs. Ghost outlines only: really switching would
+      //    scatter the grid this tour is drawn over.
+      const tabs = [...document.querySelectorAll<HTMLElement>("nav button[data-tab]")]
+        .map((b) => {
+          const r = b.getBoundingClientRect()
+          return { x: r.left - 4, y: r.top + 2, w: r.width + 8, h: r.height - 4 }
+        })
+      if (tabs.length) {
+        // From the middle of the screen, down to the first tab.
+        await enter(centre(tabs[0]))
+        place(a, tabs[0])
+        say(phone ? UI.demo.tabsPhone : UI.demo.tabsDesktop, true)
+        await Promise.all([run(animate(a.o, 1, { duration: 0.2 })), run(animate(co, 1, { duration: 0.3 })), click()]); alive()
+        await wait(200); alive()
+        // Along the dock, the outline riding from tab to tab with the finger.
+        const hop = { duration: 0.42, ease: [0.45, 0, 0.2, 1] as const }
+        for (const t of tabs.slice(1)) {
+          await Promise.all([point(centre(t), hop), to(a, t, hop)]); alive()
+          await click(); alive()
+        }
+        await wait(350); alive()
+        await Promise.all([run(animate(a.o, 0, { duration: 0.25 })), run(animate(co, 0, { duration: 0.2 }))]); alive()
+      }
+
+      // ── Tour 2 — opening a card. The outline grows to the whole grid, the
+      //    way the real one expands, holds, and shrinks back.
+      const openable = cards.find(([id]) => id === "experience" || id.startsWith("project-"))?.[0]
+      const rO = openable && rectOf(openable)
+      const boxes = [...document.querySelectorAll("[data-module]")].map((el) => el.getBoundingClientRect())
+      if (rO && boxes.length) {
+        const whole = {
+          x: Math.min(...boxes.map((b) => b.left)),
+          y: Math.min(...boxes.map((b) => b.top)),
+          w: Math.max(...boxes.map((b) => b.right)) - Math.min(...boxes.map((b) => b.left)),
+          h: Math.max(...boxes.map((b) => b.bottom)) - Math.min(...boxes.map((b) => b.top)),
+        }
+        if (fo.get() < 0.5) await enter(centre(rO))
+        else { await point(centre(rO), glide); alive() }
+        say(UI.demo.open)
+        place(b, rO)
+        await Promise.all([
+          click(),
+          run(animate(co, 1, { duration: 0.3 })),
+          run(animate(b.o, 1, { duration: 0.2 })),
+        ]); alive()
+        const grow = { type: "spring" as const, stiffness: 170, damping: 24 }
+        await to(b, whole, grow); alive()
+        await wait(550); alive()
+        await to(b, rO, grow); alive()
+        await Promise.all([run(animate(b.o, 0, { duration: 0.25 })), run(animate(co, 0, { duration: 0.2 }))]); alive()
+      }
+
+      // ── Tour 3 — onto the first card for the swap.
+      const onA = { x: cA.x, y: cA.y + rA.h * 0.1 }
+      if (fo.get() < 0.5) await enter(onA)
+      else { await point(onA, glide); alive() }
 
       // 2 — press, and the card's outline lifts.
-      setCaptionLeft(fx.get() > window.innerWidth - 170)
-      setCaption("DRAG TO SWAP")
+      say(UI.demo.swap)
       place(a, rA)
       await Promise.all([
-        run(animate(fs, 0.82, { duration: 0.14 })),
+        press(),
         run(animate(a.o, 1, { duration: 0.2 })),
         run(animate(co, 1, { duration: 0.3 })),
       ]); alive()
-      await wait(120); alive()
 
       // 3 — carry it onto the neighbour. The outline travels with the finger,
       // centred where the card was grabbed, banking into the move.
@@ -193,7 +306,7 @@ export function ThrowDemo({
       place(b, rB)
       const slide = { type: "spring" as const, stiffness: 240, damping: 26 }
       await Promise.all([
-        run(animate(fs, 1, { duration: 0.14 })),
+        release(),
         run(animate(b.o, 1, { duration: 0.15 })),
         to(a, rB, slide),
         to(b, rA, slide),
@@ -208,11 +321,10 @@ export function ThrowDemo({
       // 5 — over to the outer card for a flick.
       const cC = centre(rC)
       await point(cC, { duration: 0.8, ease: [0.45, 0, 0.2, 1] }); alive()
-      setCaptionLeft(fx.get() > window.innerWidth - 170)
-      setCaption("FLING TO THROW")
+      say(UI.demo.fling)
       place(c, rC)
       await Promise.all([
-        run(animate(fs, 0.82, { duration: 0.12 })),
+        press(),
         run(animate(c.o, 1, { duration: 0.15 })),
         run(animate(co, 1, { duration: 0.25 })),
       ]); alive()
@@ -226,7 +338,6 @@ export function ThrowDemo({
       // finger after it — straight off the bottom edge, so the one moment
       // worth seeing happened out of frame. Thrown upward it crosses the whole
       // screen. It also travels a little slower there, so the eye can follow it.
-      const phone = window.matchMedia("(max-width: 767px)").matches
       const raw = phone
         ? { x: Math.sign(window.innerWidth / 2 - cC.x) * 0.3, y: -1 }
         : flightVector(outer[1], flight)
@@ -236,7 +347,7 @@ export function ThrowDemo({
       const out = { duration: phone ? 0.75 : 0.5, ease: [0.15, 0.6, 0.35, 1] as const }
       await Promise.all([
         point({ x: cC.x + dir.x * 90, y: cC.y + dir.y * 90 }, { duration: 0.16, ease: "easeOut" }),
-        run(animate(fs, 1, { duration: 0.16 })),
+        release(),
         run(animate(c.x, rC.x + dir.x * far, out)),
         run(animate(c.y, rC.y + dir.y * far, out)),
         run(animate(c.r, Math.sign(dir.x || 1) * 320, out)),
@@ -290,18 +401,20 @@ export function ThrowDemo({
   if (!active) return null
 
   return (
-    <div className="fixed inset-0 z-40 pointer-events-none">
+    // Above the dock (z-50): the tour's first stop is the tabs, and beneath
+    // the dock the finger and outlines were simply hidden.
+    <div className="fixed inset-0 z-[55] pointer-events-none">
       {/* The overlay ignores input; this is the one thing on it that doesn't.
           Its own pointerdown already ends the demo — the click is for
           keyboard users and screen readers. */}
       <motion.button
         type="button"
         onClick={() => cancel.current?.()}
-        aria-label="Close the demonstration"
-        className="pointer-events-auto absolute top-3 right-3 md:top-4 md:right-4 z-10 flex items-center gap-2 px-3 py-2 border border-mid/30 bg-bg/70 backdrop-blur-sm text-mid hover:text-fg hover:border-fg/60 transition-colors"
+        aria-label={UI.demo.skipAria}
+        className="pointer-events-auto absolute top-3 right-3 md:top-4 md:right-4 z-10 flex items-center gap-2 px-3 py-2 border border-fg/50 bg-bg/80 backdrop-blur-sm text-fg shadow-glow-sm hover:border-fg hover:shadow-glow transition-[border-color,box-shadow] duration-300 [text-shadow:0_0_8px_rgba(240,240,240,0.5)]"
         style={{ opacity: fo }}
       >
-        <span className="font-mono text-[9px] uppercase tracking-[0.22em]">SKIP DEMO</span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.22em]">{UI.demo.skip}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
           <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" />
         </svg>
@@ -332,8 +445,8 @@ export function ThrowDemo({
           <circle cx="23" cy="66" r="2.5" />
         </motion.svg>
         {/* Backed: mid-screen it lands on top of card copy. */}
-        <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid/80 whitespace-nowrap px-2.5 py-1.5 bg-bg/85">
-          SHAKE TO RESET
+        <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-fg/90 whitespace-nowrap px-2.5 py-1.5 bg-bg/85 [text-shadow:0_0_8px_rgba(240,240,240,0.45)]">
+          {UI.demo.shake}
         </span>
       </motion.div>
 
@@ -344,11 +457,21 @@ export function ThrowDemo({
       {/* The finger. Its tip is the tracked point: the icon is 24 units with
           the tip at (8, 2), drawn at 40px. */}
       <motion.div className="absolute left-0 top-0" style={{ x: fx, y: fy, opacity: fo }}>
+        {/* The light under the fingertip. Dark between touches; each press
+            flashes it on and spreads it out as it fades (see flash()). */}
+        <motion.span
+          className="absolute -left-7 -top-7 w-14 h-14 rounded-full pointer-events-none"
+          style={{
+            opacity: ho,
+            scale: hs,
+            background: "radial-gradient(circle, rgba(240,240,240,0.55) 0%, rgba(240,240,240,0.18) 42%, transparent 70%)",
+          }}
+        />
         <motion.svg
           width="40" height="40" viewBox="0 0 24 24" fill="none"
-          className="text-mid/60 -translate-x-[13px] -translate-y-[3px] origin-[13px_3px] drop-shadow-[0_0_6px_rgba(170,170,170,0.25)]"
-          style={{ scale: fs }}
-          stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"
+          className="text-fg/85 -translate-x-[13px] -translate-y-[3px] origin-[13px_3px] [filter:drop-shadow(0_0_4px_rgba(240,240,240,0.75))_drop-shadow(0_0_14px_rgba(240,240,240,0.35))]"
+          style={{ scale: fs, rotate: fr }}
+          stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round"
         >
           {/* Lucide "pointer" (ISC). */}
           <path d="M22 14a8 8 0 0 1-8 8" />
@@ -357,14 +480,23 @@ export function ThrowDemo({
           <path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10" />
           <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
         </motion.svg>
-        <motion.span
-          className={`absolute top-9 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.24em] text-mid/60 ${
-            captionLeft ? "right-8" : "left-6"
+      </motion.div>
+
+      {/* The caption: follows the finger vertically, placed horizontally by
+          capX so it never leaves the screen. */}
+      <motion.div className="absolute left-0 top-0" style={{ x: capX, y: fy, opacity: co }}>
+        <span
+          ref={captionRef}
+          // Near-white and lit like the finger it belongs to, on a light dark
+          // backing so it still reads where it crosses card copy.
+          className={`absolute left-0 whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.24em] text-fg/90 px-1.5 py-0.5 bg-bg/60 [text-shadow:0_0_8px_rgba(240,240,240,0.45)] ${
+            // Clear of what the finger is touching: above, it sits over the
+            // dock's top edge rather than across the tab labels.
+            captionAbove ? "-top-14" : "top-11"
           }`}
-          style={{ opacity: co }}
         >
           {caption}
-        </motion.span>
+        </span>
       </motion.div>
       </div>
     </div>

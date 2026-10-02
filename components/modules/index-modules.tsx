@@ -1,17 +1,18 @@
 "use client"
-import { EMPLOYER, IDENTITY, PROJECTS, ROLES, STATS, STATS_DETAIL } from "@/lib/content"
+import { useContent } from "@/lib/i18n"
 import { Counter } from "@/components/ui/counter"
 import { GlowRule, Label, LiveDot, Tag } from "@/components/ui/bits"
 import type { TabId } from "@/lib/grid"
 
 export function Status() {
+  const { IDENTITY, UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5">
-      <Label>STATUS</Label>
+      <Label>{UI.status.label}</Label>
       <div className="flex items-center gap-2.5">
         <LiveDot />
         <span className="font-display text-fg leading-none tracking-tight text-[clamp(1.1rem,min(14cqw,24cqh),2.5rem)]">
-          OPEN
+          {UI.status.value}
         </span>
       </div>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim leading-relaxed">
@@ -22,9 +23,10 @@ export function Status() {
 }
 
 export function Stats() {
+  const { STATS, UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[300px]:p-5">
-      <Label>BY THE NUMBERS</Label>
+      <Label>{UI.stats.label}</Label>
       {/* Column count follows the data — the row fills whether STATS holds two
           entries or four, with no class to keep in sync. */}
       <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${STATS.length}, minmax(0, 1fr))` }}>
@@ -52,9 +54,10 @@ export function Stats() {
  * portrait box, three in a landscape one.
  */
 export function StatsDetail() {
+  const { STATS_DETAIL, UI } = useContent()
   return (
     <div className="h-full flex flex-col p-4 @[420px]:p-6 gap-4 min-h-0">
-      <Label right={`${STATS_DETAIL.length} FIGURES`}>BY THE NUMBERS</Label>
+      <Label right={UI.stats.figures(STATS_DETAIL.length)}>{UI.stats.label}</Label>
       <div className="stats-detail flex-1 min-h-0 grid gap-x-4 @[420px]:gap-x-6">
         {STATS_DETAIL.map((s, i) => (
           <div key={s.label} className="flex flex-col justify-end gap-2 border-t border-hairline pt-3 pb-1 min-h-0 min-w-0">
@@ -75,12 +78,13 @@ export function StatsDetail() {
 }
 
 export function Location() {
+  const { IDENTITY, UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5 overflow-hidden">
-      <Label>BASED</Label>
+      <Label>{UI.location.label}</Label>
       <div>
         <span className="font-display text-fg leading-[0.9] block tracking-tight text-[clamp(1.25rem,min(18cqw,26cqh),3.25rem)]">
-          BEIRUT
+          {UI.location.city}
         </span>
         <div className="cq-h100">
           <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-dim mt-1.5 block">
@@ -89,7 +93,7 @@ export function Location() {
         </div>
       </div>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-mid">
-        GMT+3 · REMOTE-READY
+        {UI.location.note}
       </span>
     </div>
   )
@@ -97,13 +101,14 @@ export function Location() {
 
 /** Deep-links into the WORK tab. */
 export function Latest({ onGo }: { onGo: (t: TabId) => void }) {
+  const { PROJECTS, UI } = useContent()
   const p = PROJECTS[0]
   return (
     <button
       onClick={() => onGo("work")}
-      className="h-full w-full text-left flex flex-col justify-between p-4 @[300px]:p-5 group"
+      className="h-full w-full text-start flex flex-col justify-between p-4 @[300px]:p-5 group"
     >
-      <Label right={p.year}>MOST RECENT</Label>
+      <Label right={p.year}>{UI.latest.label}</Label>
       <div className="min-w-0">
         <span className="font-display text-fg leading-[0.88] block tracking-tight whitespace-pre-line text-[clamp(1.1rem,min(11cqw,17cqh),2.5rem)]">
           {p.title}
@@ -119,7 +124,7 @@ export function Latest({ onGo }: { onGo: (t: TabId) => void }) {
         </div>
       </div>
       <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid group-hover:text-fg transition-colors flex items-center gap-2">
-        ALL WORK <span aria-hidden>→</span>
+        {UI.latest.cta} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span>
       </span>
     </button>
   )
@@ -130,13 +135,14 @@ export function Latest({ onGo }: { onGo: (t: TabId) => void }) {
  * Rung width encodes seniority so the climb is legible at a glance.
  */
 export function Experience({ onOpen }: { onOpen?: () => void }) {
+  const { EMPLOYER, ROLES, UI } = useContent()
   const Shell = onOpen ? "button" : "div"
   return (
     <Shell
       {...(onOpen ? { onClick: onOpen, type: "button" as const } : {})}
-      className="group h-full w-full text-left flex flex-col p-4 @[420px]:p-5 gap-3 min-h-0"
+      className="group h-full w-full text-start flex flex-col p-4 @[420px]:p-5 gap-3 min-h-0"
     >
-      <Label right={EMPLOYER.span}>EXPERIENCE — {EMPLOYER.name}</Label>
+      <Label right={EMPLOYER.span}>{UI.experience.label} — {EMPLOYER.name}</Label>
 
       <div className="flex-1 min-h-0 flex flex-col justify-between gap-1.5">
         {ROLES.map((r) => (
@@ -179,8 +185,8 @@ export function Experience({ onOpen }: { onOpen?: () => void }) {
           {["REACT NATIVE", "NEXT.JS", "GRAPHQL", "TYPESCRIPT"].map((s) => <Tag key={s}>{s}</Tag>)}
         </div>
         {onOpen && (
-          <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-dim group-hover:text-fg transition-colors flex items-center gap-2 shrink-0 ml-auto">
-            EXPAND <span aria-hidden>↗</span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-dim group-hover:text-fg transition-colors flex items-center gap-2 shrink-0 ms-auto">
+            {UI.expand} <span aria-hidden className="inline-block rtl:-scale-x-100">↗</span>
           </span>
         )}
       </div>
@@ -193,9 +199,10 @@ export function Experience({ onOpen }: { onOpen?: () => void }) {
  * its own stack — the card can only ever show two clamped lines.
  */
 export function ExperienceDetail() {
+  const { EMPLOYER, ROLES, UI } = useContent()
   return (
     <div className="h-full flex flex-col p-5 @[700px]:p-6 gap-4 min-h-0 overflow-y-auto">
-      <Label right={EMPLOYER.span}>EXPERIENCE — {EMPLOYER.name}</Label>
+      <Label right={EMPLOYER.span}>{UI.experience.label} — {EMPLOYER.name}</Label>
 
       <div className="shrink-0">
         <h2 className="font-display text-fg leading-[0.86] tracking-tight text-[clamp(1.75rem,min(9cqw,14cqh),4.5rem)]">
@@ -232,7 +239,7 @@ export function ExperienceDetail() {
                   {r.title}
                 </span>
                 <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-dim shrink-0">
-                  {r.from} — {r.to} · {r.months} MOS · {r.type}
+                  {r.from} — {r.to} · {r.months} {UI.experience.months} · {r.type}
                 </span>
               </div>
 

@@ -16,7 +16,14 @@ import {
  * travels on it. Both matter: the angle comes from the cell's position in the
  * grid, and the distance has to clear the viewport that grid is filling.
  */
-export type FlightGrid = { cols: number; rows: number; travelX: number; travelY: number }
+export type FlightGrid = {
+  cols: number; rows: number; travelX: number; travelY: number
+  /**
+   * Arabic. CSS grid counts columns from the right, so column 1 is on the
+   * right edge — a card there must fly right, not left. Mirrors the heading.
+   */
+  rtl?: boolean
+}
 
 /** Beyond the viewport in both axes. */
 export const DESKTOP_FLIGHT: FlightGrid = {
@@ -50,7 +57,8 @@ export type Vector = { x: number; y: number; rotate: number; radius: number }
  * Cards left of centre fly left, top fly up, corners fly diagonally.
  */
 export function flightVector(p: Placement, g: FlightGrid = DESKTOP_FLIGHT): Vector {
-  const { cx, cy } = placementCenter(p, g.cols, g.rows)
+  const { cx: lx, cy } = placementCenter(p, g.cols, g.rows)
+  const cx = g.rtl ? 1 - lx : lx
   const dx = cx - 0.5
   const dy = cy - 0.5
 

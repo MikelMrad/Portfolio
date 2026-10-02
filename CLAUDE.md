@@ -345,13 +345,49 @@ appears once a tab has been rearranged.
 - **`x`/`y`/`scale`/`rotate` are the card's own motion values**, passed through
   `style`, so the scatter variants, the drag, the throw and the slide all drive
   the same four numbers rather than fighting over the transform.
-- **`ThrowDemo`** (`throw-demo.tsx`) plays on every load once the grid first
-  settles: a faint grey finger swaps two cards and flings a third. It is a
-  ghost — outlines drawn over the grid, never the real cards — so stopping it
-  (SKIP DEMO, Esc, or any touch of the page) can't leave a half-done swap.
+- **`ThrowDemo`** (`throw-demo.tsx`) is the guided tour that plays on every
+  load, 0.5s after the boot drawing hands over: the dock's tabs, opening a
+  card, swapping, flinging, and (phone grid only) shake-to-reset. It is a ghost
+  — outlines drawn over the grid, never the real cards or tabs — so it can play
+  over a visitor who is already exploring. Only SKIP DEMO ends it; a tab switch
+  or an opened card stops it too, since the outlines belong to this layout.
+- **Shake to reset** (`shake.ts`, phone grid only): a shake bumps `shakeGen`,
+  which is in every card's key, so the set scatters and gathers back into the
+  tab's original layout. iOS gates motion behind a permission that is armed on
+  the first swap or fling and asked on the tap after.
 - Drag starts manually (`dragListener={false}`) so form fields are exempt, and a
   drag that ends on a button swallows the click. Disabled while `busy`, in an
   expanded view, and in the scaled phone canvas (whose drag is pan).
+
+### English and Arabic
+
+The dock's language toggle (`عربي` / `EN`) switches the whole site, and Arabic
+is a mirrored site, not a translated one. `lib/i18n.tsx` explains the design;
+the rules worth knowing before touching anything:
+
+- **Copy lives in two files of one shape.** `lib/content.ts` is English and
+  defines `Content` (including `UI`, every interface string); `lib/content-ar.ts`
+  implements it, so a missing Arabic string is a type error. Components read
+  `useContent()` — never the English constants, which remain only for the
+  server-side link preview and metadata. **New copy goes in both files.**
+- **The language is on `<html>`** (`lang` + `dir`), set before first paint by
+  `LANG_BOOT` (`lib/lang-boot.ts`, inlined in `<head>`) from `?lang=` or the
+  saved choice, so the server-rendered boot drawing is mirrored on frame one.
+- **CSS does the mirroring** — grid, flex and logical properties. So: write
+  `ms-*`/`me-*`, `start-*`/`end-*`, `text-start`, `border-e`, never left/right.
+  Directional arrows get `rtl:-scale-x-100`.
+- **Hand-positioned things are mirrored explicitly:** `rectFor(..., cols, rtl)`
+  for the identity card, `FlightGrid.rtl` for flight headings, and the ←/→ keys.
+- **Latin inside Arabic needs `dir="ltr"`** wherever bidi would reorder it: the
+  name (".MRAD"), tech names ("++C"), the phone number, the footer, counters
+  ("+10"). Tags and stack rows already do it.
+- **Arabic fonts** (IBM Plex Sans Arabic, Noto Kufi Arabic) are self-hosted
+  Arabic-only subsets behind the Latin fonts in the stacks, never preloaded —
+  English visitors never fetch them. `globals.css` zeroes letter-spacing and
+  loosens display leading under `lang="ar"`: tracking breaks Arabic's joined
+  letters, and Latin-tight leading clips its dots.
+- Card keys carry the language, so switching scatters the set and gathers it
+  into the mirrored grid while the identity card glides across.
 
 ### Routing
 

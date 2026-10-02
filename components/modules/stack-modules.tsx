@@ -1,22 +1,24 @@
 "use client"
-import { EDUCATION, STACK, TECH_COUNT, type StackCategory } from "@/lib/content"
+import type { StackCategory } from "@/lib/content"
+import { useContent } from "@/lib/i18n"
 import { Counter } from "@/components/ui/counter"
 import { Label } from "@/components/ui/bits"
 
 export function TechCount() {
+  const { STACK, TECH_COUNT, UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5">
-      <Label>TOOLBOX</Label>
+      <Label>{UI.toolbox.label}</Label>
       <div>
         <span className="font-display text-fg leading-none block text-[clamp(1.5rem,min(22cqw,26cqh),3.75rem)]">
           <Counter to={TECH_COUNT} delay={450} />
         </span>
         <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim block mt-1">
-          TECHNOLOGIES
+          {UI.toolbox.technologies}
         </span>
       </div>
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-mid leading-relaxed">
-        {STACK.length} CATEGORIES
+        {UI.toolbox.categories(STACK.length)}
       </span>
     </div>
   )
@@ -35,7 +37,9 @@ export function Category({ cat }: { cat: StackCategory }) {
             key={skill}
             className="flex-1 min-h-0 flex items-center justify-between gap-2 border-b border-hairline last:border-0 group"
           >
-            <span className="font-mono text-[10px] @[240px]:text-[11px] uppercase tracking-[0.12em] text-mid group-hover:text-fg transition-colors truncate">
+            {/* Technology names are Latin in both languages; isolated, or an
+                RTL line turns "C++" into "++C". */}
+            <span dir="ltr" className="font-mono text-[10px] @[240px]:text-[11px] uppercase tracking-[0.12em] text-mid group-hover:text-fg transition-colors truncate">
               {skill}
             </span>
             <span className="font-mono text-[8px] tracking-[0.16em] text-dim shrink-0 tabular-nums">
@@ -49,9 +53,10 @@ export function Category({ cat }: { cat: StackCategory }) {
 }
 
 export function Education() {
+  const { EDUCATION, UI } = useContent()
   return (
     <div className="h-full flex flex-col p-4 @[260px]:p-5 gap-3 min-h-0">
-      <Label>EDUCATION</Label>
+      <Label>{UI.education.label}</Label>
       {/*
         `safe center` rather than plain centring. When the two entries are taller
         than the card — a 360px phone gives this three rows, ~133px — centred

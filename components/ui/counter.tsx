@@ -24,5 +24,7 @@ export function Counter({ to, suffix = "", delay = 0 }: { to: number; suffix?: s
     return () => { clearTimeout(timer); cancelAnimationFrame(raf.current) }
   }, [to, delay])
 
-  return <span>{val}{suffix}</span>
+  // Isolated left-to-right: in an Arabic line the trailing "+" would otherwise
+  // be reordered to the front ("+10").
+  return <span dir="ltr">{val}{suffix}</span>
 }
