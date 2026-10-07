@@ -375,8 +375,8 @@ the rules worth knowing before touching anything:
   `useContent()` — never the English constants, which remain only for the
   server-side link preview and metadata. **New copy goes in both files.**
 - **The language is on `<html>`** (`lang` + `dir`), set before first paint by
-  `LANG_BOOT` (`lib/lang-boot.ts`, inlined in `<head>`) from `?lang=` or the
-  saved choice, so the server-rendered boot drawing is mirrored on frame one.
+  `LANG_BOOT` (`lib/lang-boot.ts`, inlined in `<head>`) from `?lang=`, the
+  saved choice, or else the device language (Arabic only if it is Arabic), so the server-rendered boot drawing is mirrored on frame one.
 - **CSS does the mirroring** — grid, flex and logical properties. So: write
   `ms-*`/`me-*`, `start-*`/`end-*`, `text-start`, `border-e`, never left/right.
   Directional arrows get `rtl:-scale-x-100`.
