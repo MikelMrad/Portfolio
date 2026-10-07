@@ -150,20 +150,22 @@ export function ThrowDemo({
   }, [ready])
 
   /**
-   * Rotation mid-tour: the outlines it was drawing belong to the previous grid,
-   * so stop and play it again on the new one. A tour that already finished, or
-   * was skipped, stays finished.
+   * Rotation or a language switch mid-tour: the outlines belong to the previous
+   * (or unmirrored) grid, and the script's captions were read when it started —
+   * left running, an Arabic visitor who switched to English kept Arabic
+   * captions. Stop and play it again. A tour that already finished, or was
+   * skipped, stays finished.
    */
-  const lastPortrait = useRef(portrait)
+  const lastLayout = useRef({ portrait, UI })
   useEffect(() => {
-    if (lastPortrait.current === portrait) return
-    lastPortrait.current = portrait
+    if (lastLayout.current.portrait === portrait && lastLayout.current.UI === UI) return
+    lastLayout.current = { portrait, UI }
     if (!runningTour.current) return
     cancel.current?.()
     played.current = false
     startDelay.current = 1100
     setReplay((n) => n + 1)
-  }, [portrait])
+  }, [portrait, UI])
 
   useEffect(() => {
     if (!ready || played.current) return
