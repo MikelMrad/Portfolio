@@ -16,10 +16,11 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react"
  *   drops its shake step rather than promise something that can't work.
  * - **Permission**, which iOS only lets a page ask for from a tap. Asking on
  *   load would put a system dialog in front of someone who hasn't done
- *   anything, so it is asked at the two moments shake means something: the
- *   tour's shake step offers a "turn on" button (`requestMotionPermission`),
- *   and the first swap or fling arms a request on the next tap
- *   (`armMotionPermission`).
+ *   anything, so it is asked at the two moments shake means something: when
+ *   the tour ends or is skipped, a popup offers it (ThrowDemo), and the first
+ *   swap or fling arms a request on the next tap (`armMotionPermission`).
+ *   Before that popup existed, a visitor who skipped the tour and never
+ *   rearranged a card was never asked — and got no motion events at all.
  * - **Not reduced motion.** It used to be off under Reduce Motion; a shake is
  *   the visitor's own gesture, not decoration, and the reset it triggers
  *   already honours the preference.
@@ -63,19 +64,32 @@ export function motionPermission(): Permission {
   return permission
 }
 
+/** A request is waiting on the next tap (armMotionPermission). */
+let permissionArmed = false
+
+/** The request in flight — an armed tap and the popup's ENABLE can land together. */
+let asking: Promise<boolean> | null = null
+
 /** Ask now. Must be called from a tap handler — iOS ignores it otherwise. */
-export async function requestMotionPermission(): Promise<boolean> {
-  if (motionPermission() !== "unknown") return permission !== "denied"
+export function requestMotionPermission(): Promise<boolean> {
+  if (motionPermission() !== "unknown") return Promise.resolve(permission !== "denied")
+  asking ??= ask().finally(() => { asking = null })
+  return asking
+}
+
+async function ask(): Promise<boolean> {
   try {
     permission = (await motionApi()!.requestPermission!()) === "granted" ? "granted" : "denied"
   } catch {
-    permission = "denied"
+    // Thrown, not answered: iOS refused to *ask*, because this didn't come
+    // from a tap it counts. Recording that as a denial would end shake for
+    // the visit without the visitor ever seeing a prompt — leave it open.
+    permissionArmed = false
+    return false
   }
   permissionListeners.forEach((fn) => fn())
   return permission === "granted"
 }
-
-let permissionArmed = false
 
 /**
  * Ask on the visitor's next tap, if it still needs asking. Called after the
@@ -84,9 +98,12 @@ let permissionArmed = false
 export function armMotionPermission() {
   if (permissionArmed || motionPermission() !== "unknown") return
   permissionArmed = true
-  // touchend, not pointerdown: iOS only honours the request from a completed
-  // user gesture.
-  window.addEventListener("touchend", () => { void requestMotionPermission() }, { once: true, passive: true })
+  // click, not pointerdown or touchend: iOS only honours the request from a
+  // completed tap, and the touchend that ends a drag isn't one. Attached after
+  // this event, so the gesture that armed it can't spend it.
+  setTimeout(() => {
+    window.addEventListener("click", () => { void requestMotionPermission() }, { once: true, capture: true })
+  }, 0)
 }
 
 /**

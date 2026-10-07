@@ -357,7 +357,8 @@ export const UI = {
     swap: "DRAG ONTO ANOTHER TO SWAP",
     fling: "FLING TO THROW",
     shake: "SHAKE TO RESET",
-    enableShake: "TAP TO TURN ON SHAKE",
+    shakeOffer: "SHAKE YOUR PHONE TO RESET THE GRID",
+    shakeEnable: "ENABLE", shakeLater: "NOT NOW",
     skip: "SKIP DEMO", skipAria: "Close the demonstration",
   },
 }

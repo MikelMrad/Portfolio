@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
-import { animate, motion, useMotionValue, useTransform, type MotionValue } from "motion/react"
+import { AnimatePresence, animate, motion, useMotionValue, useTransform, type MotionValue } from "motion/react"
 import type { ModuleId, Placement } from "@/lib/grid"
 import { useContent } from "@/lib/i18n"
 import { flightVector, rankByRadius, type FlightGrid } from "@/lib/scatter"
@@ -90,7 +90,9 @@ export function ThrowDemo({
   /** Delay before the finger appears; longer for a replay, which has to wait
    *  for the rotation's own scatter and gather to land. */
   const startDelay = useRef(START_DELAY_MS)
-  const cancel = useRef<(() => void) | null>(null)
+  /** Stops the tour. `replaying` (rotation, language) means it plays again, so
+   *  it doesn't count as the end — see the shake offer. */
+  const cancel = useRef<((replaying?: boolean) => void) | null>(null)
 
   const fx = useMotionValue(0)
   const fy = useMotionValue(0)
@@ -135,10 +137,11 @@ export function ThrowDemo({
   const [all, setAll] = useState<Rect[]>([])
   /**
    * iOS only: shake needs a permission the page may only ask for from a tap.
-   * The shake step shows a "turn on" button and waits — this resolves it.
+   * When the tour ends — played through, skipped, or cut short by a card
+   * opening — a small popup offers it; its ENABLE is the tap iOS needs. Asked
+   * after the tour rather than during it, so a visitor who skips still gets it.
    */
-  const [askShake, setAskShake] = useState(false)
-  const shakeAnswered = useRef<(() => void) | null>(null)
+  const [offerShake, setOfferShake] = useState(false)
   const a = useGhost()
   const b = useGhost()
   const c = useGhost()
@@ -161,7 +164,7 @@ export function ThrowDemo({
     if (lastLayout.current.portrait === portrait && lastLayout.current.UI === UI) return
     lastLayout.current = { portrait, UI }
     if (!runningTour.current) return
-    cancel.current?.()
+    cancel.current?.(true)
     played.current = false
     startDelay.current = 1100
     setReplay((n) => n + 1)
@@ -178,10 +181,11 @@ export function ThrowDemo({
     const wait = (ms: number) => new Promise<void>((res) => setTimeout(res, ms))
     const alive = () => { if (stopped) throw new Error("stopped") }
 
-    const stop = () => {
+    const stop = (replaying = false) => {
       if (stopped) return
       stopped = true
       runningTour.current = false
+      if (!replaying && touch && shakeAvailable() && motionPermission() === "unknown") setOfferShake(true)
       running.forEach((r) => r.stop())
       // Fade out from wherever it got to, however it was interrupted.
       Promise.all([fo, co, po, go, a.o, b.o, c.o].map((v) => animate(v, 0, { duration: 0.25 })))
@@ -421,17 +425,6 @@ export function ThrowDemo({
           run(animate(po, 1, { duration: 0.3 })),
           run(animate(go, 1, { duration: 0.3 })),
         ]); alive()
-        // iOS: ask now — the visitor is being told about the gesture — and
-        // wait for the answer, or ~5s, before showing it off.
-        if (motionPermission() === "unknown") {
-          setAskShake(true)
-          await Promise.race([
-            new Promise<void>((done) => { shakeAnswered.current = done }),
-            wait(5000),
-          ]); alive()
-          shakeAnswered.current = null
-          setAskShake(false)
-        }
         const shakeOnce = { duration: 0.75, ease: "easeInOut" as const }
         for (let i = 0; i < 2; i++) {
           await Promise.all([
@@ -453,11 +446,56 @@ export function ThrowDemo({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, replay])
 
-  if (!active) return null
+  const shakeOffer = (
+    <AnimatePresence>
+      {offerShake && (
+        <motion.div
+          key="shake-offer"
+          role="dialog"
+          aria-label={UI.demo.shakeOffer}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 12 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          // Above the dock, clear of the tabs it would otherwise cover.
+          className="fixed inset-x-4 bottom-[4.5rem] z-[56] mx-auto max-w-xs flex flex-col items-center gap-3 px-4 py-3.5 border border-fg/50 bg-bg/90 backdrop-blur-sm text-fg shadow-glow-sm"
+        >
+          <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-center [text-shadow:0_0_8px_rgb(var(--glow)/calc(0.45*var(--glow-k)))]">
+            {UI.demo.shakeOffer}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                // From this tap, so iOS shows its prompt. The listener re-attaches
+                // on the answer (useShake).
+                setOfferShake(false)
+                void requestMotionPermission()
+              }}
+              className="font-mono text-[9px] uppercase tracking-[0.22em] px-3 py-2 border border-fg text-fg shadow-glow-sm"
+            >
+              {UI.demo.shakeEnable}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOfferShake(false)}
+              className="font-mono text-[9px] uppercase tracking-[0.22em] px-3 py-2 border border-transparent text-mid"
+            >
+              {UI.demo.shakeLater}
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+
+  if (!active) return shakeOffer
 
   return (
-    // Above the dock (z-50): the tour's first stop is the tabs, and beneath
-    // the dock the finger and outlines were simply hidden.
+    <>
+    {shakeOffer}
+    {/* Above the dock (z-50): the tour's first stop is the tabs, and beneath
+        the dock the finger and outlines were simply hidden. */}
     <div className="fixed inset-0 z-[55] pointer-events-none">
       {/* The overlay ignores input; this is the one thing on it that doesn't.
           Its own pointerdown already ends the demo — the click is for
@@ -503,18 +541,6 @@ export function ThrowDemo({
         <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-fg/90 whitespace-nowrap px-2.5 py-1.5 bg-bg/85 [text-shadow:0_0_8px_rgb(var(--glow)/calc(0.45*var(--glow-k)))]">
           {UI.demo.shake}
         </span>
-        {askShake && (
-          // The overlay ignores input; this button, like SKIP, doesn't.
-          <button
-            type="button"
-            onClick={() => {
-              void requestMotionPermission().finally(() => shakeAnswered.current?.())
-            }}
-            className="pointer-events-auto font-mono text-[9px] uppercase tracking-[0.22em] text-fg border border-fg/50 bg-bg/85 px-3 py-2 shadow-glow-sm"
-          >
-            {UI.demo.enableShake}
-          </button>
-        )}
       </motion.div>
 
       <GhostBox g={a} />
@@ -567,5 +593,6 @@ export function ThrowDemo({
       </motion.div>
       </div>
     </div>
+    </>
   )
 }

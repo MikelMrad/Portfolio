@@ -351,10 +351,12 @@ appears once a tab has been rearranged.
   or an opened card stops it too, since the outlines belong to this layout.
 - **Shake to reset** (`shake.tsx`, any touch screen): a shake bumps `shakeGen`,
   which is in every card's key, so the set scatters and gathers back into the
-  tab's original layout. iOS gates motion behind a permission that is armed on
-  the first swap or fling and asked on the tap after.
-  On iOS it needs https, a permission asked from a tap (the tour's shake step
-  offers a button), and a listener attached after that answer. **`?debug=shake`
+  tab's original layout. iOS gates motion behind a permission it only lets a
+  page ask for from a tap: when the tour ends or is skipped, a popup offers it
+  (ENABLE is that tap), and the first swap or fling also arms a request on the
+  next click. Without the popup, a visitor who skipped the tour was never asked
+  and got no motion events. On iOS it needs https, that permission, and a
+  listener attached after the answer. **`?debug=shake`
   shows a live readout** — secure page, permission, events, forces, spikes —
   for a phone that won't shake.
 - Drag starts manually (`dragListener={false}`) so form fields are exempt, and a
