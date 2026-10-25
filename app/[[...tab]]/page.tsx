@@ -4,7 +4,7 @@ import { GridBoot } from "@/components/grid/grid-boot"
 import { Stage } from "@/components/grid/stage"
 import { StaticCv } from "@/components/static-cv"
 import { TABS, type TabId } from "@/lib/grid"
-import { SITE_NAME, TAB_META, jsonLd, jsonLdScript } from "@/lib/seo"
+import { OG_IMAGE, SITE_NAME, TAB_META, jsonLd, jsonLdScript } from "@/lib/seo"
 
 type Params = { params: Promise<{ tab?: string[] }> }
 
@@ -48,11 +48,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       siteName: SITE_NAME,
       locale: "en_US",
       alternateLocale: ["ar_LB"],
+      images: [OG_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
       title: m.title,
       description: m.description,
+      images: [OG_IMAGE],
     },
   }
 }

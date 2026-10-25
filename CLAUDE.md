@@ -532,8 +532,10 @@ plays that role (`shadow-glow-sm` / `shadow-glow` / `shadow-glow-lg`, plus
 
 The sales copy (hero, services, prices, process, FAQ, project write-ups,
 experience blurbs) was supplied by Mikel in October 2026 and is final: change
-it only when asked. Every build includes a free first
-year of maintenance; after it, two yearly care plans (Care, Care+) live on the
-fourth service card (`plans` on the `care` entry). The Outlets is
+it only when asked. Builds include onboarding and free bug
+fixes (a year for stores and websites, 3 months for apps; `fixesNote` says what
+that covers), and two yearly care plans (Care, Care+) live on the fourth
+service card (`plans` on the `care` entry). Nothing offered may include data
+entry (adding a client's products or content). The Outlets is
 *Co-Founder & Developer since 2022*, with no sales figures. Uncle J has no live link and nothing on the site may say the
 store closed.

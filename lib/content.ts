@@ -69,42 +69,46 @@ export type Service = {
   plans?: CarePlan[]
 }
 
-/** What every build comes with: stores, websites and apps alike. */
-const INCLUDED = [
+/** What a build comes with. Stores and websites get a year of bug fixes,
+ *  apps three months. */
+const included = (fixes: string) => [
   "Onboarding: a walkthrough so you can run it yourself",
-  "1 year of free maintenance",
+  fixes,
   "Everything set up in your name, with full access",
 ]
 
 export const SERVICES = {
   label: "WHAT I BUILD",
+  /** Shown under the services: what free bug fixes do and don't cover. */
+  fixesNote:
+    "Bug fixes cover anything that breaks. New features and design changes are quoted separately or covered by a Care plan.",
   items: [
     {
       id: "stores", num: "01", title: "ONLINE\nSTORES",
       body: "Shopify stores built for how people here buy: WhatsApp orders, cash on delivery, Whish, delivery zones. Pixel and analytics ready for your ads.",
       price: "Starting at $600",
-      note: "Includes onboarding and 1 year of free maintenance",
-      includes: INCLUDED,
+      note: "Includes onboarding and 1 year of free bug fixes",
+      includes: included("1 year of free bug fixes"),
     },
     {
       id: "websites", num: "02", title: "WEBSITES",
       body: "Fast custom sites in English and Arabic, with real right-to-left layout, not flipped text. Built to show up on Google and turn visits into messages.",
       price: "Starting at $900",
-      note: "Includes onboarding and 1 year of free maintenance",
-      includes: INCLUDED,
+      note: "Includes onboarding and 1 year of free bug fixes",
+      includes: included("1 year of free bug fixes"),
     },
     {
       id: "apps", num: "03", title: "APPS",
       body: "iOS and Android apps in React Native, from booking systems to dashboards.",
       price: "Quoted after a call",
-      note: "Includes onboarding and 1 year of free maintenance",
-      includes: INCLUDED,
+      note: "Includes onboarding and 3 months of free bug fixes",
+      includes: included("3 months of free bug fixes"),
     },
     {
       id: "care", num: "04", title: "CARE\nPLANS",
-      body: "After your free first year, I keep your site running and up to date. Care covers maintenance and small changes; Care+ adds more for a growing business.",
+      body: "After launch, I keep your site running and up to date. Care covers maintenance and small changes; Care+ adds more for a growing business.",
       price: "From $200 a year",
-      note: "Starts after your free first year",
+      note: "Available any time after launch",
       plans: [
         {
           name: "CARE",
@@ -120,7 +124,7 @@ export const SERVICES = {
           price: "$450 a year",
           items: [
             "Everything in Care",
-            "Bigger changes: new sections and pages",
+            "Up to 1 new section or page per quarter",
             "Speed and SEO checkups",
             "Onboarding for new staff",
             "Priority support, replies within 24 hours",
@@ -139,7 +143,7 @@ export const PROCESS = {
     { title: "Free call",                 body: "20 minutes to understand your business and what you need." },
     { title: "Fixed quote in 48 hours",   body: "One price, a clear scope, no surprises." },
     { title: "Weekly previews",           body: "You see progress every week and give feedback as we go." },
-    { title: "Launch and support",        body: "I launch it, train you, and look after it free for the first year." },
+    { title: "Launch and support",        body: "I launch it, train you, and fix any bug free for a year (3 months for apps)." },
   ],
 }
 
@@ -170,7 +174,7 @@ export const FAQ = {
     },
     {
       q: "What happens after launch?",
-      a: "Your first year of maintenance is free. After that, you can keep it on a Care or Care+ plan.",
+      a: "Stores and websites get 1 year of free bug fixes, and apps get 3 months. After that, you can keep it on a Care or Care+ plan.",
     },
   ],
 }

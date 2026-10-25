@@ -22,6 +22,13 @@ export const SITE_TITLE = "Mikel Mrad | Online stores and websites for Lebanon, 
 export const SITE_DESCRIPTION =
   "Developer in Beirut. I build Shopify stores, Next.js websites and apps for businesses in Lebanon, the Gulf and anywhere in the world, in Arabic and English. Available for freelance."
 
+/**
+ * The link preview (app/opengraph-image.tsx), named in metadata explicitly:
+ * a route that sets its own openGraph/twitter objects replaces the parent's,
+ * and the file convention's image went with them, so no og:image was output.
+ */
+export const OG_IMAGE = { url: "/opengraph-image", width: 1200, height: 630, alt: SITE_TITLE, type: "image/png" }
+
 const cap = (s: string) =>
   s.toLowerCase().replace(/(^|[\s/-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase())
 
@@ -40,7 +47,7 @@ export const TAB_META: Record<TabId, { path: string; title: string; description:
     path: "/about",
     title: `How I work | ${SITE_NAME}`,
     description:
-      "Free call, fixed quote in 48 hours, weekly previews, then launch with a free first year of maintenance. Front-end and mobile lead at York Press, building with Next.js, React Native and Shopify.",
+      "Free call, fixed quote in 48 hours, weekly previews, then launch with free bug fixes: a year for stores and websites, 3 months for apps. Front-end and mobile lead at York Press, building with Next.js, React Native and Shopify.",
   },
   contact: {
     path: "/contact",
@@ -73,7 +80,7 @@ export function jsonLd() {
         makesOffer: SERVICES.items.map((s) => ({
           "@type": "Offer",
           name: cap(s.title.replace("\n", " ")),
-          description: s.body,
+          description: s.note ? `${s.body} ${s.note}.` : s.body,
         })),
       },
       {

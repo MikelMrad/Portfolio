@@ -39,6 +39,7 @@ export function StaticCv() {
 
       <section>
         <h2>{SERVICES.label}</h2>
+        <p>{SERVICES.fixesNote}</p>
         {SERVICES.items.map((s) => (
           <section key={s.id}>
             <h3>{s.title.replace("\n", " ")}</h3>

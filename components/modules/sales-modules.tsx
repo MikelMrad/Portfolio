@@ -154,6 +154,14 @@ export function ServiceCard({ svc, onOpen }: { svc: Service; onOpen?: () => void
             ))}
           </div>
         )}
+
+        {/* What the free bug fixes do and don't cover, under the detail of
+            every opened service. */}
+        {!onOpen && (
+          <p className="font-mono text-[9px] @[480px]:text-[10px] leading-relaxed text-dim max-w-[70ch]">
+            {SERVICES.fixesNote}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 shrink-0">

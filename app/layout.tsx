@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { JetBrains_Mono, Barlow_Condensed } from "next/font/google"
 import localFont from "next/font/local"
 import { CONTACT } from "@/lib/config"
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo"
+import { OG_IMAGE, SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo"
 import { PREFS_BOOT } from "@/lib/lang-boot"
 import "./globals.css"
 
@@ -61,16 +61,15 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   // Link previews need absolute URLs; app/opengraph-image.tsx supplies the image.
   metadataBase: new URL(CONTACT.site),
-  openGraph: { type: "website", title: SITE_TITLE, description: SITE_DESCRIPTION, siteName: "Mikel Mrad" },
-  twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
+  openGraph: { type: "website", title: SITE_TITLE, description: SITE_DESCRIPTION, siteName: "Mikel Mrad", images: [OG_IMAGE] },
+  twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION, images: [OG_IMAGE] },
 }
 
 export const viewport: Viewport = {
   themeColor: "#0a0a0a",
-  // The page is a fixed canvas — stop mobile browsers from rubber-banding it.
+  // No maximum-scale: pinch zoom stays available, an accessibility must.
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

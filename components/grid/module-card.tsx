@@ -322,7 +322,9 @@ export function ModuleCard({
         x, y, scale, rotate,
         willChange: "transform, opacity",
         zIndex: lift ?? undefined,
-        touchAction: throwable?.enabled ? "none" : undefined,
+        // One finger drags the card, so the browser mustn't pan; two still
+        // pinch-zoom the page. "none" here blocked zoom over every card.
+        touchAction: throwable?.enabled ? "pinch-zoom" : undefined,
       }}
       className={`module @container [container-type:size] min-h-0 min-w-0 hover:border-fg/35 hover:shadow-glow ${
         lifted ? "!border-fg/60 shadow-glow-lg" : ""
