@@ -226,6 +226,8 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
    * as a tab switch, landing on the tab's original layout.
    */
   const [shakeGen, setShakeGen] = useState(0)
+  /** Bumped by the dock's WATCH DEMO — the tour plays only when asked. */
+  const [demoGen, setDemoGen] = useState(0)
   /** The card another card is currently being dragged over. */
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   const { portrait, touch, resolved } = useViewportMode()
@@ -780,10 +782,11 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
           portrait grid, not a squeezed landscape one. */}
       <div className="h-dvh w-full overflow-hidden">{grid}</div>
 
-      {/* Shows the throwable cards off, once, after the first settle. */}
+      {/* The guided tour — only when the visitor asks for it (the dock). */}
       {resolved && booted && (
         <ThrowDemo
           ready={!open && !zoom && !reduced}
+          play={demoGen}
           cards={entries}
           flight={flight}
           touch={touch}
@@ -799,6 +802,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
         detailOpen={!!open || !!zoom}
         onReset={swaps[layoutKey] && !open && !zoom ? resetCards : undefined}
         onToggleLang={toggleLang}
+        onDemo={resolved && booted && !open && !zoom && !reduced ? () => setDemoGen((n) => n + 1) : undefined}
       />
     </main>
     </LangProvider>

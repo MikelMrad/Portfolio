@@ -343,8 +343,10 @@ appears once a tab has been rearranged.
 - **`x`/`y`/`scale`/`rotate` are the card's own motion values**, passed through
   `style`, so the scatter variants, the drag, the throw and the slide all drive
   the same four numbers rather than fighting over the transform.
-- **`ThrowDemo`** (`throw-demo.tsx`) is the guided tour that plays on every
-  load, 0.5s after the boot drawing hands over: the dock's tabs, opening a
+- **`ThrowDemo`** (`throw-demo.tsx`) is the guided tour. It **never plays on
+  its own** — only from the dock's WATCH DEMO (bottom-right on a desktop, a
+  play glyph beside the language toggle on a phone), which bumps `demoGen` in
+  the stage. It walks through the dock's tabs, opening a
   card, swapping, flinging, and (phone grid only) shake-to-reset. It is a ghost
   — outlines drawn over the grid, never the real cards or tabs — so it can play
   over a visitor who is already exploring. Only SKIP DEMO ends it; a tab switch
@@ -354,8 +356,8 @@ appears once a tab has been rearranged.
   tab's original layout. iOS gates motion behind a permission it only lets a
   page ask for from a tap: when the tour ends or is skipped, a popup offers it
   (ENABLE is that tap), and the first swap or fling also arms a request on the
-  next click. Without the popup, a visitor who skipped the tour was never asked
-  and got no motion events. On iOS it needs https, that permission, and a
+  next click. A visitor who never watches the tour only gets that second
+  route — the popup is tied to the tour ending. On iOS it needs https, that permission, and a
   listener attached after the answer. **`?debug=shake`
   shows a live readout** — secure page, permission, events, forces, spikes —
   for a phone that won't shake.

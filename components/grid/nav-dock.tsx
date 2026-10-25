@@ -9,7 +9,7 @@ import { toggleTheme, useThemeStore } from "@/lib/theme"
  * the desktop view is being dragged around underneath it.
  */
 export function NavDock({
-  tab, onSelect, detailOpen, onReset, onToggleLang,
+  tab, onSelect, detailOpen, onReset, onToggleLang, onDemo,
 }: {
   tab: TabId
   onSelect: (t: TabId) => void
@@ -17,6 +17,8 @@ export function NavDock({
   /** Present only once this tab's cards have been rearranged. */
   onReset?: () => void
   onToggleLang: () => void
+  /** Plays the guided tour. Absent while a card is expanded. */
+  onDemo?: () => void
 }) {
   const { UI } = useContent()
   const theme = useThemeStore()
@@ -32,6 +34,23 @@ export function NavDock({
       </svg>
       <span className="hidden md:inline font-mono text-[8px] uppercase tracking-[0.22em] text-mid group-hover:text-fg transition-colors">
         {UI.dock.reset}
+      </span>
+    </button>
+  )
+
+  // The tour never plays by itself — this is the only way in. A play glyph
+  // everywhere, with the words beside it once there is room.
+  const demoButton = (className: string) => onDemo && (
+    <button
+      onClick={onDemo}
+      aria-label={UI.demo.watchAria}
+      className={`p-2 md:p-2.5 items-center gap-2 group ${className}`}
+    >
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className="text-mid group-hover:text-fg transition-colors rtl:-scale-x-100">
+        <path d="M3 1.5v9l7.5-4.5z" stroke="currentColor" strokeLinejoin="round" />
+      </svg>
+      <span className="hidden md:inline font-mono text-[8px] uppercase tracking-[0.22em] text-mid group-hover:text-fg transition-colors">
+        {UI.demo.watch}
       </span>
     </button>
   )
@@ -115,13 +134,19 @@ export function NavDock({
         >
           {UI.dock.lang}
         </button>
+        {demoButton("flex md:hidden")}
         {themeButton("hidden md:block")}
         {resetButton("hidden md:flex")}
       </div>
 
-      <span className="hidden lg:block absolute end-6 font-mono text-[8px] uppercase tracking-[0.22em] text-dim">
-        {UI.dock.hints}
-      </span>
+      {/* The end margin on a desktop: WATCH DEMO, and the key hints beside it
+          once the window is wide enough for both. */}
+      <div className="hidden md:flex absolute end-6 items-center gap-4">
+        {demoButton("flex")}
+        <span className="hidden xl:block font-mono text-[8px] uppercase tracking-[0.22em] text-dim">
+          {UI.dock.hints}
+        </span>
+      </div>
 
       {/*
         Phone only, and icon-only by necessity: the four tab labels already take

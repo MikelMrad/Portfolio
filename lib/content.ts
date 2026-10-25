@@ -360,6 +360,7 @@ export const UI = {
     shakeOffer: "SHAKE YOUR PHONE TO RESET THE GRID",
     shakeEnable: "ENABLE", shakeLater: "NOT NOW",
     skip: "SKIP DEMO", skipAria: "Close the demonstration",
+    watch: "WATCH DEMO", watchAria: "Play a short demonstration of how the site works",
   },
 }
 

@@ -7,7 +7,7 @@ import { flightVector, rankByRadius, type FlightGrid } from "@/lib/scatter"
 import { motionPermission, requestMotionPermission, shakeAvailable } from "./shake"
 
 /**
- * The guided tour that plays once the intro has settled.
+ * The guided tour, played on request — the dock's WATCH DEMO (`play`).
  *
  * A non-scrolling bento with draggable cards explains itself badly, so a faint
  * grey finger walks through it, in the order a visitor needs it:
@@ -22,17 +22,15 @@ import { motionPermission, requestMotionPermission, shakeAvailable } from "./sha
  * ones. Nothing it shows changes the page, so it can play over a visitor who is
  * already exploring, and stopping it can't leave anything half-done.
  *
- * Every load. Only SKIP DEMO ends it — a touch or a keypress doesn't, so the
+ * Never on its own: a first visit opens on the site, not on a lesson. Once
+ * started, only SKIP DEMO ends it — a touch or a keypress doesn't, so the
  * tour isn't lost to the first accidental tap. A tab switch or an opened card
  * does stop it, because the outlines are drawn over this layout.
  */
 
-/**
- * From the loading screen handing over (the modules mounting) to the finger
- * appearing. Long enough for the cards to finish rising, short enough that
- * nobody has started exploring yet.
- */
-const START_DELAY_MS = 500
+/** From WATCH DEMO being pressed to the finger appearing. Longer than the
+ *  250ms fade-out in stop(), so a skip-then-replay isn't blanked by it. */
+const START_DELAY_MS = 300
 /** How long the finger rests on the card before flinging it, so the caption can be read. */
 const FLING_HOLD_MS = 550
 
@@ -64,11 +62,13 @@ function GhostBox({ g }: { g: Ghost }) {
 }
 
 export function ThrowDemo({
-  ready, cards, flight, touch = false, portrait = false,
+  ready, play, cards, flight, touch = false, portrait = false,
 }: {
   /** Modules mounted, nothing expanded, full-size, motion allowed. Not
    *  gated on the intro transition finishing — see START_DELAY_MS. */
   ready: boolean
+  /** Bumped by WATCH DEMO; each new value plays the tour once. 0 never does. */
+  play: number
   cards: [ModuleId, Placement][]
   flight: FlightGrid
   /** A touch screen: tap-worded captions, and the tour ends with shake-to-reset. */
@@ -82,7 +82,8 @@ export function ThrowDemo({
 }) {
   const { UI } = useContent()
   const [active, setActive] = useState(false)
-  const played = useRef(false)
+  /** Nothing to play until WATCH DEMO asks — see the `play` effect. */
+  const played = useRef(true)
   /** A tour is on screen (between its start and stop()). */
   const runningTour = useRef(false)
   /** Bumped to replay the tour — on rotation, see below. */
@@ -169,6 +170,14 @@ export function ThrowDemo({
     startDelay.current = 1100
     setReplay((n) => n + 1)
   }, [portrait, UI])
+
+  // WATCH DEMO. Ignored while a tour is already on screen.
+  useEffect(() => {
+    if (!play || runningTour.current) return
+    played.current = false
+    startDelay.current = START_DELAY_MS
+    setReplay((n) => n + 1)
+  }, [play])
 
   useEffect(() => {
     if (!ready || played.current) return
@@ -440,8 +449,8 @@ export function ThrowDemo({
     }
 
     script().catch(() => { /* stopped mid-step */ })
-    // Deliberately keyed on `ready` and `replay` alone: it runs once, on the
-    // first settled grid (and again after a rotation), reading `cards`,
+    // Deliberately keyed on `ready` and `replay` alone: it runs once per
+    // WATCH DEMO (and again after a rotation), reading `cards`,
     // `flight` and the rest at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, replay])

@@ -225,6 +225,7 @@ export const AR: Content = {
       shakeOffer: "هزّ الهاتف لإعادة ترتيب الشبكة",
       shakeEnable: "تفعيل", shakeLater: "ليس الآن",
       skip: "تخطَّ العرض", skipAria: "إغلاق العرض التوضيحي",
+      watch: "شاهد العرض", watchAria: "تشغيل عرض توضيحي قصير لطريقة استخدام الموقع",
     },
   },
 }
