@@ -1,60 +1,183 @@
 /**
- * The Arabic set — the same shape as lib/content.ts (`Content`), so a missing
+ * The Arabic set: the same shape as lib/content.ts (`Content`), so a missing
  * string is a type error rather than an English line in an Arabic page.
  *
  * Conventions:
- * - Names stay in Latin script: the person, employers, projects, and every
- *   technology (NEXT.JS, REACT…). That is how they are written in Lebanese tech
- *   writing, and it is how Brand Atelier — the bilingual project shown here —
- *   handles them too.
+ * - Modern Standard Arabic, written for business owners in Lebanon and the
+ *   Gulf: plain, direct, no Levantine-only words in sales copy. "الإنجليزية"
+ *   rather than the Levantine "الإنكليزية" for the same reason.
+ * - Names stay in Latin script: the person, employers, projects, payment
+ *   services and every technology (NEXT.JS, SHOPIFY, WHISH…).
  * - Months are the Levantine names used in Lebanon (شباط، أيار، تشرين…), with
- *   Western digits.
+ *   Western digits, as on the CV.
+ * - Prices are written in words ("900 دولار"), not "$900", which bidi
+ *   reorders inside a right-to-left line.
  * - Numbers that come from data are reused from the English set, so the two
  *   languages can never disagree on a figure.
+ * - No em or en dashes in anything a visitor reads (see lib/content.ts).
  */
 import { EN, type Content } from "./content"
 
-const ROLE_MONTHS = EN.ROLES.reduce((n, r) => n + r.months, 0)
+/** What every build comes with (INCLUDED in lib/content.ts). */
+const INCLUDED = [
+  "جلسة تعريفية تشرح لك كيف تدير موقعك بنفسك",
+  "سنة صيانة مجانية",
+  "كل شيء مسجّل باسمك، مع صلاحيات وصول كاملة",
+]
 
 export const AR: Content = {
   IDENTITY: {
     name:     "MIKEL MRAD",
-    role:     "مطوّر FRONT-END / FULL-STACK",
-    tagline:  "التجارة، الواجهات، والتفاصيل بينهما.",
+    role:     "مطوّر FRONT-END / FULL-STACK · بيروت",
+    tagline:  "متاجر إلكترونية، مواقع، وتطبيقات.",
     location: "بيروت، لبنان",
-    reach:    "بيروت ← العالم",
     availability: {
       short: "متاح للعمل الحر",
       long:  "متاح لمشاريع العمل الحر",
-      note:  "مشاريع العمل الحر فقط",
     },
   },
 
-  STATS: [
-    { value: EN.STATS[0].value, suffix: "+", label: "سنوات من الإنجاز" },
-    { value: EN.STATS[1].value, suffix: "+", label: "مشاريع منجزة" },
-  ],
+  HERO: {
+    label:    "متاجر · مواقع · تطبيقات",
+    langs:    "AR · EN",
+    headline: "أبني متاجر إلكترونية ومواقع تبيع.",
+    subline:
+      "للشركات في لبنان والخليج وأي مكان في العالم. Shopify وNext.js، بالعربية والإنجليزية، مع طلبات واتساب والدفع عند الاستلام وتتبّع الإعلانات، جاهزة من اليوم الأول.",
+    whatsapp: "راسلني على واتساب",
+    work:     "شاهد أعمالي",
+  },
+
+  PROOF: {
+    label: "سجلّ الإنجازات",
+    items: [
+      "قائد الواجهات الأمامية وتطبيقات الموبايل في منصة تعمل في 5 دول",
+      "شريك مؤسّس لمتجر إلكتروني لبناني",
+      "أُطلق مشاريع منذ 2022",
+    ],
+  },
+
+  SERVICES: {
+    label: "ما أبنيه",
+    items: [
+      {
+        ...EN.SERVICES.items[0], title: "متاجر\nإلكترونية",
+        body: "متاجر Shopify مبنية على طريقة الشراء هنا: الطلب عبر واتساب، والدفع عند الاستلام، وWhish، ومناطق التوصيل. مع Pixel وأدوات التحليل جاهزة لإعلاناتك.",
+        price: "ابتداءً من 600 دولار",
+        note: "تشمل جلسة تعريفية وسنة صيانة مجانية",
+        includes: INCLUDED,
+      },
+      {
+        ...EN.SERVICES.items[1], title: "مواقع\nإلكترونية",
+        body: "مواقع مخصّصة وسريعة بالعربية والإنجليزية، باتجاه حقيقي من اليمين إلى اليسار، لا مجرد نص مقلوب. مبنية لتظهر على Google وتحوّل الزيارات إلى رسائل.",
+        price: "ابتداءً من 900 دولار",
+        note: "تشمل جلسة تعريفية وسنة صيانة مجانية",
+        includes: INCLUDED,
+      },
+      {
+        ...EN.SERVICES.items[2], title: "تطبيقات",
+        body: "تطبيقات iOS وAndroid بـ React Native، من أنظمة الحجز إلى لوحات التحكم.",
+        price: "السعر بعد مكالمة تعارف",
+        note: "تشمل جلسة تعريفية وسنة صيانة مجانية",
+        includes: INCLUDED,
+      },
+      {
+        ...EN.SERVICES.items[3], title: "باقات\nالصيانة",
+        body: "بعد سنتك الأولى المجانية، أحافظ على عمل موقعك وتحديثه. باقة Care للصيانة والتعديلات الصغيرة، وباقة Care+ تضيف المزيد لمشروع ينمو.",
+        price: "ابتداءً من 200 دولار سنوياً",
+        note: "تبدأ بعد السنة الأولى المجانية",
+        plans: [
+          {
+            name: "CARE",
+            price: "200 دولار سنوياً",
+            items: [
+              "تحديثات وحماية ونسخ احتياطية",
+              "إصلاح أي مشكلة خلال 48 ساعة",
+              "إصلاحات وتعديلات صغيرة على التصميم",
+            ],
+          },
+          {
+            name: "CARE+",
+            price: "450 دولار سنوياً",
+            items: [
+              "كل ما تشمله باقة Care",
+              "تعديلات أكبر: أقسام وصفحات جديدة",
+              "فحص السرعة وتحسين الظهور على Google",
+              "جلسة تعريفية لأي موظف جديد",
+              "أولوية في الدعم، والرد خلال 24 ساعة",
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  PROCESS: {
+    label: "كيف أعمل",
+    steps: [
+      { title: "مكالمة مجانية",              body: "20 دقيقة لأفهم عملك وما تحتاجه." },
+      { title: "عرض سعر ثابت خلال 48 ساعة",  body: "سعر واحد، ونطاق عمل واضح، ومن دون مفاجآت." },
+      { title: "معاينة كل أسبوع",            body: "ترى التقدّم كل أسبوع وتشاركني ملاحظاتك أولاً بأول." },
+      { title: "الإطلاق والدعم",             body: "أطلق الموقع، وأدرّبك عليه، وأتولّى صيانته مجاناً طوال السنة الأولى." },
+    ],
+  },
+
+  FAQ: {
+    label: "أسئلة شائعة",
+    items: [
+      {
+        q: "كم تكلفة الموقع؟",
+        a: "تبدأ المتاجر من 600 دولار والمواقع المخصّصة من 900 دولار. تحصل على عرض سعر ثابت خلال 48 ساعة من مكالمتنا.",
+      },
+      {
+        q: "كم يستغرق التنفيذ؟",
+        a: "معظم المتاجر تستغرق من أسبوعين إلى 3 أسابيع، والمواقع من 3 إلى 4 أسابيع.",
+      },
+      {
+        q: "هل تعمل مع عملاء خارج لبنان؟",
+        a: "نعم. أعمل مع عملاء في الخليج وأوروبا وأمريكا الشمالية، عن بُعد بالكامل.",
+      },
+      {
+        q: "هل يمكن لعملائي الدفع عند الاستلام أو عبر واتساب؟",
+        a: "نعم. أُعِدّ الدفع عند الاستلام وWhish وطلبات واتساب والدفع بالبطاقة حيث يتوفّر.",
+      },
+      {
+        q: "هل أملك موقعي؟",
+        a: "نعم. كل شيء يُسجَّل باسمك، وتحصل على صلاحيات الوصول الكاملة.",
+      },
+      {
+        q: "ماذا يحدث بعد الإطلاق؟",
+        a: "السنة الأولى من الصيانة مجانية. بعدها يمكنك الاشتراك في باقة Care أو Care+.",
+      },
+    ],
+  },
+
+  TESTIMONIALS: {
+    "brand-atelier": {
+      quote: "كان ميكل محترفاً جداً من البداية حتى النهاية. كان يردّ بسرعة ويصلح المشاكل بسرعة، حتى عندما غيّرت الشيء نفسه عدة مرات. سلّم في الموعد وبالسعر الذي اتفقنا عليه تماماً.",
+      role:  "",
+    },
+    vinylized: {
+      quote: "منذ إطلاق الموقع الجديد صار يأتينا زبائن أكثر بكثير. الموقع يعمل كقناة مبيعات حقيقية للمشروع، ورفع مستوى العلامة التجارية كلها.",
+      role:  "",
+    },
+  },
 
   MODULE_TITLES: {
-    status:       "الحالة",
-    stats:        "بالأرقام",
-    experience:   "الخبرة",
-    location:     "المقر",
-    latest:       "الأحدث",
+    hero:         "ما\nأبنيه",
     "work-meta":  "أعمال\nمختارة",
-    cv:           "السيرة\nالذاتية",
-    "tech-count": "الأدوات",
+    testimonials: "العملاء",
+    process:      "كيف\nأعمل",
+    experience:   "الخبرة",
+    stack:        "الأدوات",
     education:    "التعليم",
-    headline:     "تواصل",
-    email:        "مباشر",
-    form:         "أرسل\nرسالة",
-    socials:      "روابط",
+    contact:      "تواصل",
+    faq:          "أسئلة\nشائعة",
   },
 
   EMPLOYER: {
     name:     "YORK PRESS",
     location: "بيروت، لبنان",
-    span:     "2024 — الآن",
+    span:     "2024 حتى الآن",
     summary:  "منصة متعددة المستأجرين لتسجيل الامتحانات. 5 دول، قاعدة شيفرة واحدة.",
   },
 
@@ -66,7 +189,7 @@ export const AR: Content = {
       from:  "شباط 2026",
       to:    "الآن",
       blurb:
-        "تولّيت قيادة الواجهات الأمامية بعد قيادة مبادرات أساسية في المنصة — مسار تسجيل المدارس، فئات المراحل التعليمية، وأداة بناء لوحات التحكم. ثم تولّيت قيادة فريق الموبايل، فقُدت فريقاً من 3 مهندسين لبناء تطبيق iOS وAndroid بـ React Native / Expo، وأطلقت التحقق برمز OTP للتسجيل واستعادة كلمة المرور من طرف إلى طرف — من خدمة المصادقة المصغّرة بـ Node.js حتى شاشات التطبيق.",
+        "أقود فريقاً من 3 مهندسين لإطلاق تطبيق iOS وAndroid بـ React Native وExpo. بنيت التسجيل برمز OTP واستعادة كلمة المرور بالكامل، من خدمة المصادقة بـ Node.js حتى شاشات التطبيق.",
     },
     {
       ...EN.ROLES[1],
@@ -75,7 +198,7 @@ export const AR: Content = {
       from:  "أيار 2025",
       to:    "شباط 2026",
       blurb:
-        "تولّيت تسليم ميزات الواجهة الأمامية عبر المنصة. صمّمت نظام دفع متعدد البوابات بنمط Strategy يوجّه PayPal وPaymob حسب الدولة، وبنيت مساراً متكاملاً لتتبّع UTM ينسب إنفاق إعلانات Meta وGoogle عبر إعادة التوجيه بين النطاقات.",
+        "بنيت نظاماً لتوجيه الدفع يرسل كل دولة إلى PayPal أو Paymob، وتتبّعاً لمصادر الإعلانات على Meta وGoogle عبر نطاقات الدول.",
     },
     {
       ...EN.ROLES[2],
@@ -84,7 +207,7 @@ export const AR: Content = {
       from:  "تشرين الثاني 2024",
       to:    "أيار 2025",
       blurb:
-        "طوّرت ميزات الواجهة الأمامية لمنصة تسجيل الامتحانات. بنيت مكوّنات React قابلة لإعادة الاستخدام، وحسّنت منطق اختيار الامتحانات حسب المجموعات، وساهمت في تطوير لوحة التحكم ومسارات المستخدم الأساسية. انتقلت بعدها إلى الدوام الكامل.",
+        "بنيت مكوّنات React قابلة لإعادة الاستخدام ومنطق اختيار الامتحانات حسب المجموعات. انتقلت إلى الدوام الكامل بعد ستة أشهر.",
     },
     {
       ...EN.ROLES[3],
@@ -93,50 +216,39 @@ export const AR: Content = {
       from:  "تموز 2024",
       to:    "تشرين الأول 2024",
       blurb:
-        "أول دور لي في الفريق الهندسي. ساهمت بميزات واجهة أمامية في بيئة الإنتاج بـ React وNext.js، وبنيت مكوّنات الواجهة وصمّمتها، وأصلحت الأخطاء عبر تجربة التسجيل.",
+        "أطلقت ميزات وإصلاحات في بيئة الإنتاج بـ React وNext.js.",
     },
   ],
 
   PROJECTS: [
     {
       ...EN.PROJECTS[0],
-      subtitle: "موقع وكالة / ثنائي اللغة EN—AR",
-      role:     "منصة ويب مخصّصة",
-      detail: [
-        "موقع تسويقي ثنائي اللغة، إنكليزي / عربي، على Next.js 16 App Router مع دعم RTL حقيقي يقلب الـ CSS فعلياً عبر Emotion cache وإضافة stylis-plugin-rtl وثيم يراعي الاتجاه.",
-        "تحليلات مشروطة بموافقة المستخدم على نمط GDPR عبر GA4 وMeta Pixel وLinkedIn Insight Tag، إلى جانب مسارات SEO لخريطة الموقع وrobots والبيانات الوصفية.",
-        "نموذج تواصل عبر EmailJS، وبنية مكوّنات صارمة تعتمد على styled() حصراً.",
-      ],
+      headline: "متجر يصل فيه كل طلب إلى واتساب.",
+      body:
+        "يختار الزبائن أسطواناتهم ويضغطون زراً واحداً. يكتب الموقع الطلب كاملاً في رسالة واتساب جاهزة ليؤكّدها صاحب المتجر. لا نماذج بطاقات ولا رسوم بوابات دفع، في سوق اعتاد أصلاً الطلب عبر واتساب. ومنذ الإطلاق، يقول صاحب المتجر إن الموقع يجلب له زبائن أكثر بكثير.",
+      role: "مطوّر منفرد",
     },
     {
       ...EN.PROJECTS[1],
-      subtitle: "تجارة إلكترونية / الطلب عبر واتساب",
-      role:     "مطوّر منفرد",
-      detail: [
-        "متجر مخصّص يتحوّل فيه الدفع إلى واتساب — يُنشأ الطلب في المتصفح ويُرسَل كرسالة منظّمة، ما يزيل تعقيد بوابات الدفع في السوق المحلي.",
-        "يدير Supabase الكتالوج وسجلات الطلبات، ويتولّى Cloudflare التوزيع والتخزين المؤقت.",
-      ],
+      headline: "موقع وكالة ثنائي اللغة مصمَّم للخليج.",
+      body:
+        "بالعربية والإنجليزية مع اتجاه حقيقي من اليمين إلى اليسار في كل الصفحات. تحليلات تحترم الخصوصية لـ Google وMeta وLinkedIn، وإعداد SEO كامل. سُلِّم في الموعد وضمن الميزانية المتفق عليهما، رغم عدة جولات من التعديلات.",
+      role: "منصة ويب مخصّصة",
     },
     {
       ...EN.PROJECTS[2],
-      subtitle: "تجارة إلكترونية / SHOPIFY",
-      role:     "عمل حر",
-      year:     "كانون الثاني 2026",
-      detail: [
-        "متجر Shopify يركّز على التحويل، بقوالب Liquid وأقسام مخصّصة وتصميم متجاوب يبدأ من الهاتف.",
-        "سُلِّم بالكامل كمشروع عمل حر: قوالب مخصّصة للمنتجات والمجموعات، وتحسين أداء القالب، وإعداد المتجر كاملاً.",
-        "أُغلق المتجر منذ ذلك الحين — هذه اللقطات، الملتقطة في آب 2026، هي سجلّ ما بُني.",
-      ],
+      headline: "أدير متجري الخاص، لذلك أبني للمبيعات لا للشكل فقط.",
+      body:
+        "شاركت في تأسيس The Outlets وبنيت واجهة متجره المخصّصة على Shopify. أديره كل يوم: المنتجات والإعلانات والطلبات والتوصيل. وكل متجر أبنيه لعملائي يستفيد مما تعلّمته هناك.",
+      role: "شريك مؤسّس ومطوّر",
+      year: "منذ 2022",
     },
     {
       ...EN.PROJECTS[3],
-      subtitle: "تجارة إلكترونية / SHOPIFY",
-      role:     "شريك مؤسّس ومطوّر",
-      year:     "منذ 2022",
-      detail: [
-        "شاركت في تأسيس المشروع وبنيت متجره المخصّص على Shopify Liquid بأقسام مصمّمة خصيصاً وصفحات منتجات متجاوبة.",
-        "أتولّى المنتج والعمليات والقرارات اليومية — أدير المتجر من البداية إلى النهاية، من الكتالوج والعرض حتى إتمام الشراء.",
-      ],
+      headline: "واجهة متجر Shopify لعلامة مكمّلات غذائية كندية.",
+      body:
+        "قوالب مخصّصة للمنتجات والمجموعات، وتصميم يبدأ من الهاتف، وتحسين للأداء، سُلِّم بالكامل لعميل في الخارج.",
+      role: "عمل حر",
     },
   ],
 
@@ -149,58 +261,45 @@ export const AR: Content = {
 
   TECH_COUNT: EN.TECH_COUNT,
 
-  STATS_DETAIL: [
-    { ...EN.STATS_DETAIL[0], label: "سنوات من الإنجاز", note: "NEXT.JS · REACT · TYPESCRIPT" },
-    { ...EN.STATS_DETAIL[1], label: "مشاريع منجزة", note: `${EN.PROJECTS.length} منها في قسم الأعمال` },
-    { value: ROLE_MONTHS, label: "شهراً في YORK PRESS", note: `${EN.ROLES.length} أدوار، من متدرّب إلى قائد` },
-    { ...EN.STATS_DETAIL[3], label: "دول على المنصة", note: "قاعدة شيفرة واحدة" },
-    { ...EN.STATS_DETAIL[4], label: "مهندسين بقيادتي", note: "iOS وAndroid · React Native" },
-    { ...EN.STATS_DETAIL[5], label: "تقنية", note: `ضمن ${EN.STACK.length} فئات` },
-  ],
-
   EDUCATION: [
     {
       ...EN.EDUCATION[0],
-      school: "جامعة الروح القدس – الكسليك",
+      school: "جامعة الروح القدس، الكسليك",
       place:  "الكسليك، لبنان",
       award:  "بكالوريوس في علوم الكمبيوتر",
+      years:  "2021 حتى 2024",
     },
     {
       ...EN.EDUCATION[1],
       school: "مدرسة العائلة المقدسة",
       place:  "الزلقا، لبنان",
-      award:  "البكالوريا اللبنانية — العلوم العامة",
+      award:  "البكالوريا اللبنانية · العلوم العامة",
+      years:  "2020 حتى 2021",
     },
   ],
 
   UI: {
-    identity: { portfolio: "ملف الأعمال — 2026", home: "الرئيسية", homeAria: "العودة إلى الرئيسية" },
-    status:   { label: "الحالة", value: "متاح" },
-    stats:    { label: "بالأرقام", figures: (n) => `${n} أرقام` },
-    location: { label: "المقر", city: "بيروت", note: "GMT+3 · جاهز للعمل عن بُعد" },
-    latest:   { label: "الأحدث", cta: "كل الأعمال" },
+    identity: { portfolio: "ملف الأعمال · 2026", home: "الرئيسية", homeAria: "العودة إلى الرئيسية" },
+    range: (from, to) => `${from} حتى ${to}`,
     experience: { label: "الخبرة", months: "أشهر" },
-    workMeta: { label: "مختارة", line: "مشاريع · 2022—2026", tags: "SHOPIFY · HEADLESS · تجارة إلكترونية" },
-    cv: {
-      label: "السيرة الذاتية", top: "2026", bottom: "سيرة ذاتية",
-      contents: "الخبرة · الأدوات · التعليم", download: "تحميل",
-    },
-    project: {
-      label: "عمل", archivedView: "مؤرشف — عرض", views: "لقطات",
-      visit: "زيارة الموقع", offline: "مؤرشف — الموقع متوقف",
-    },
-    toolbox:   { label: "الأدوات", technologies: "تقنية", categories: (n) => `${n} فئات` },
+    workMeta: { label: "مختارة", line: "مشاريع · 2022 حتى 2026", tags: "SHOPIFY · NEXT.JS · تجارة إلكترونية" },
+    project: { label: "عمل", views: "لقطات", visit: "زيارة الموقع" },
+    service: { label: "خدمة", cta: "اسألني عنها", plansCta: "اسألني عن باقات الصيانة", included: "ما تشمله" },
+    stack:   { label: "الأدوات", technologies: (n) => `${n} تقنية` },
     education: { label: "التعليم" },
+    testimonials: { label: "ماذا يقول العملاء", next: "التالي", nextAria: "عرض الشهادة التالية", open: "«", close: "»" },
+    faq: { count: (n) => `${n} أسئلة` },
     contact: {
-      label: "تواصل", headline: ["لنعمل", "معاً."],
-      direct: "مباشر",
-      form: "أرسل رسالة", formTag: "نموذج", sentTag: "أُرسلت",
-      received: "وصلت.", reply: "سأتواصل معك قريباً.",
-      name: "الاسم", email: "البريد الإلكتروني", message: "رسالتك",
-      error: "حدث خطأ — راسلني مباشرة.",
-      sending: "جارٍ الإرسال...", send: "أرسل الرسالة",
-      github: "GITHUB", linkedin: "LINKEDIN", cv: "السيرة",
+      label: "تواصل",
+      headline: "أخبرني ماذا تبني.",
+      line: "عادةً أردّ خلال ساعات قليلة.",
+      whatsapp: "واتساب", book: "احجز مكالمة مجانية", email: "البريد الإلكتروني",
+      github: "GITHUB", linkedin: "LINKEDIN", cv: "السيرة الذاتية",
       footer: "© 2026 MikelMrad", colophon: "· NEXT.JS",
+    },
+    whatsapp: {
+      message: "مرحباً ميكل، أودّ التحدث معك بخصوص موقع إلكتروني.",
+      aria: "راسل ميكل على واتساب",
     },
     expand: "توسيع",
     close: "إغلاق",
@@ -208,16 +307,16 @@ export const AR: Content = {
     step: "للتنقّل",
     expanded: "موسّع",
     roles: (n) => `${n} أدوار`,
-    tabs: { index: "الرئيسية", work: "الأعمال", stack: "الأدوات", contact: "تواصل" },
+    tabs: { index: "الرئيسية", work: "الأعمال", about: "عنّي", contact: "تواصل" },
     dock: {
-      hints: "اسحب · ارمِ · 1—4 · ← → · ESC",
+      hints: "اسحب · ارمِ · 1-4 · ← → · ESC",
       reset: "إعادة الترتيب", resetAria: "أعد البطاقات إلى أماكنها",
       lang: "EN", langAria: "Switch to English",
       toLight: "التبديل إلى الوضع الفاتح", toDark: "التبديل إلى الوضع الداكن",
     },
     demo: {
       tabsPhone: "اضغط على تبويب لتغيير الصفحة",
-      tabsDesktop: "التبويبات تغيّر الصفحة · أو اضغط 1–4",
+      tabsDesktop: "التبويبات تغيّر الصفحة · أو اضغط 1-4",
       open: "اضغط على بطاقة لفتحها",
       swap: "اسحبها فوق أخرى لتبديلهما",
       fling: "ارمِها بسرعة لقذفها",

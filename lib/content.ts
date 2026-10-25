@@ -1,70 +1,215 @@
 /**
  * Single source of truth for every piece of copy on the site.
- * Reconciled from Mikel-Mrad-CV-Technical.pdf (Sep 2026) and the v3 portfolio.
- * Modules read from here — never hardcode strings in components.
+ * Modules read from here; never hardcode strings in components.
  *
  * Two languages. This file is English and defines the shape (`Content`);
  * lib/content-ar.ts is the Arabic set of the same shape. Components read the
  * active one through `useContent()` (lib/i18n.tsx), never these constants
- * directly — the named exports below remain for the server-side, English-only
- * consumers (the link preview, metadata).
+ * directly. The named exports below remain for the server-side, English-only
+ * consumers (the link preview, metadata, the static CV).
+ *
+ * House rule: no em or en dashes in anything a visitor reads. Use a comma, a
+ * period, a colon or a middle dot (·).
+ *
+ * Contact details (numbers, addresses, links) are not copy: see lib/config.ts.
  */
+export { CONTACT } from "./config"
 
 export const IDENTITY = {
   name:      "MIKEL MRAD",
-  role:      "FRONT-END / FULL-STACK DEVELOPER",
-  tagline:   "COMMERCE, INTERFACES, AND THE DETAILS IN BETWEEN.",
+  /** The hero's eyebrow, carried by the identity card. */
+  role:      "FRONT-END / FULL-STACK DEVELOPER · BEIRUT",
+  tagline:   "ONLINE STORES, WEBSITES AND APPS.",
   location:  "BEIRUT, LEBANON",
-  reach:     "BEIRUT → WORLDWIDE",
   /**
-   * Freelance only — the full-time seat is taken (see ROLES), so nothing on the
-   * site may read as looking for another one. Three lengths because the line
-   * lands in three box shapes: the identity card narrow and wide, and STATUS.
+   * Freelance only: the full-time seat is taken (see ROLES), so nothing on the
+   * site may read as looking for another one. Two lengths because the line
+   * lands in two box shapes: the identity card narrow and wide.
    */
   availability: {
     short: "OPEN TO FREELANCE",
     long:  "AVAILABLE FOR FREELANCE",
-    note:  "FREELANCE PROJECTS ONLY",
   },
 }
 
-export const CONTACT = {
-  email:    "mikelmrad.work@gmail.com",
-  phone:    "+961 70 036 858",
-  github:   "https://github.com/mikelmrad",
-  linkedin: "https://www.linkedin.com/in/mikel-mrad/",
-  cv:       "/docs/Mikel-Mrad-CV.pdf",
-  /** The production origin — metadataBase and the link preview use it. */
-  site:     "https://mikelmrad.dev",
-} as const
+// ── Hero ──────────────────────────────────────────────────────────────────────
 
-export const STATS: { value: number; suffix: string; label: string }[] = [
-  { value: 2,  suffix: "+", label: "YEARS SHIPPING" },
-  { value: 10, suffix: "+", label: "PROJECTS BUILT" },
+export const HERO = {
+  label:    "STORES · WEBSITES · APPS",
+  langs:    "EN · AR",
+  headline: "I build online stores and websites that sell.",
+  subline:
+    "For businesses in Lebanon, the Gulf and anywhere in the world. Shopify and Next.js, Arabic and English, with WhatsApp orders, cash on delivery and ad tracking set up from day one.",
+  whatsapp: "MESSAGE ME ON WHATSAPP",
+  work:     "SEE MY WORK",
+}
+
+/** The proof strip: replaces the old "2+ years / 10+ projects" figures. */
+export const PROOF = {
+  label: "TRACK RECORD",
+  items: [
+    "Front-end and mobile lead on a platform running in 5 countries",
+    "Co-founder of a Lebanese online store",
+    "Shipping since 2022",
+  ],
+}
+
+// ── Services ──────────────────────────────────────────────────────────────────
+
+/** A care plan, shown side by side when the CARE PLANS card is opened. */
+export type CarePlan = { name: string; price: string; items: string[] }
+
+/** `id` is stable across languages: the stage maps `svc-<id>` modules by it. */
+export type Service = {
+  id: string; num: string; title: string; body: string; price: string
+  /** A line under the price: what's included, or when it applies. */
+  note?: string
+  /** What comes with the build, listed when the card is opened. */
+  includes?: string[]
+  plans?: CarePlan[]
+}
+
+/** What every build comes with: stores, websites and apps alike. */
+const INCLUDED = [
+  "Onboarding: a walkthrough so you can run it yourself",
+  "1 year of free maintenance",
+  "Everything set up in your name, with full access",
 ]
+
+export const SERVICES = {
+  label: "WHAT I BUILD",
+  items: [
+    {
+      id: "stores", num: "01", title: "ONLINE\nSTORES",
+      body: "Shopify stores built for how people here buy: WhatsApp orders, cash on delivery, Whish, delivery zones. Pixel and analytics ready for your ads.",
+      price: "Starting at $600",
+      note: "Includes onboarding and 1 year of free maintenance",
+      includes: INCLUDED,
+    },
+    {
+      id: "websites", num: "02", title: "WEBSITES",
+      body: "Fast custom sites in English and Arabic, with real right-to-left layout, not flipped text. Built to show up on Google and turn visits into messages.",
+      price: "Starting at $900",
+      note: "Includes onboarding and 1 year of free maintenance",
+      includes: INCLUDED,
+    },
+    {
+      id: "apps", num: "03", title: "APPS",
+      body: "iOS and Android apps in React Native, from booking systems to dashboards.",
+      price: "Quoted after a call",
+      note: "Includes onboarding and 1 year of free maintenance",
+      includes: INCLUDED,
+    },
+    {
+      id: "care", num: "04", title: "CARE\nPLANS",
+      body: "After your free first year, I keep your site running and up to date. Care covers maintenance and small changes; Care+ adds more for a growing business.",
+      price: "From $200 a year",
+      note: "Starts after your free first year",
+      plans: [
+        {
+          name: "CARE",
+          price: "$200 a year",
+          items: [
+            "Updates, security and backups",
+            "Any issue fixed within 48 hours",
+            "Small fixes and design tweaks",
+          ],
+        },
+        {
+          name: "CARE+",
+          price: "$450 a year",
+          items: [
+            "Everything in Care",
+            "Bigger changes: new sections and pages",
+            "Speed and SEO checkups",
+            "Onboarding for new staff",
+            "Priority support, replies within 24 hours",
+          ],
+        },
+      ],
+    },
+  ] as Service[],
+}
+
+// ── How I work ────────────────────────────────────────────────────────────────
+
+export const PROCESS = {
+  label: "HOW I WORK",
+  steps: [
+    { title: "Free call",                 body: "20 minutes to understand your business and what you need." },
+    { title: "Fixed quote in 48 hours",   body: "One price, a clear scope, no surprises." },
+    { title: "Weekly previews",           body: "You see progress every week and give feedback as we go." },
+    { title: "Launch and support",        body: "I launch it, train you, and look after it free for the first year." },
+  ],
+}
+
+// ── FAQ ───────────────────────────────────────────────────────────────────────
+
+export const FAQ = {
+  label: "FAQ",
+  items: [
+    {
+      q: "How much does a website cost?",
+      a: "Stores start at $600 and custom websites at $900. You get a fixed quote within 48 hours of our call.",
+    },
+    {
+      q: "How long does it take?",
+      a: "Most stores take 2 to 3 weeks and websites 3 to 4.",
+    },
+    {
+      q: "Do you work with clients outside Lebanon?",
+      a: "Yes. I work with clients in the Gulf, Europe and North America, fully remote.",
+    },
+    {
+      q: "Can my customers pay by cash on delivery or WhatsApp?",
+      a: "Yes. I set up cash on delivery, Whish, WhatsApp orders and card payments where available.",
+    },
+    {
+      q: "Do I own my website?",
+      a: "Yes. Everything is set up in your name, and you get full access.",
+    },
+    {
+      q: "What happens after launch?",
+      a: "Your first year of maintenance is free. After that, you can keep it on a Care or Care+ plan.",
+    },
+  ],
+}
+
+// ── Testimonials ──────────────────────────────────────────────────────────────
+
+/**
+ * Quote and role per testimonial, keyed by the `id` in lib/testimonials.ts,
+ * which holds the name, business, logo and the `approved` switch.
+ */
+export const TESTIMONIALS: Record<string, { quote: string; role: string }> = {
+  "brand-atelier": {
+    quote: "Mikel was very professional from start to finish. He replied quickly and fixed issues fast, even when I changed the same thing several times. He delivered on time and at exactly the price we agreed.",
+    role:  "",
+  },
+  vinylized: {
+    quote: "Since the new website launched, we've been getting way more customers. It works as a real sales funnel for the business and it lifted the whole brand.",
+    role:  "",
+  },
+}
 
 /**
  * What a module is called when it is too small to show itself.
  *
  * A card moved into a cell much smaller than the one it was composed for
  * collapses to this title plus EXPAND, and opens full-size on tap (see
- * `isCramped()` in stage.tsx). Projects and stack categories use their own
- * titles, so they're not listed here.
+ * `isCramped()` in stage.tsx). Projects and services use their own titles, so
+ * they're not listed here.
  */
 export const MODULE_TITLES: Record<string, string> = {
-  status:       "STATUS",
-  stats:        "BY THE\nNUMBERS",
-  experience:   "EXPERIENCE",
-  location:     "BASED",
-  latest:       "MOST\nRECENT",
+  hero:         "WHAT I\nBUILD",
   "work-meta":  "SELECTED\nWORK",
-  cv:           "2026 CV",
-  "tech-count": "TOOLBOX",
+  testimonials: "CLIENTS",
+  process:      "HOW I\nWORK",
+  experience:   "EXPERIENCE",
+  stack:        "STACK",
   education:    "EDUCATION",
-  headline:     "CONTACT",
-  email:        "DIRECT",
-  form:         "SEND A\nMESSAGE",
-  socials:      "ELSEWHERE",
+  contact:      "CONTACT",
+  faq:          "FAQ",
 }
 
 // ── Experience ────────────────────────────────────────────────────────────────
@@ -86,7 +231,7 @@ export type Role = {
 export const EMPLOYER = {
   name:     "YORK PRESS",
   location: "BEIRUT, LEBANON",
-  span:     "2024 — PRESENT",
+  span:     "2024 TO PRESENT",
   summary:  "MULTI-TENANT EXAM-REGISTRATION PLATFORM. 5 COUNTRY TENANTS, ONE CODEBASE.",
 }
 
@@ -99,7 +244,7 @@ export const ROLES: Role[] = [
     months: 7,
     level:  3,
     blurb:
-      "Became Front-End Lead after driving core platform initiatives — the school registration flow, education categories, and the dashboard builder. Took on Mobile Lead, leading a 3-engineer team building the iOS & Android app in React Native / Expo, and shipped OTP verification for mobile signup and password reset full-stack — from the Node.js auth microservice to the app screens.",
+      "Lead a 3-engineer team shipping the iOS and Android app in React Native and Expo. Built OTP signup and password reset end to end, from the Node.js auth service to the app screens.",
     skills: ["REACT NATIVE", "EXPO", "NODE.JS", "ZUSTAND", "TYPESCRIPT"],
   },
   {
@@ -110,7 +255,7 @@ export const ROLES: Role[] = [
     months: 10,
     level:  2,
     blurb:
-      "Owned frontend feature delivery across the platform. Architected a multi-gateway payment system using the Strategy Pattern to route PayPal and Paymob by country, and built an end-to-end UTM tracking pipeline attributing Meta and Google ad spend across domain redirects.",
+      "Built payment routing that sends each country to PayPal or Paymob, and ad attribution tracking for Meta and Google across country domains.",
     skills: ["NEXT.JS", "APOLLO", "GRAPHQL", "MUI"],
   },
   {
@@ -121,7 +266,7 @@ export const ROLES: Role[] = [
     months: 7,
     level:  1,
     blurb:
-      "Delivered frontend features for the exam registration platform. Built reusable React components, refined group-aware exam selection logic, and contributed to dashboard and core user-flow improvements. Earned a transition to full-time.",
+      "Built reusable React components and group-aware exam selection logic. Moved to full-time after six months.",
     skills: ["REACT", "TYPESCRIPT", "MUI"],
   },
   {
@@ -132,7 +277,7 @@ export const ROLES: Role[] = [
     months: 4,
     level:  0,
     blurb:
-      "First role on the engineering team. Contributed production frontend features in React and Next.js, built and styled UI components, and resolved bugs across the registration experience.",
+      "Shipped production features and bug fixes in React and Next.js.",
     skills: ["REACT", "NEXT.JS"],
   },
 ]
@@ -142,42 +287,23 @@ export const ROLES: Role[] = [
 export type Project = {
   num:      string
   title:    string
-  subtitle: string
+  /** The outcome, in one line. */
+  headline: string
+  body:     string
   role:     string
   year:     string
   url:      string | null
-  /** Set when the live site is gone — renders an ARCHIVED chip instead of a link. */
-  archived?: boolean
   images:   string[]
   stack:    string[]
-  detail:   string[]
 }
 
 export const PROJECTS: Project[] = [
   {
     num:      "01",
-    title:    "BRAND\nATELIER",
-    subtitle: "AGENCY SITE / BILINGUAL EN—AR",
-    role:     "CUSTOM WEB PLATFORM",
-    year:     "2026",
-    url:      "https://brandatelierdigital.com",
-    images: [
-      "/images/work/brandatelier-01.webp",
-      "/images/work/brandatelier-02.webp",
-      "/images/work/brandatelier-03.webp",
-      "/images/work/brandatelier-04.webp",
-    ],
-    stack:  ["NEXT.JS 16", "MUI 9", "EMOTION", "NEXT-INTL"],
-    detail: [
-      "Bilingual English / Arabic marketing site on the Next.js 16 App Router with true RTL that physically flips CSS via a stylis-plugin-rtl Emotion cache and a direction-aware theme.",
-      "GDPR-style consent-gated analytics across GA4, Meta Pixel and LinkedIn Insight Tag, plus SEO routes for sitemap, robots and metadata.",
-      "An EmailJS contact form and a strict styled()-only component architecture throughout.",
-    ],
-  },
-  {
-    num:      "02",
     title:    "VINYLIZED",
-    subtitle: "E-COMMERCE / ORDER-TO-WHATSAPP",
+    headline: "A store where every order lands in WhatsApp.",
+    body:
+      "Customers pick their records and tap one button. The site writes the full order into a WhatsApp message, ready for the owner to confirm. No card forms and no gateway fees, in a market that already orders by WhatsApp. Since launch, the owner says the site brings in far more customers.",
     role:     "SOLO DEVELOPER",
     year:     "2026",
     url:      "https://vinylizedlb.com",
@@ -187,37 +313,31 @@ export const PROJECTS: Project[] = [
       "/images/work/vinylized-03.webp",
       "/images/work/vinylized-04.webp",
     ],
-    stack:  ["NEXT.JS", "MUI", "SUPABASE", "CLOUDFLARE"],
-    detail: [
-      "Custom storefront where checkout hands off to WhatsApp — the order is composed client-side and delivered as a structured message, removing payment-gateway friction for a local market.",
-      "Supabase backs the catalogue and order records; Cloudflare fronts delivery and caching.",
+    stack:  ["NEXT.JS", "SUPABASE", "CLOUDFLARE"],
+  },
+  {
+    num:      "02",
+    title:    "BRAND\nATELIER",
+    headline: "A bilingual agency site built for the Gulf.",
+    body:
+      "English and Arabic with true right-to-left layout across every page. Privacy-first analytics for Google, Meta and LinkedIn, plus full SEO setup. Delivered on the agreed timeline and budget, through several rounds of changes.",
+    role:     "CUSTOM WEB PLATFORM",
+    year:     "2026",
+    url:      "https://brandatelierdigital.com",
+    images: [
+      "/images/work/brandatelier-01.webp",
+      "/images/work/brandatelier-02.webp",
+      "/images/work/brandatelier-03.webp",
+      "/images/work/brandatelier-04.webp",
     ],
+    stack:  ["NEXT.JS 16", "MUI", "NEXT-INTL"],
   },
   {
     num:      "03",
-    title:    "UNCLE J\nNUTRITION",
-    subtitle: "E-COMMERCE / SHOPIFY",
-    role:     "FREELANCE",
-    year:     "JAN 2026",
-    url:      null,
-    archived: true,
-    images: [
-      "/images/work/unclej-01.webp",
-      "/images/work/unclej-02.webp",
-      "/images/work/unclej-03.webp",
-      "/images/work/unclej-04.webp",
-    ],
-    stack:  ["SHOPIFY", "LIQUID"],
-    detail: [
-      "Conversion-focused Shopify storefront with Liquid theming, custom sections and mobile-first responsive design.",
-      "Delivered end-to-end as a freelance engagement: custom product and collection templates, theme performance tuning, and full store configuration.",
-      "The store has since closed — these screenshots, captured Aug 2026, are the record of the build.",
-    ],
-  },
-  {
-    num:      "04",
     title:    "THE\nOUTLETS",
-    subtitle: "E-COMMERCE / SHOPIFY",
+    headline: "I run my own store, so I build for sales, not just looks.",
+    body:
+      "I co-founded The Outlets and built its custom Shopify storefront. I run it every day: products, ads, orders and delivery. Every client store gets what I learned there.",
     role:     "CO-FOUNDER & DEVELOPER",
     year:     "SINCE 2022",
     url:      "https://theoutletslb.com",
@@ -228,16 +348,28 @@ export const PROJECTS: Project[] = [
       "/images/work/theoutlets-04.webp",
     ],
     stack:  ["SHOPIFY", "LIQUID"],
-    detail: [
-      "Co-founded the business and built its custom Shopify Liquid storefront with bespoke sections and responsive product pages.",
-      "Own product, operations and day-to-day decision-making — running the store end-to-end from catalogue and merchandising through to checkout.",
+  },
+  {
+    num:      "04",
+    title:    "UNCLE J\nNUTRITION",
+    headline: "A Shopify storefront for a Canadian supplement brand.",
+    body:
+      "Custom product and collection templates, mobile-first design and performance tuning, delivered end to end for a client abroad.",
+    role:     "FREELANCE",
+    year:     "2026",
+    url:      null,
+    images: [
+      "/images/work/unclej-01.webp",
+      "/images/work/unclej-02.webp",
+      "/images/work/unclej-03.webp",
+      "/images/work/unclej-04.webp",
     ],
+    stack:  ["SHOPIFY", "LIQUID"],
   },
 ]
 
 // ── Stack ─────────────────────────────────────────────────────────────────────
 
-/** `id` is stable across languages — the stage maps `cat-<id>` modules by it. */
 export type StackCategory = { id: string; label: string; skills: string[] }
 
 export const STACK: StackCategory[] = [
@@ -267,74 +399,52 @@ export const STACK: StackCategory[] = [
 
 export const TECH_COUNT = STACK.reduce((n, c) => n + c.skills.length, 0)
 
-/**
- * BY THE NUMBERS, expanded. The card shows STATS; the full view adds the
- * figures behind them. Derived wherever the data already exists here, so they
- * can't drift from the rest of the site — the tenant count is the CV's.
- */
-export const STATS_DETAIL: { value: number; suffix?: string; label: string; note: string }[] = [
-  { ...STATS[0], note: "NEXT.JS, REACT, TYPESCRIPT" },
-  { ...STATS[1], note: `${PROJECTS.length} OF THEM UNDER WORK` },
-  {
-    value: ROLES.reduce((n, r) => n + r.months, 0),
-    label: "MONTHS AT YORK PRESS",
-    note:  `${ROLES.length} ROLES, INTERN → LEAD`,
-  },
-  { value: 5, label: "COUNTRY TENANTS", note: "ONE CODEBASE" },
-  { value: 3, label: "ENGINEERS LED", note: "IOS & ANDROID, REACT NATIVE" },
-  { value: TECH_COUNT, label: "TECHNOLOGIES", note: `ACROSS ${STACK.length} CATEGORIES` },
-]
-
 export const EDUCATION = [
   {
     school: "HOLY SPIRIT UNIVERSITY OF KASLIK",
     short:  "USEK",
     place:  "KASLIK, LEBANON",
     award:  "BSc COMPUTER SCIENCE",
-    years:  "2021 — 2024",
+    years:  "2021 TO 2024",
   },
   {
     school: "COLLÈGE SAINTE FAMILLE",
     short:  "CSF",
     place:  "ZALKA, LEBANON",
-    award:  "LEBANESE BACCALAUREATE — GENERAL SCIENCES",
-    years:  "2020 — 2021",
+    award:  "LEBANESE BACCALAUREATE · GENERAL SCIENCES",
+    years:  "2020 TO 2021",
   },
 ]
 
 /**
- * Interface copy — every label, button and caption the modules draw that isn't
+ * Interface copy: every label, button and caption the modules draw that isn't
  * part of the content above. Arrows are not in these strings: components draw
  * them as separate glyphs that mirror under RTL (`rtl:-scale-x-100`).
  */
 export const UI = {
-  identity: { portfolio: "PORTFOLIO — 2026", home: "INDEX", homeAria: "Go to index" },
-  status:   { label: "STATUS", value: "OPEN" },
-  stats:    { label: "BY THE NUMBERS", figures: (n: number) => `${n} FIGURES` },
-  location: { label: "BASED", city: "BEIRUT", note: "GMT+3 · REMOTE-READY" },
-  latest:   { label: "MOST RECENT", cta: "ALL WORK" },
+  identity: { portfolio: "PORTFOLIO · 2026", home: "INDEX", homeAria: "Go to index" },
+  /** A date range, "FEB 2026 TO PRESENT". */
+  range: (from: string, to: string) => `${from} TO ${to}`,
   experience: { label: "EXPERIENCE", months: "MOS" },
-  workMeta: { label: "SELECTED", line: "PROJECTS · 2022—2026", tags: "SHOPIFY · HEADLESS · COMMERCE" },
-  cv: {
-    label: "CURRICULUM VITAE", top: "2026", bottom: "CV",
-    contents: "EXPERIENCE · STACK · EDUCATION", download: "DOWNLOAD",
-  },
-  project: {
-    label: "WORK", archivedView: "ARCHIVED — VIEW", views: "VIEWS",
-    visit: "VISIT SITE", offline: "ARCHIVED — SITE OFFLINE",
-  },
-  toolbox:   { label: "TOOLBOX", technologies: "TECHNOLOGIES", categories: (n: number) => `${n} CATEGORIES` },
+  workMeta: { label: "SELECTED", line: "PROJECTS · 2022 TO 2026", tags: "SHOPIFY · NEXT.JS · E-COMMERCE" },
+  project: { label: "WORK", views: "VIEWS", visit: "VISIT SITE" },
+  service: { label: "SERVICE", cta: "ASK ABOUT THIS", plansCta: "ASK ABOUT CARE PLANS", included: "WHAT'S INCLUDED" },
+  stack:   { label: "STACK", technologies: (n: number) => `${n} TECHNOLOGIES` },
   education: { label: "EDUCATION" },
+  testimonials: { label: "WHAT CLIENTS SAY", next: "NEXT", nextAria: "Show the next testimonial", open: "“", close: "”" },
+  faq: { count: (n: number) => `${n} QUESTIONS` },
   contact: {
-    label: "CONTACT", headline: ["LET'S", "WORK."] as [string, string],
-    direct: "DIRECT",
-    form: "SEND A MESSAGE", formTag: "FORM", sentTag: "SENT",
-    received: "RECEIVED.", reply: "I'LL BE IN TOUCH SHORTLY.",
-    name: "YOUR NAME", email: "YOUR EMAIL", message: "YOUR MESSAGE",
-    error: "SOMETHING WENT WRONG — EMAIL ME DIRECTLY.",
-    sending: "SENDING...", send: "SEND MESSAGE",
+    label: "CONTACT",
+    headline: "Tell me what you're building.",
+    line: "I usually reply within a few hours.",
+    whatsapp: "WHATSAPP", book: "BOOK A FREE CALL", email: "EMAIL",
     github: "GITHUB", linkedin: "LINKEDIN", cv: "CV",
     footer: "© 2026 MikelMrad", colophon: "· NEXT.JS",
+  },
+  whatsapp: {
+    /** Typed into the chat for the visitor; wa.me receives it URL-encoded. */
+    message: "Hi Mikel, I'd like to talk about a website.",
+    aria: "Message Mikel on WhatsApp",
   },
   expand: "EXPAND",
   close: "CLOSE",
@@ -342,17 +452,17 @@ export const UI = {
   step: "TO STEP THROUGH",
   expanded: "EXPANDED",
   roles: (n: number) => `${n} ROLES`,
-  tabs: { index: "INDEX", work: "WORK", stack: "STACK", contact: "CONTACT" },
+  tabs: { index: "INDEX", work: "WORK", about: "ABOUT", contact: "CONTACT" },
   dock: {
-    hints: "DRAG · FLING · 1—4 · ← → · ESC",
+    hints: "DRAG · FLING · 1-4 · ← → · ESC",
     reset: "RESET GRID", resetAria: "Put the cards back",
-    /** The *other* language, named in itself — what the toggle switches to. */
+    /** The *other* language, named in itself: what the toggle switches to. */
     lang: "عربي", langAria: "التبديل إلى العربية",
     toLight: "Switch to light mode", toDark: "Switch to dark mode",
   },
   demo: {
     tabsPhone: "TAP A TAB TO SWITCH PAGE",
-    tabsDesktop: "TABS SWITCH PAGE · OR PRESS 1–4",
+    tabsDesktop: "TABS SWITCH PAGE · OR PRESS 1-4",
     open: "TAP A CARD TO OPEN IT",
     swap: "DRAG ONTO ANOTHER TO SWAP",
     fling: "FLING TO THROW",
@@ -366,7 +476,7 @@ export const UI = {
 
 /** Everything a language supplies. lib/content-ar.ts implements this. */
 export const EN = {
-  IDENTITY, STATS, MODULE_TITLES, EMPLOYER, ROLES, PROJECTS, STACK, TECH_COUNT,
-  STATS_DETAIL, EDUCATION, UI,
+  IDENTITY, HERO, PROOF, SERVICES, PROCESS, FAQ, TESTIMONIALS, MODULE_TITLES,
+  EMPLOYER, ROLES, PROJECTS, STACK, TECH_COUNT, EDUCATION, UI,
 }
 export type Content = typeof EN

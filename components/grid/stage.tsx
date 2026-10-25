@@ -1,6 +1,5 @@
 "use client"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import dynamic from "next/dynamic"
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, type MotionValue } from "motion/react"
 
 import {
@@ -21,26 +20,11 @@ import { ThrowDemo } from "./throw-demo"
 import { Cursor } from "@/components/ui/cursor"
 import { CompactCard, ZoomNav } from "@/components/ui/bits"
 import { Identity } from "@/components/modules/identity"
-import { Experience, ExperienceDetail, Latest, Location, Stats, StatsDetail, Status } from "@/components/modules/index-modules"
-import { CvCard, DetailNav, ProjectCard, ProjectDetail, WorkMeta } from "@/components/modules/work-modules"
-import { Category, Education, TechCount } from "@/components/modules/stack-modules"
-import { ContactForm, EmailCard, Footer, Headline, Socials } from "@/components/modules/contact-modules"
-
-/**
- * The one WebGL module, kept out of the first load.
- *
- * three.js and @react-three/fiber are ~290KB gzipped — more than half of what
- * the page used to ship — for a single 2x2 card that only exists on INDEX. A
- * static import put that in the critical path of all four tabs: /contact
- * downloaded the whole renderer to draw a form. Imported this way it never
- * loads on the other three, and on INDEX it arrives after the grid is up.
- *
- * `ssr: false` because it is a canvas either way — there is nothing for the
- * server to render, and prerendering it only puts the module back in the graph.
- */
-const Signature = dynamic(() => import("@/components/three/signature").then((m) => m.Signature), {
-  ssr: false,
-})
+import { Experience, ExperienceDetail } from "@/components/modules/experience"
+import { DetailNav, ProjectCard, ProjectDetail, WorkMeta } from "@/components/modules/work-modules"
+import { Education, Stack } from "@/components/modules/stack-modules"
+import { Footer } from "@/components/modules/contact-modules"
+import { ContactCard, Faq, Hero, Process, ServiceCard, Testimonials } from "@/components/modules/sales-modules"
 
 /**
  * An expanded project is just another layout. Opening one scatters the grid and
@@ -74,13 +58,14 @@ const mobileZoomLayout = (id: ModuleId): Partial<Record<ModuleId, Placement>> =>
 })
 
 /*
- * Any module can expand into the whole grid (`zoom`). EXPERIENCE does it from
- * its normal card; every other module only from its compact face, when it has
- * been swapped somewhere too small — see isCramped().
+ * Any module can expand into the whole grid (`zoom`). The services, HOW I
+ * WORK, EXPERIENCE and STACK do it from their normal card, since each shows
+ * only its headline on a phone; every other module only from its compact
+ * face, when it has been swapped somewhere too small (see isCramped()).
  */
 
-/** Size-agnostic modules: a canvas, and a one-line colophon. Never compacted. */
-const ALWAYS_FITS: ModuleId[] = ["signature", "footer"]
+/** Size-agnostic modules: a one-line colophon. Never compacted. */
+const ALWAYS_FITS: ModuleId[] = ["footer"]
 
 /**
  * Has this card been swapped into a cell too small for what it holds?
@@ -98,9 +83,7 @@ function isCramped(id: ModuleId, now: Placement, native: Placement | undefined) 
 
 function titleOf(id: ModuleId, t: Content): string {
   if (id.startsWith("project-0")) return t.PROJECTS.find((p) => p.num === id.slice(-2))?.title ?? id
-  if (id.startsWith("cat-")) {
-    return t.STACK.find((c) => c.id === id.slice(4))?.label.replace(" & ", " &\n") ?? id
-  }
+  if (id.startsWith("svc-")) return t.SERVICES.items.find((x) => x.id === id.slice(4))?.title ?? id
   return t.MODULE_TITLES[id] ?? id.toUpperCase()
 }
 
@@ -360,20 +343,6 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     const t = setTimeout(hand, Math.max(0, left / rate - BOOT_OVERLAP_MS))
     return () => { settled = true; clearTimeout(t) }
   }, [resolved])
-
-  /**
-   * Start the WebGL chunk downloading during the boot drawing.
-   *
-   * It is ~226KB and `next/dynamic` would otherwise not ask for it until the
-   * card mounts — which is after the loading screen, so the one module that
-   * needs it arrives last, into a box that is already on screen. Requesting it
-   * here overlaps the download with the drawing instead. INDEX only: the whole
-   * point of the dynamic import is that the other three tabs never fetch it.
-   */
-  useEffect(() => {
-    if (!resolved || tab !== "index") return
-    void import("@/components/three/signature")
-  }, [resolved, tab])
 
   const goTab = useCallback((next: TabId) => {
     if (next === tab && !open && !zoom) return
@@ -639,34 +608,24 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       const p = t.PROJECTS.find((x) => x.num === id.slice(-2))!
       return <ProjectCard project={p} onOpen={openProject} />
     }
-    if (id.startsWith("cat-")) {
-      const cat = t.STACK.find((c) => c.id === id.slice(4))!
-      return <Category cat={cat} />
+    if (id.startsWith("svc-")) {
+      const svc = t.SERVICES.items.find((x) => x.id === id.slice(4))!
+      // Expanded, it drops the button shell and gains its WhatsApp link.
+      return <ServiceCard svc={svc} onOpen={zoom === id ? undefined : () => openZoom(id)} />
     }
     switch (id) {
-      case "status":         return <Status />
-      case "stats":          return zoom === "stats" ? <StatsDetail /> : <Stats />
-      /*
-        `busy` parks the WebGL loop while the grid is flying, which is what it
-        is for. The intro is not a flight — the cards rise in place — so parking
-        it there just leaves the card blank for TRANSITION_MS after everything
-        else has arrived, which is the longest anything on the page waits.
-      */
-      case "signature":      return <Signature paused={busy && !intro} />
+      case "hero":           return <Hero onWork={() => goTab("work")} />
+      case "process":        return <Process onOpen={zoom === "process" ? undefined : () => openZoom("process")} />
       case "experience":
         return zoom === "experience"
           ? <ExperienceDetail />
           : <Experience onOpen={() => openZoom("experience")} />
-      case "location":       return <Location />
-      case "latest":         return <Latest onGo={goTab} />
-      case "work-meta":      return <WorkMeta />
-      case "cv":             return <CvCard />
-      case "tech-count":     return <TechCount />
+      case "stack":          return <Stack onOpen={zoom === "stack" ? undefined : () => openZoom("stack")} />
       case "education":      return <Education />
-      case "headline":       return <Headline />
-      case "email":          return <EmailCard />
-      case "form":           return <ContactForm />
-      case "socials":        return <Socials />
+      case "work-meta":      return <WorkMeta />
+      case "testimonials":   return <Testimonials />
+      case "contact":        return <ContactCard />
+      case "faq":            return <Faq />
       case "footer":         return <Footer />
       case "project-detail": return <ProjectDetail num={open!} />
       case "detail-nav":     return <DetailNav num={open!} onClose={closeProject} onOpen={openProject} />

@@ -9,8 +9,9 @@ import { cardAt, centreOf, flipFrom, impact, nextLift, onImpact, returnSlot, typ
 const FLING_SPEED = 1100
 /** How long a thrown card stays gone before it comes back. */
 const AWAY_MS = 420
-/** Drag starts on anything but a form field — typing must still work. */
-const NO_DRAG = "input,textarea,select,[contenteditable]"
+/** Drag starts on anything but a form field, so typing still works, or a
+ *  region marked `data-no-drag`, so it can scroll (the FAQ list). */
+const NO_DRAG = "input,textarea,select,[contenteditable],[data-no-drag]"
 
 export type Throwable = {
   /** Off during a transition, in an expanded view and in the scaled canvas. */

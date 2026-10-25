@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next"
 import { JetBrains_Mono, Barlow_Condensed } from "next/font/google"
 import localFont from "next/font/local"
-import { CONTACT } from "@/lib/content"
+import { CONTACT } from "@/lib/config"
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo"
 import { PREFS_BOOT } from "@/lib/lang-boot"
 import "./globals.css"
 
@@ -56,11 +57,12 @@ const kufiArabic = localFont({
 })
 
 export const metadata: Metadata = {
-  title: "Mikel Mrad — Front-End / Full-Stack Developer",
-  description: "Commerce, interfaces, and the details in between. Beirut, Lebanon.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   // Link previews need absolute URLs; app/opengraph-image.tsx supplies the image.
   metadataBase: new URL(CONTACT.site),
-  twitter: { card: "summary_large_image" },
+  openGraph: { type: "website", title: SITE_TITLE, description: SITE_DESCRIPTION, siteName: "Mikel Mrad" },
+  twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
 }
 
 export const viewport: Viewport = {

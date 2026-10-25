@@ -10,6 +10,8 @@
  * writing animation code.
  */
 
+import { HAS_TESTIMONIALS } from "./testimonials"
+
 export const GRID_COLS = 12
 export const GRID_ROWS = 8
 
@@ -25,12 +27,19 @@ export const GRID_ROWS = 8
 export const MOBILE_COLS = 4
 export const MOBILE_ROWS = 12
 
-export type TabId = "index" | "work" | "stack" | "contact"
+export type TabId = "index" | "work" | "about" | "contact"
 
+/**
+ * Four tabs, eight sections, in reading order:
+ *   INDEX   hero (with the proof strip), services
+ *   WORK    projects, testimonials (only once one is approved)
+ *   ABOUT   how I work, experience, stack, education
+ *   CONTACT contact, FAQ
+ */
 export const TABS: { id: TabId; label: string; key: string }[] = [
   { id: "index",   label: "INDEX",   key: "1" },
   { id: "work",    label: "WORK",    key: "2" },
-  { id: "stack",   label: "STACK",   key: "3" },
+  { id: "about",   label: "ABOUT",   key: "3" },
   { id: "contact", label: "CONTACT", key: "4" },
 ]
 
@@ -38,131 +47,134 @@ export type ModuleId =
   // shared
   | "identity"
   // index
-  | "status" | "stats" | "signature" | "experience" | "location" | "latest"
+  | "hero" | "svc-stores" | "svc-websites" | "svc-apps" | "svc-care"
   // work
-  | "work-meta" | "cv" | "project-01" | "project-02" | "project-03" | "project-04"
-  // stack
-  | "tech-count" | "cat-languages" | "cat-frameworks" | "cat-tools" | "cat-databases" | "education"
+  | "work-meta" | "testimonials" | "project-01" | "project-02" | "project-03" | "project-04"
+  // about
+  | "process" | "experience" | "stack" | "education"
   // contact
-  | "headline" | "email" | "form" | "socials" | "footer"
-  // expanded project — a synthetic layout, see DETAIL_LAYOUT in stage.tsx
+  | "contact" | "faq" | "footer"
+  // expanded project: a synthetic layout, see DETAIL_LAYOUT in stage.tsx
   | "project-detail" | "detail-nav"
-  // generic desktop zoom (currently the experience timeline)
+  // generic zoom chrome
   | "zoom-nav"
 
-/** [startLine, span] — 1-indexed, matching CSS grid lines. */
+/** [startLine, span]: 1-indexed, matching CSS grid lines. */
 export type Placement = { col: [number, number]; row: [number, number] }
+
+type Map = Partial<Record<ModuleId, Placement>>
+
+/**
+ * WORK comes in two shapes: with the testimonials card (in place of the
+ * SELECTED counter) and without it. Which
+ * one ships is decided by lib/testimonials.ts at build time, so the boot
+ * drawing (server-rendered from these maps) always matches what mounts.
+ */
+const WORK: Map = {
+  identity:     { col: [1, 3],  row: [1, 4] },
+  "work-meta":  { col: [1, 3],  row: [5, 4] },
+  "project-01": { col: [4, 5],  row: [1, 4] },
+  "project-02": { col: [9, 4],  row: [1, 4] },
+  "project-03": { col: [4, 5],  row: [5, 4] },
+  "project-04": { col: [9, 4],  row: [5, 4] },
+}
+/** With quotes to show, they take the SELECTED counter's place. */
+const WORK_TESTIMONIALS: Map = {
+  identity:     { col: [1, 3],  row: [1, 3] },
+  testimonials: { col: [1, 3],  row: [4, 5] },
+  "project-01": WORK["project-01"],
+  "project-02": WORK["project-02"],
+  "project-03": WORK["project-03"],
+  "project-04": WORK["project-04"],
+}
 
 /**
  * Each map tiles the full 12x8 with no gaps and no overlaps.
- * Order within an object is irrelevant — placement is absolute.
+ * Order within an object is irrelevant: placement is absolute.
  */
-export const LAYOUTS: Record<TabId, Partial<Record<ModuleId, Placement>>> = {
+export const LAYOUTS: Record<TabId, Map> = {
+  // The hero (pitch, buttons, proof strip) beside the name; the four
+  // services share the bottom band as equal columns.
   index: {
-    identity:   { col: [1, 5],  row: [1, 4] },
-    status:     { col: [6, 3],  row: [1, 2] },
-    stats:      { col: [9, 4],  row: [1, 2] },
-    signature:  { col: [6, 7],  row: [3, 3] },
-    experience: { col: [1, 5],  row: [5, 4] },
-    location:   { col: [6, 3],  row: [6, 3] },
-    latest:     { col: [9, 4],  row: [6, 3] },
+    identity:       { col: [1, 4],  row: [1, 4] },
+    hero:           { col: [5, 8],  row: [1, 4] },
+    "svc-stores":   { col: [1, 3],  row: [5, 4] },
+    "svc-websites": { col: [4, 3],  row: [5, 4] },
+    "svc-apps":     { col: [7, 3],  row: [5, 4] },
+    "svc-care":     { col: [10, 3], row: [5, 4] },
   },
-  work: {
-    identity:     { col: [1, 3],  row: [1, 2] },
-    "work-meta":  { col: [1, 3],  row: [3, 2] },
-    "project-01": { col: [4, 5],  row: [1, 4] },
-    "project-02": { col: [9, 4],  row: [1, 4] },
-    cv:           { col: [1, 3],  row: [5, 4] },
-    "project-03": { col: [4, 5],  row: [5, 4] },
-    "project-04": { col: [9, 4],  row: [5, 4] },
-  },
-  // Four tall columns rather than wide bands: 12 chips need to wrap to fill a
-  // card, and a 9-wide box just puts them all on one line with dead space below.
-  stack: {
-    identity:         { col: [1, 3],  row: [1, 2] },
-    "tech-count":     { col: [1, 3],  row: [3, 2] },
-    education:        { col: [1, 3],  row: [5, 4] },
-    "cat-languages":  { col: [4, 3],  row: [1, 5] },
-    "cat-databases":  { col: [4, 3],  row: [6, 3] },
-    "cat-frameworks": { col: [7, 3],  row: [1, 8] },
-    "cat-tools":      { col: [10, 3], row: [1, 8] },
+  work: HAS_TESTIMONIALS ? WORK_TESTIMONIALS : WORK,
+  // How I work runs across the top as four steps; the CV material sits under
+  // it, experience widest, stack and education compact beside it.
+  about: {
+    identity:   { col: [1, 3],  row: [1, 3] },
+    process:    { col: [4, 9],  row: [1, 3] },
+    experience: { col: [1, 6],  row: [4, 5] },
+    stack:      { col: [7, 3],  row: [4, 5] },
+    education:  { col: [10, 3], row: [4, 5] },
   },
   contact: {
     identity: { col: [1, 4],  row: [1, 3] },
-    email:    { col: [5, 8],  row: [1, 2] },
-    form:     { col: [5, 8],  row: [3, 5] },
-    headline: { col: [1, 4],  row: [4, 5] },
-    socials:  { col: [5, 5],  row: [8, 1] },
-    footer:   { col: [10, 3], row: [8, 1] },
+    contact:  { col: [1, 4],  row: [4, 5] },
+    faq:      { col: [5, 8],  row: [1, 7] },
+    footer:   { col: [5, 8],  row: [8, 1] },
   },
+}
+
+const MOBILE_WORK: Map = {
+  identity:     { col: [1, 4], row: [1, 2] },
+  "work-meta":  { col: [1, 4], row: [3, 2] },
+  "project-01": { col: [1, 2], row: [5, 4] },
+  "project-02": { col: [3, 2], row: [5, 4] },
+  "project-03": { col: [1, 2], row: [9, 4] },
+  "project-04": { col: [3, 2], row: [9, 4] },
+}
+const MOBILE_WORK_TESTIMONIALS: Map = {
+  identity:     { col: [1, 4], row: [1, 2] },
+  testimonials: { col: [1, 4], row: [3, 4] },
+  "project-01": { col: [1, 2], row: [7, 3] },
+  "project-02": { col: [3, 2], row: [7, 3] },
+  "project-03": { col: [1, 2], row: [10, 3] },
+  "project-04": { col: [3, 2], row: [10, 3] },
 }
 
 /**
  * The same modules, arranged for a portrait 4x12.
  *
- * Not a transposition of the desktop map — a phone column is ~86px, so what
+ * Not a transposition of the desktop map: a phone column is ~86px, so what
  * works as a 5-wide band on a desktop has to become either a full-width bar or
  * a half-width block. Each tab is composed for the shape it is actually in.
  *
  * Every tab holds exactly the modules its desktop layout holds. If a module is
  * missing from one of these maps it does not exist on a phone, and the grid
  * will have a hole where it should be.
+ *
+ * Small cards keep their headline and drop the detail (the `.cq-h*` gates);
+ * every one of them is a button that expands to the whole grid, so the detail
+ * is one tap away rather than squeezed in.
  */
-export const MOBILE_LAYOUTS: Record<TabId, Partial<Record<ModuleId, Placement>>> = {
-  // Identity, then the numbers, then the story — with the four small modules
-  // paired off two-by-two down the bottom third.
+export const MOBILE_LAYOUTS: Record<TabId, Map> = {
   index: {
+    identity:       { col: [1, 4], row: [1, 2] },
+    hero:           { col: [1, 4], row: [3, 6] },
+    "svc-stores":   { col: [1, 2], row: [9, 2] },
+    "svc-websites": { col: [3, 2], row: [9, 2] },
+    "svc-apps":     { col: [1, 2], row: [11, 2] },
+    "svc-care":     { col: [3, 2], row: [11, 2] },
+  },
+  work: HAS_TESTIMONIALS ? MOBILE_WORK_TESTIMONIALS : MOBILE_WORK,
+  about: {
     identity:   { col: [1, 4], row: [1, 2] },
-    stats:      { col: [1, 4], row: [3, 2] },
-    experience: { col: [1, 4], row: [5, 4] },
-    signature:  { col: [1, 2], row: [9, 2] },
-    latest:     { col: [3, 2], row: [9, 2] },
-    status:     { col: [1, 2], row: [11, 2] },
-    location:   { col: [3, 2], row: [11, 2] },
+    process:    { col: [1, 4], row: [3, 3] },
+    experience: { col: [1, 4], row: [6, 4] },
+    stack:      { col: [1, 2], row: [10, 3] },
+    education:  { col: [3, 2], row: [10, 3] },
   },
-  // The projects are the tab, so they take the middle in a 2x2 — three rows
-  // each, ~180x181, which holds the title and the two lines under it with room
-  // to spare. Four rows left them with a hole through the middle.
-  //
-  // SELECTED and the CV are full-width bars instead of a half-width pair: both
-  // are a label, a numeral and a line of mono, and at ~180 wide every one of
-  // those lines wrapped — "SHOPIFY · HEADLESS · COMMERCE" took two lines and
-  // pushed itself into the card's edge. The same two rows at full width fit
-  // them on one line each. The CV goes last because DOWNLOAD is the exit.
-  work: {
-    identity:     { col: [1, 4], row: [1, 2] },
-    "work-meta":  { col: [1, 4], row: [3, 2] },
-    "project-01": { col: [1, 2], row: [5, 3] },
-    "project-02": { col: [3, 2], row: [5, 3] },
-    "project-03": { col: [1, 2], row: [8, 3] },
-    "project-04": { col: [3, 2], row: [8, 3] },
-    cv:           { col: [1, 4], row: [11, 2] },
-  },
-  // Two columns of spec sheets. Row count roughly tracks entry count, but the
-  // spec-sheet rows are `flex-1` and share whatever they get, so the tighter
-  // constraint is EDUCATION: at three rows its second school lost its dates off
-  // the bottom. FRAMEWORKS gives up the row — a denser list is cosmetic, a
-  // missing line is not.
-  stack: {
-    identity:         { col: [1, 4], row: [1, 2] },
-    "tech-count":     { col: [1, 2], row: [3, 2] },
-    "cat-databases":  { col: [3, 2], row: [3, 2] },
-    "cat-languages":  { col: [1, 2], row: [5, 4] },
-    "cat-tools":      { col: [1, 2], row: [9, 4] },
-    "cat-frameworks": { col: [3, 2], row: [5, 4] },
-    education:        { col: [3, 2], row: [9, 4] },
-  },
-  // HEADLINE needs three rows: its type is already at the floor of its clamp,
-  // and `leading-[0.82]` lets the glyphs overflow their line boxes, so at two
-  // rows "WORK." sat on top of the availability line. The form gives up the row
-  // — its textarea is flex-1 and had the slack.
   contact: {
     identity: { col: [1, 4], row: [1, 2] },
-    headline: { col: [1, 4], row: [3, 3] },
-    email:    { col: [1, 4], row: [6, 2] },
-    form:     { col: [1, 4], row: [8, 4] },
-    socials:  { col: [1, 2], row: [12, 1] },
-    footer:   { col: [3, 2], row: [12, 1] },
+    contact:  { col: [1, 4], row: [3, 4] },
+    faq:      { col: [1, 4], row: [7, 5] },
+    footer:   { col: [1, 4], row: [12, 1] },
   },
 }
 

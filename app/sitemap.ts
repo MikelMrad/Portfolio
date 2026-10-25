@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { CONTACT } from "@/lib/content"
+import { CONTACT } from "@/lib/config"
 import { TAB_META } from "@/lib/seo"
 
 /** Every tab, each with its Arabic alternate (?lang=ar). */

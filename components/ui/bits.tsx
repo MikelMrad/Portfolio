@@ -53,6 +53,24 @@ export function CompactCard({ title, onOpen }: { title: string; onOpen: () => vo
   )
 }
 
+/**
+ * WhatsApp's mark, drawn in the site's own line weight: a speech bubble with a
+ * handset in it. Monochrome like everything else (currentColor), so it reads
+ * as WhatsApp by shape without bringing the brand green into a site that has
+ * no hue.
+ */
+export function WhatsAppIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden className="shrink-0">
+      <path d="M3.5 20.5l1.3-4.4A8.6 8.6 0 1 1 8 19.3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path
+        d="M9.2 8.1c.2-.4.5-.4.8-.4h.4c.2 0 .4 0 .5.4l.6 1.4c.1.2.1.4 0 .6l-.4.5c-.1.2-.2.3 0 .6.6 1 1.3 1.6 2.3 2.1.3.1.4.1.6-.1l.5-.6c.2-.2.4-.2.6-.1l1.4.7c.2.1.4.2.4.4 0 .3 0 .9-.4 1.3-.4.4-1.1.8-1.9.7-1.4-.1-3.1-.9-4.4-2.2-1.2-1.2-2-2.7-2.1-3.9-.1-.7.3-1.3.7-1.6z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
 /** Bordered technology chip. */
 export function Tag({ children }: { children: ReactNode }) {
   return (
@@ -98,28 +116,30 @@ export function ZoomNav({
 }: { label: string; title: string; meta?: string; onClose: () => void }) {
   const { UI } = useContent()
   return (
-    <div className="chrome h-full flex justify-between p-4 @[260px]:p-5 gap-3 min-h-0 min-w-0">
-      <button
-        onClick={onClose}
-        className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors flex items-center gap-2 self-center shrink-0"
-      >
+    // The whole panel is the close button: it holds nothing else to press.
+    <button
+      type="button"
+      onClick={onClose}
+      className="chrome group h-full w-full text-start flex justify-between p-4 @[260px]:p-5 gap-3 min-h-0 min-w-0"
+    >
+      <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid group-hover:text-fg transition-colors flex items-center gap-2 self-center shrink-0">
         <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {UI.close} <span className="cq-h160 text-dim">{UI.esc}</span>
-      </button>
+      </span>
 
-      <div className="min-w-0">
+      <span className="block min-w-0">
         <span className="font-mono text-[9px] uppercase tracking-[0.28em] text-dim block truncate">{label}</span>
         {/* Wrapped, not gated directly: .cq-h160 reverts `display`, which for a
             bare <span> is `inline` — and an inline heading drops its margin. */}
-        <div className="cq-h160">
+        <span className="cq-h160">
           <span className="font-display text-fg leading-[0.9] block tracking-tight mt-1 text-[clamp(1.25rem,min(18cqw,20cqh),3rem)]">
             {title}
           </span>
-        </div>
-      </div>
+        </span>
+      </span>
 
       <span className="cq-h160 font-mono text-[9px] uppercase tracking-[0.2em] text-dim leading-relaxed">
         {meta}
       </span>
-    </div>
+    </button>
   )
 }

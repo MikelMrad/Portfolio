@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
-import { CONTACT, IDENTITY } from "@/lib/content"
+import { CONTACT, HERO, IDENTITY } from "@/lib/content"
+import { SITE_TITLE } from "@/lib/seo"
 
 /**
  * The link preview — what WhatsApp, iMessage, Slack and LinkedIn show when the
@@ -16,7 +17,7 @@ import { CONTACT, IDENTITY } from "@/lib/content"
  * Applies to every route: it sits at the app root, above the tab catch-all.
  */
 
-export const alt = `${IDENTITY.name} — ${IDENTITY.role}`
+export const alt = SITE_TITLE
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -63,7 +64,7 @@ export default async function Image() {
         >
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <span style={{ fontSize: 22, letterSpacing: 6, color: DIM }}>PORTFOLIO — 2026</span>
+              <span style={{ fontSize: 22, letterSpacing: 6, color: DIM }}>STORES · WEBSITES · APPS</span>
               <span style={{ fontSize: 24, letterSpacing: 5, color: MID }}>{IDENTITY.role}</span>
             </div>
 
@@ -76,7 +77,7 @@ export default async function Image() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <span style={{ fontSize: 22, letterSpacing: 4, color: DIM }}>{IDENTITY.tagline}</span>
+              <span style={{ fontSize: 34, letterSpacing: 2, color: FG }}>{HERO.headline.toUpperCase()}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <div
                   style={{

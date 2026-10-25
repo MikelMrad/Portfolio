@@ -17,10 +17,17 @@ No test suite. Verification is visual — drive the app and look at it.
 
 ## What this is
 
-Portfolio v2 for Mikel Mrad. A **single, never-scrolling page**: one `100dvh`
+Portfolio v2 for Mikel Mrad, written to **sell freelance work** (online stores,
+websites and apps for businesses in Lebanon and the Gulf), not to read as a CV.
+A **single, never-scrolling page**: one `100dvh`
 bento grid where clicking a tab makes the current modules fly off to the four
 edges while the next tab's modules fly in from the directions their new cells
 imply. Inspired by alahmad.dev's modularity, but non-scrollable.
+
+Eight sections across four tabs, in reading order: INDEX (hero with the proof
+strip, four services), WORK (projects, testimonials once one is approved),
+ABOUT (how I work, experience, stack, education), CONTACT (contact card, FAQ).
+Keys 1-4 and ←/→ switch tabs. `/stack` redirects to `/about` (next.config.ts).
 
 A phone gets the same site, not a reduced one: every module, its real content,
 the same scatter. It runs on a portrait grid instead of a landscape one — see
@@ -34,28 +41,11 @@ the same scatter. It runs on a portrait grid instead of a landscape one — see
 - **Tailwind v4** — tokens live in `@theme {}` inside `app/globals.css`. There is
   no `tailwind.config.*`.
 - **Motion 12** (`motion/react`) drives the whole transition.
-- **@react-three/fiber** for exactly one module (`components/three/signature.tsx`
-  — a field of arrows that all turn to face the cursor, drawn as raw line
-  segments to match the site's hairline weight). **Imported through
-  `next/dynamic` with `ssr: false`** — see The first load. Two things about its
-  timing: the stage requests the chunk during the boot drawing rather than
-  waiting for the card to mount, and `paused` is `busy && !intro`, because
-  parking the loop through an intro that isn't a flight just leaves the card
-  blank for `TRANSITION_MS` after everything else has landed. It listens for `pointermove` on
-  **`window`**, not the canvas, so the field reacts while the cursor is anywhere
-  on the page; each arrow eases toward its target, which is what drags a wave
-  through the grid as you move.
-
-  Two React Compiler constraints bite here: read `camera`/`pointer` off the
-  `useFrame` state rather than `useThree()`, and keep per-frame mutable state
-  (the easing angles) in a **ref** — the lint rules reject mutating anything a
-  hook returned.
-
-  **The canvas rect is measured every frame, on purpose.** Caching it on mount
-  is wrong: the card enters under a scatter transform of up to ±1400px, so a
-  rect read then is pinned to the entrance position — and a `ResizeObserver`
-  never corrects it, because the card's *size* never changes, only its position.
-  That offset made every arrow point the same wrong way.
+- No WebGL and no form SDK any more: the 3D arrows card and the EmailJS
+  contact form were removed when the site was rewritten to sell (the phone
+  grid had no room for the card, and CONTACT is WhatsApp / email buttons now).
+  Both are in git history (`components/three/signature.tsx`,
+  `ContactForm` in `contact-modules.tsx`).
 
 ## Architecture
 
@@ -83,7 +73,23 @@ The site is a data structure, not a set of pages.
    expanded-project state. Renders the grid.
 
 4. **`lib/content.ts`** — every string on the site. Modules read from it;
-   never hardcode copy in a component.
+   never hardcode copy in a component. **No em or en dashes in anything a
+   visitor reads** (copy, titles, metadata, alt text): use a comma, period,
+   colon or middle dot. Date ranges go through `UI.range(from, to)`.
+
+5. **`lib/config.ts`** — contact constants: WhatsApp number, email, Cal.com
+   URL, links. `whatsappUrl(text)` builds the wa.me link with the language's
+   prefilled message (`UI.whatsapp.message`); `has(url)` is false for an empty
+   string, and **a button whose URL is empty does not render** (BOOK A FREE CALL
+   stays hidden until `calcom` is filled in).
+
+6. **`lib/testimonials.ts`** — name, business, logo and `approved` per
+   testimonial; quote and role are copy, in the content files under the same
+   id. Only approved entries render, and **with none approved WORK uses a
+   layout without the card** (`HAS_TESTIMONIALS` picks between `WORK` and
+   `WORK_TESTIMONIALS` in `lib/grid.ts`, at build time, so the boot drawing
+   matches). Both variants must tile; re-run the tiling check after editing
+   either.
 
 ### The identity card is positioned in pixels, not by the grid
 
@@ -131,10 +137,13 @@ in:
 - **Projects** → `DETAIL_LAYOUT` / `MOBILE_DETAIL_LAYOUT`, driven by `open` (a
   project number).
 - **Any other module** → `zoomLayout(id)` / `mobileZoomLayout(id)`, driven by
-  `zoom`. EXPERIENCE opens it from its own card; every module opens it from
-  its compact face (below). A module with a dedicated expanded view renders it
-  when `zoom === id` — `ExperienceDetail`, `StatsDetail`. Give one to any
-  module that looks empty blown up to the whole grid; the rest render as-is.
+  `zoom`. The services, HOW I WORK, EXPERIENCE and STACK open it from their
+  own card (on a phone they show only their headline, so the tap is how the
+  detail is read); every module opens it from its compact face (below). A
+  module with a dedicated expanded view renders it when `zoom === id`:
+  `ExperienceDetail`, and a service drops its button shell to show its
+  WhatsApp call to action. Give one to any module that looks empty blown up to
+  the whole grid; the rest render as-is.
 
 **Compact faces.** A card swapped into a cell under 80% of its composed size on
 either axis (`isCramped()` in `stage.tsx`) shows only its title and EXPAND
@@ -190,14 +199,11 @@ unaffected, and Googlebot executes JS.
 
 Two pieces, and they solve different halves of the same problem.
 
-**Nothing heavy is in the critical path.** The page used to ship ~473KB gzipped
-of JS before the first pixel, because `Signature` and `@emailjs/browser` were
-static imports: every tab downloaded three.js for a 2x2 card that only exists on
-INDEX, and the SDK for a form that only exists on CONTACT. Both are lazy now —
-`next/dynamic` with `ssr: false` for the WebGL module, `await import()` inside
-the submit handler for EmailJS — which is 247KB on every route. **Don't import
-either of them statically again**, and weigh anything else this size the same
-way: the grid can't paint until the bundle has.
+**Nothing heavy is in the critical path.** The page once shipped ~473KB gzipped
+of JS before the first pixel, mostly three.js and the EmailJS SDK. Both are gone
+now. Weigh any new dependency of that size carefully, and lazy-load it
+(`next/dynamic` / `await import()`) if it's only needed on one tab: the grid
+can't paint until the bundle has.
 
 **The boot layer covers what's left.** `components/grid/grid-boot.tsx` draws
 *this tab's* bento as a line — one SVG rectangle per module in the layout the
@@ -246,11 +252,6 @@ Three consequences worth keeping:
 - **The handoff is a timer, not `animation.finished`.** It has to fire before
   the drawing ends, and a tab loaded in the background throttles its animations
   — the content must not be held back with them.
-- **The WebGL chunk is requested during the drawing.** Lazy-loading it moved
-  ~226KB off the critical path but left the one module that needs it arriving
-  last, into a box already on screen; asking for it at `resolved` overlaps the
-  download with the loading screen. INDEX only — the other three tabs must go
-  on never fetching it.
 
 Measured on a warm load: first paint 104ms, content starts rising 621ms, last
 line closes 774ms, everything settled 966ms.
@@ -284,9 +285,9 @@ the wrong height. Cells come out ~86 x 57, so a 2x4 module is 180x251 and a 4x2 
 
 Composition is per tab, not transposed. What works as a 5-wide band on a desktop
 has to become either a full-width bar or a half-width block, so each tab is laid
-out for the shape it is actually in — projects pair off 2x2, the stack becomes two
-columns of spec sheets, the contact form takes five rows because its textarea
-collapses to nothing at four.
+out for the shape it is actually in — the hero takes six rows on a phone and
+the services pair off 2x2 under it, projects pair off 2x2, the FAQ takes five
+rows and scrolls inside itself (`data-no-drag`) on a short phone.
 
 **Both maps must hold the same module set for a tab.** There is a check worth
 re-running after any edit: every map must tile its grid exactly (no holes, no
@@ -319,10 +320,6 @@ A portrait phone used to be able to toggle a pinch-and-pan view of the real
 gives the real desktop grid at real size, with everything live, and the dock's
 bottom-right slot went to the theme toggle. It is in git history
 (`components/grid/pinch-pan.tsx`) if it is ever wanted back.
-
-The WebGL canvas keeps `resize={{ offsetSize: true }}` from that era — R3F
-measures with `getBoundingClientRect`, which is transform-aware, and offset
-size is correct inside any transformed ancestor.
 
 ### Throwable cards
 
@@ -413,9 +410,8 @@ and the area grows with the square of the radius.
   and every stroke or rule is `var(--color-fg)`. In light mode `--glow` is near
   black at half strength (`--glow-k: 0.5`) — on white, a white glow vanishes
   and a full-strength black one is a smudge; half reads as the same lift.
-- **WebGL is the exception CSS can't reach** — `signature.tsx` reads
-  `useThemeStore()` for its line colour. Anything else drawn outside the DOM
-  needs the same.
+- Anything drawn outside the DOM (a canvas) can't be reached by the CSS
+  tokens and must read `useThemeStore()` for its colours.
 - The link preview (`opengraph-image.tsx`) stays dark: it is one image for
   everyone.
 
@@ -423,17 +419,17 @@ and the area grows with the square of the radius.
 
 The grid mounts after JavaScript, so without help a crawler sees an empty page.
 `lib/seo.ts` derives, from `content.ts`, per-tab titles/descriptions with
-`?lang=ar` alternates (`generateMetadata` in `page.tsx`) and a schema.org
-ProfilePage → Person (JSON-LD); `app/sitemap.ts` and `app/robots.ts` list the
-four tabs. `components/static-cv.tsx` server-renders the whole CV as semantic
+`?lang=ar` alternates, Open Graph and Twitter tags (`generateMetadata` in
+`page.tsx`), and one JSON-LD `@graph` with a Person and an FAQPage built from
+`FAQ`; `app/sitemap.ts` and `app/robots.ts` list the four tabs. `components/static-cv.tsx` server-renders the whole CV as semantic
 HTML: visually hidden during boot, given `hidden` by the stage once the grid
 mounts (so screen readers get one copy), and shown as the page itself when
 JavaScript is off (`<noscript>` in `page.tsx`). **New content in `content.ts`
-belongs in the static CV too** if it matters to a recruiter.
+belongs in the static CV too** if it matters to a client or a crawler.
 
 ### Routing
 
-Tabs are real static routes (`/`, `/work`, `/stack`, `/contact`) via an optional
+Tabs are real static routes (`/`, `/work`, `/about`, `/contact`) via an optional
 catch-all with `generateStaticParams`, so links and hard reloads work. Client-side
 switching uses `window.history.pushState`, so React never unmounts the grid and
 the identity morph survives. The catch-all calls `notFound()` on unknown
@@ -462,15 +458,15 @@ as HTML.
   directions, write a real two-axis container query in `globals.css`. See
   `.role-blurb`, which hides experience blurbs when a card is too short for them.
 - **Drop optional lines with the `.cq-h*` gates, don't let them clip.** The two
-  grids put the same module in wildly different heights — the CV card is a
-  ~369x112 bar on a phone and a ~290x340 block on a desktop — so a width gate
-  can't tell them apart, and on the CV card it now gets the answer backwards.
-  `.cq-h80`, `.cq-h100` and `.cq-h160` in `globals.css` show their content only
-  above that container height. Gate the line the card can most afford to lose:
-  STATS keeps its numerals and drops the captions, LATEST keeps its link and
-  drops the subtitle, the CV card keeps DOWNLOAD and drops the contents list —
-  and its own `<br>` is gated the same way, so "2026 CV" is one line in the
-  phone's bar and two in the desktop's block.
+  grids put the same module in wildly different heights — a service is a
+  ~180x121 block on a phone and a ~345x350 one on a desktop — so a width gate
+  can't tell them apart. `.cq-h80` through `.cq-h320` in `globals.css` show
+  their content only above that container height (`.cq-h320-hide` is the
+  inverse). Gate the line the card can most afford to lose: the hero drops its
+  proof strip, then its subline, and keeps headline and buttons; a service
+  keeps title and price and drops its description; HOW I WORK keeps the step
+  titles and drops their explanations; STACK keeps the categories and drops
+  the lists.
   They set `display: revert`, which for a bare `<span>` is `inline` — so on a
   non-flex parent, gate a wrapper `<div>` instead, or `truncate` and vertical
   margins silently stop working.
@@ -519,7 +515,7 @@ original "half-cut image" problem.
 `inline-block`. That is load-bearing: as a **flex item** the wrapper otherwise
 stretches to the container's full width, putting its centre far from the content
 it wraps. The offset is measured from that centre, so a left-aligned label
-(the CV card's "DOWNLOAD ↓") shot sideways on hover. A definite width overrides
+(the old CV card's "DOWNLOAD ↓") shot sideways on hover. A definite width overrides
 the stretch. Don't remove it, and don't paper over it with `self-start` at each
 call site.
 
@@ -534,6 +530,10 @@ plays that role (`shadow-glow-sm` / `shadow-glow` / `shadow-glow-lg`, plus
 
 ## Content source of truth
 
-`lib/content.ts` was reconciled from the 2026 technical CV, which supersedes the
-v3 portfolio where they disagree: 2+ years (not 3+), and The Outlets is
-*Co-Founder & Developer since 2022* (not a 2024 build).
+The sales copy (hero, services, prices, process, FAQ, project write-ups,
+experience blurbs) was supplied by Mikel in October 2026 and is final: change
+it only when asked. Every build includes a free first
+year of maintenance; after it, two yearly care plans (Care, Care+) live on the
+fourth service card (`plans` on the `care` entry). The Outlets is
+*Co-Founder & Developer since 2022*, with no sales figures. Uncle J has no live link and nothing on the site may say the
+store closed.

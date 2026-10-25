@@ -1,54 +1,54 @@
 "use client"
-import type { StackCategory } from "@/lib/content"
 import { useContent } from "@/lib/i18n"
-import { Counter } from "@/components/ui/counter"
 import { Label } from "@/components/ui/bits"
 
-export function TechCount() {
+/**
+ * The whole toolbox in one card: each category with its count, and the
+ * technologies themselves once the card is tall enough to list them. On a
+ * phone it is a half-width block of four lines, and a tap expands it.
+ */
+export function Stack({ onOpen }: { onOpen?: () => void }) {
   const { STACK, TECH_COUNT, UI } = useContent()
+  const Shell = onOpen ? "button" : "div"
   return (
-    <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5">
-      <Label>{UI.toolbox.label}</Label>
-      <div>
-        <span className="font-display text-fg leading-none block text-[clamp(1.5rem,min(22cqw,26cqh),3.75rem)]">
-          <Counter to={TECH_COUNT} delay={450} />
-        </span>
-        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim block mt-1">
-          {UI.toolbox.technologies}
-        </span>
-      </div>
-      <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-mid leading-relaxed">
-        {UI.toolbox.categories(STACK.length)}
-      </span>
-    </div>
-  )
-}
+    <Shell
+      {...(onOpen ? { onClick: onOpen, type: "button" as const } : {})}
+      className="group h-full w-full text-start flex flex-col p-4 @[260px]:p-5 gap-3 min-h-0 overflow-hidden"
+    >
+      {/* The arrow says the card opens; it goes once the card is tall
+          enough to list everything, where there is nothing more to open. */}
+      <Label right={<>{TECH_COUNT}{onOpen && <span className="cq-h320-hide"> <span aria-hidden className="inline-block rtl:-scale-x-100">↗</span></span>}</>}>
+        {UI.stack.label}
+      </Label>
 
-export function Category({ cat }: { cat: StackCategory }) {
-  return (
-    <div className="h-full flex flex-col p-4 @[240px]:p-5 gap-3 min-h-0">
-      <Label right={String(cat.skills.length).padStart(2, "0")}>{cat.label}</Label>
-
-      {/* A spec sheet, not a chip cloud. Each row takes an equal share of the
-          column, so the card fills whether it holds 2 entries or 12. */}
-      <ul className="flex-1 min-h-0 flex flex-col">
-        {cat.skills.map((skill, i) => (
-          <li
-            key={skill}
-            className="flex-1 min-h-0 flex items-center justify-between gap-2 border-b border-hairline last:border-0 group"
-          >
-            {/* Technology names are Latin in both languages; isolated, or an
-                RTL line turns "C++" into "++C". */}
-            <span dir="ltr" className="font-mono text-[10px] @[240px]:text-[11px] uppercase tracking-[0.12em] text-mid group-hover:text-fg transition-colors truncate">
-              {skill}
-            </span>
-            <span className="font-mono text-[8px] tracking-[0.16em] text-dim shrink-0 tabular-nums">
-              {String(i + 1).padStart(2, "0")}
-            </span>
+      <ul className="flex-1 min-h-0 flex flex-col [justify-content:safe_center] gap-2.5 @[420px]:gap-4">
+        {STACK.map((c) => (
+          <li key={c.id} className="border-b border-hairline pb-2 last:border-0 last:pb-0 min-w-0">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="font-mono text-[9px] @[420px]:text-[10px] uppercase tracking-[0.14em] text-fg truncate">
+                {c.label}
+              </span>
+              <span className="font-mono text-[8px] tracking-[0.16em] text-dim tabular-nums shrink-0">
+                {String(c.skills.length).padStart(2, "0")}
+              </span>
+            </div>
+            <div className="cq-h320">
+              {/* Technology names are Latin in both languages; each is
+                  isolated, or an RTL line turns "C++" into "++C". */}
+              <p className="font-mono text-[9px] @[420px]:text-[10px] uppercase tracking-[0.08em] text-mid leading-relaxed mt-1">
+                {c.skills.map((sk, i) => (
+                  <span key={sk}>
+                    {i > 0 && <span className="text-dim"> · </span>}
+                    <span dir="ltr">{sk}</span>
+                  </span>
+                ))}
+              </p>
+            </div>
           </li>
         ))}
       </ul>
-    </div>
+
+    </Shell>
   )
 }
 
@@ -59,10 +59,9 @@ export function Education() {
       <Label>{UI.education.label}</Label>
       {/*
         `safe center` rather than plain centring. When the two entries are taller
-        than the card — a 360px phone gives this three rows, ~133px — centred
-        content overflows in *both* directions, and the first school rode up over
-        the EDUCATION label. Safe centring falls back to flex-start instead, so
-        it clips off the bottom like everything else does.
+        than the card, centred content overflows in *both* directions and the
+        first school rides up over the EDUCATION label. Safe centring falls back
+        to flex-start instead, so it clips off the bottom like everything else.
       */}
       <div className="flex-1 min-h-0 flex flex-col [justify-content:safe_center] gap-4">
         {EDUCATION.map((e) => (

@@ -164,13 +164,6 @@
   .role-blurb { display: block; }
 }
 
-/* StatsDetail: two columns in a portrait box (a phone's expanded view), three
-   in a landscape one. Rows share the height so the six figures fill it. */
-.stats-detail { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
-@container (min-aspect-ratio: 1 / 1) {
-  .stats-detail { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
-}
-
 /*
   Optional content, revealed only when the card has the vertical room for it.
 
@@ -180,10 +173,15 @@
   can't tell those apart, and on the CV card it gets the answer backwards. Named for their threshold in
   pixels. Requires container-type: size, which ModuleCard sets.
 */
-.cq-h80, .cq-h100, .cq-h160 { display: none; }
+.cq-h80, .cq-h100, .cq-h160, .cq-h220, .cq-h240, .cq-h320 { display: none; }
 @container (min-height:  80px) { .cq-h80  { display: revert; } }
 @container (min-height: 100px) { .cq-h100 { display: revert; } }
 @container (min-height: 160px) { .cq-h160 { display: revert; } }
+@container (min-height: 220px) { .cq-h220 { display: revert; } }
+@container (min-height: 240px) { .cq-h240 { display: revert; } }
+@container (min-height: 320px) { .cq-h320 { display: revert; } }
+/* The inverse: a hint that only matters while the content above is hidden. */
+@container (min-height: 320px) { .cq-h320-hide { display: none; } }
 
 /*
   Detail chrome — the close control and the sibling list beside an expanded
@@ -313,6 +311,17 @@
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 8px 0 rgb(var(--glow) / calc(0.35 * var(--glow-k))); }
   50%      { box-shadow: 0 0 16px 3px rgb(var(--glow) / calc(0.65 * var(--glow-k))); }
+}
+
+/* The dock's WhatsApp button arrives a beat after the page, so the eye finds
+   it once. Reduced motion: no entrance. */
+@keyframes wa-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.wa-dock { animation: wa-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) 0.9s both; }
+@media (prefers-reduced-motion: reduce) {
+  .wa-dock { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

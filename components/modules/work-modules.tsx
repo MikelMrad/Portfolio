@@ -1,17 +1,19 @@
 "use client"
 import Image from "next/image"
-import { CONTACT, type Project } from "@/lib/content"
+import type { Project } from "@/lib/content"
 import { useContent } from "@/lib/i18n"
 import { GlowRule, Label, Tag } from "@/components/ui/bits"
 import { Magnetic } from "@/components/ui/magnetic"
 
 export function WorkMeta() {
-  const { UI } = useContent()
+  const { PROJECTS, UI } = useContent()
   return (
     <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5">
       <Label>{UI.workMeta.label}</Label>
       <div>
-        <span className="font-display text-fg leading-none block text-[clamp(1.5rem,min(22cqw,26cqh),3.75rem)]">04</span>
+        <span className="font-display text-fg leading-none block text-[clamp(1.5rem,min(22cqw,26cqh),3.75rem)]">
+          {String(PROJECTS.length).padStart(2, "0")}
+        </span>
         <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-dim block mt-1">
           {UI.workMeta.line}
         </span>
@@ -19,43 +21,6 @@ export function WorkMeta() {
       <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-mid leading-relaxed">
         {UI.workMeta.tags}
       </span>
-    </div>
-  )
-}
-
-export function CvCard() {
-  const { UI } = useContent()
-  return (
-    <div className="h-full flex flex-col justify-between p-4 @[260px]:p-5">
-      <Label right="PDF">{UI.cv.label}</Label>
-      <div className="flex flex-col gap-2">
-        {/* One line in the phone's full-width bar, two in the desktop card's
-            portrait box — the break is gated on the same height as the contents
-            line below it. */}
-        <span className="font-display text-fg leading-[0.88] block tracking-tight text-[clamp(1.25rem,min(20cqw,20cqh),3rem)]">
-          {UI.cv.top}{" "}
-          <br className="cq-h160" />
-          {UI.cv.bottom}
-        </span>
-        {/* First thing to go when the card is short — the CV itself says this,
-            and DOWNLOAD is the only line here that has to survive. */}
-        <span className="cq-h160 font-mono text-[9px] uppercase tracking-[0.16em] text-dim leading-relaxed">
-          {UI.cv.contents}
-        </span>
-      </div>
-      <div className="flex flex-col gap-2">
-        <GlowRule />
-        <Magnetic strength={0.25}>
-          <a
-            href={CONTACT.cv}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors flex items-center gap-2"
-          >
-            {UI.cv.download} <span aria-hidden>↓</span>
-          </a>
-        </Magnetic>
-      </div>
     </div>
   )
 }
@@ -91,21 +56,25 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (nu
       </span>
 
       <div className="relative h-full flex flex-col justify-between p-4 @[300px]:p-5">
-        <Label right={project.year}>{UI.project.label} — {project.num}</Label>
+        <Label right={project.year}>{UI.project.label} · {project.num}</Label>
 
         <h3 className="font-display text-fg leading-[0.86] tracking-tight whitespace-pre-line text-[clamp(1.35rem,min(11cqw,22cqh),4rem)]">
           {project.title}
         </h3>
 
         <div className="flex flex-col gap-2 min-w-0">
-          <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-mid truncate">
-            {project.role}
-          </span>
+          {/* The outcome, the line that sells the project. Drops before the
+              title does on a short card. */}
+          <div className="cq-h160">
+            <p className="font-mono text-[9px] @[300px]:text-[10px] uppercase tracking-[0.1em] text-mid leading-snug line-clamp-3">
+              {project.headline}
+            </p>
+          </div>
           <div className="hidden @[300px]:flex flex-wrap gap-1.5">
             {project.stack.slice(0, 4).map((s) => <Tag key={s}>{s}</Tag>)}
           </div>
           <span className="font-mono text-[9px] uppercase tracking-[0.24em] text-dim group-hover:text-fg transition-colors flex items-center gap-2">
-            {project.archived ? UI.project.archivedView : UI.expand} <span aria-hidden className="inline-block rtl:-scale-x-100">↗</span>
+            {UI.expand} <span aria-hidden className="inline-block rtl:-scale-x-100">↗</span>
           </span>
         </div>
       </div>
@@ -144,7 +113,7 @@ function VerticalReel({ images, alt }: { images: string[]; alt: string }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={src}
-              alt={i < images.length ? `${alt} — view ${i + 1}` : ""}
+              alt={i < images.length ? `${alt}, ${i + 1}/${images.length}` : ""}
               aria-hidden={i >= images.length}
               /* Full colour: the screenshots are the content here. Monochrome
                  is a rule for type and chrome, not for the work itself. */
@@ -191,30 +160,27 @@ export function ProjectDetail({ num }: { num: string }) {
 
       {/* Copy */}
       <div className="w-full @[700px]:w-[36%] shrink-0 flex flex-col gap-4 p-5 @[700px]:p-6 @[700px]:min-h-0 @[700px]:overflow-y-auto">
-        <Label right={project.year}>{UI.project.label} — {project.num}</Label>
+        <Label right={project.year}>{UI.project.label} · {project.num}</Label>
 
         <h2 className="font-display text-fg leading-[0.86] tracking-tight whitespace-pre-line text-4xl @[700px]:text-6xl">
           {project.title}
         </h2>
 
-        <div className="flex flex-col gap-1">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-mid">{project.role}</span>
-          <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-dim">{project.subtitle}</span>
-        </div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-dim">{project.role}</span>
+
+        <p className="font-mono text-[11px] @[700px]:text-xs uppercase tracking-[0.1em] text-fg leading-snug">
+          {project.headline}
+        </p>
 
         <GlowRule />
 
-        <div className="flex flex-col gap-3">
-          {project.detail.map((para, i) => (
-            <p key={i} className="font-mono text-[10px] leading-relaxed text-mid">{para}</p>
-          ))}
-        </div>
+        <p className="font-mono text-[10px] leading-relaxed text-mid">{project.body}</p>
 
         <div className="flex flex-wrap gap-1.5 @[700px]:mt-auto pt-2">
           {project.stack.map((s) => <Tag key={s}>{s}</Tag>)}
         </div>
 
-        {project.url ? (
+        {project.url && (
           <Magnetic strength={0.3}>
             <a
               href={project.url}
@@ -223,12 +189,9 @@ export function ProjectDetail({ num }: { num: string }) {
               className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-fg border border-fg px-5 py-3 hover:bg-fg hover:text-bg transition-colors duration-150"
             >
               {UI.project.visit} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span>
+              <span dir="ltr" className="normal-case tracking-[0.08em] text-mid">{project.url.replace(/^https?:\/\//, "")}</span>
             </a>
           </Magnetic>
-        ) : (
-          <span className="inline-flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.24em] text-dim border border-hairline px-5 py-3 self-start">
-            {UI.project.offline}
-          </span>
         )}
       </div>
     </div>
@@ -248,9 +211,12 @@ export function DetailNav({
 }: { num: string; onClose: () => void; onOpen: (n: string) => void }) {
   const { PROJECTS, UI } = useContent()
   return (
-    <div className="chrome h-full flex justify-between p-4 @[260px]:p-5 gap-3 min-h-0 min-w-0">
+    // A click anywhere on the panel closes the project, except on the sibling
+    // list, whose buttons open another one. The CLOSE button stays the
+    // keyboard and screen-reader way out.
+    <div onClick={onClose} className="chrome group/nav h-full flex justify-between p-4 @[260px]:p-5 gap-3 min-h-0 min-w-0 cursor-pointer">
       <button
-        onClick={onClose}
+        onClick={(e) => { e.stopPropagation(); onClose() }}
         className="font-mono text-[9px] uppercase tracking-[0.24em] text-mid hover:text-fg transition-colors flex items-center gap-2 self-center shrink-0"
       >
         <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {UI.close} <span className="cq-h160 text-dim">{UI.esc}</span>
@@ -264,7 +230,7 @@ export function DetailNav({
           return (
             <button
               key={p.num}
-              onClick={() => onOpen(p.num)}
+              onClick={(e) => { e.stopPropagation(); onOpen(p.num) }}
               className="chrome-item text-start group flex flex-1 min-h-0 min-w-0 items-center gap-2 border-hairline"
             >
               <span className={`font-mono text-[9px] tracking-[0.2em] ${active ? "text-fg" : "text-dim"}`}>

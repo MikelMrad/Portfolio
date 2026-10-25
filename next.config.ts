@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   // build, scatter transition, identity morph and project expand all behave
   // identically with this on. Matches the v3 portfolio's setup.
   reactCompiler: true,
+  // STACK became ABOUT (how I work, experience, stack, education). Old links
+  // and search results land on the new tab.
+  async redirects() {
+    return [{ source: "/stack", destination: "/about", permanent: true }]
+  },
 }
 
 export default nextConfig

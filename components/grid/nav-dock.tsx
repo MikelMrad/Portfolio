@@ -3,6 +3,8 @@ import { TABS, type TabId } from "@/lib/grid"
 import { Magnetic } from "@/components/ui/magnetic"
 import { useContent } from "@/lib/i18n"
 import { toggleTheme, useThemeStore } from "@/lib/theme"
+import { whatsappUrl } from "@/lib/config"
+import { WhatsAppIcon } from "@/components/ui/bits"
 
 /**
  * Fixed furniture. Lives outside the pan container so it stays reachable while
@@ -55,6 +57,28 @@ export function NavDock({
     </button>
   )
 
+  /**
+   * The always-there WhatsApp button, in the dock's end corner: bottom-right in
+   * English, bottom-left in Arabic (`end-*` mirrors it). In the dock rather
+   * than floating above it, so it never sits on a card or the key hints.
+   */
+  const whatsappButton = (className: string, withLabel: boolean) => (
+    <a
+      href={whatsappUrl(UI.whatsapp.message)}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={UI.whatsapp.aria}
+      className={`wa-dock items-center justify-center gap-2 h-8 md:h-9 border border-fg/60 text-fg bg-bg shadow-glow-sm hover:border-fg hover:shadow-glow hover:bg-fg hover:text-bg transition-[background-color,color,border-color,box-shadow] duration-300 ${
+        withLabel ? "px-3" : "w-8 md:w-9 rounded-full"
+      } ${className}`}
+    >
+      <WhatsAppIcon size={15} />
+      {withLabel && (
+        <span className="font-mono text-[9px] uppercase tracking-[0.2em]">{UI.contact.whatsapp}</span>
+      )}
+    </a>
+  )
+
   const themeButton = (className: string) => (
     <button
       // The wipe grows from the button itself (lib/theme.tsx).
@@ -92,7 +116,7 @@ export function NavDock({
               data-tab={t.id}
               // 2.5 rather than 3 on a phone: the start margin holds the
               // language toggle and, after a swap, the reset beside it.
-              className="relative px-2.5 md:px-5 py-2 group focus-visible:outline-none"
+              className="relative px-2 md:px-5 py-2 group focus-visible:outline-none"
             >
               <span
                 className={`font-mono text-[9px] md:text-[10px] uppercase tracking-[0.24em] transition-colors duration-300 ${
@@ -117,11 +141,11 @@ export function NavDock({
       })}
 
       {/*
-        The start margin — left in English, right in Arabic — holds the language
-        and on a desktop the theme toggle and the reset beside it. On a phone the
-        theme toggle and the reset sit in the end margin instead (bottom-right in
-        English): the start margin is ~71px there, and language + theme + reset
-        would be ~90. The end margin has the key hints on a desktop.
+        The start margin (left in English, right in Arabic) holds the language
+        and, on a desktop, the theme toggle and the reset beside it. A phone's
+        margins are ~60px each, two glyphs: the language and WATCH DEMO here,
+        with RESET taking the demo's place once there is something to reset,
+        and the theme toggle and WhatsApp in the end margin.
       */}
       <div className="absolute start-1 md:start-6 flex items-center">
         <button
@@ -134,28 +158,30 @@ export function NavDock({
         >
           {UI.dock.lang}
         </button>
-        {demoButton("flex md:hidden")}
+        {onReset ? resetButton("flex md:hidden") : demoButton("flex md:hidden")}
         {themeButton("hidden md:block")}
         {resetButton("hidden md:flex")}
       </div>
 
-      {/* The end margin on a desktop: WATCH DEMO, and the key hints beside it
-          once the window is wide enough for both. */}
+      {/* The end margin on a desktop: WATCH DEMO, the key hints once the
+          window is wide enough (and never on a touch screen, where there is
+          no keyboard to press them on), and WhatsApp in the corner. */}
       <div className="hidden md:flex absolute end-6 items-center gap-4">
         {demoButton("flex")}
-        <span className="hidden xl:block font-mono text-[8px] uppercase tracking-[0.22em] text-dim">
+        <span className="hidden min-[1440px]:pointer-fine:block font-mono text-[8px] uppercase tracking-[0.22em] text-dim">
           {UI.dock.hints}
         </span>
+        {whatsappButton("flex lg:hidden", false)}
+        {whatsappButton("hidden lg:flex", true)}
       </div>
 
       {/*
-        Phone only, and icon-only by necessity: the four tab labels already take
-        267 of a 393px screen, which leaves room for a glyph and not a word.
-        Sits in the dock's end margin, clear of the centred tabs.
+        Phone only, and icon-only by necessity: the four tab labels take most
+        of a 393px screen, which leaves room for a glyph and not a word.
       */}
-      <div className="absolute end-1 md:hidden flex items-center">
-        {resetButton("flex")}
-        {themeButton("block")}
+      <div className="absolute end-1.5 md:hidden flex items-center gap-1">
+        {themeButton("block !p-1.5")}
+        {whatsappButton("flex", false)}
       </div>
     </nav>
   )

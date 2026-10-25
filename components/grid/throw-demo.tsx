@@ -304,7 +304,8 @@ export function ThrowDemo({
 
       // ── Tour 2 — opening a card. The outline grows to the whole grid, the
       //    way the real one expands, holds, and shrinks back.
-      const openable = cards.find(([id]) => id === "experience" || id.startsWith("project-"))?.[0]
+      const openable = cards.find(([id]) =>
+        id.startsWith("svc-") || id.startsWith("project-") || id === "process" || id === "experience")?.[0]
       const rO = openable && rectOf(openable)
       const boxes = [...document.querySelectorAll("[data-module]")].map((el) => el.getBoundingClientRect())
       if (rO && boxes.length) {

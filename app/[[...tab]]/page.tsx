@@ -4,7 +4,7 @@ import { GridBoot } from "@/components/grid/grid-boot"
 import { Stage } from "@/components/grid/stage"
 import { StaticCv } from "@/components/static-cv"
 import { TABS, type TabId } from "@/lib/grid"
-import { TAB_META, jsonLdScript, personJsonLd } from "@/lib/seo"
+import { SITE_NAME, TAB_META, jsonLd, jsonLdScript } from "@/lib/seo"
 
 type Params = { params: Promise<{ tab?: string[] }> }
 
@@ -41,13 +41,18 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       languages: { en: m.path, ar: `${m.path}?lang=ar`, "x-default": m.path },
     },
     openGraph: {
-      type: "profile",
+      type: "website",
       title: m.title,
       description: m.description,
       url: m.path,
-      siteName: "Mikel Mrad",
+      siteName: SITE_NAME,
       locale: "en_US",
       alternateLocale: ["ar_LB"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: m.title,
+      description: m.description,
     },
   }
 }
@@ -58,10 +63,10 @@ export default async function Page({ params }: Params) {
 
   return (
     <>
-      {/* Structured data about the person — see lib/seo.ts. */}
+      {/* Structured data: the Person and the FAQ. See lib/seo.ts. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdScript(personJsonLd(TAB_META[id].path)) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd()) }}
       />
 
       {/* With JavaScript off the canvas never comes, so the plain document is
