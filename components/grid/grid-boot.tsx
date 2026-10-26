@@ -1,4 +1,5 @@
-import { LAYOUTS, MOBILE_LAYOUTS, gridStyle, type ModuleId, type Placement, type TabId } from "@/lib/grid"
+import type { Variant } from "@/lib/content-types"
+import { GRIDS, gridStyle, type ModuleId, type Placement, type TabId } from "@/lib/grid"
 import { DESKTOP_FLIGHT, MOBILE_FLIGHT, rankByRadius, type FlightGrid } from "@/lib/scatter"
 
 /**
@@ -58,11 +59,12 @@ function boxes(map: Partial<Record<ModuleId, Placement>>, flight: FlightGrid, va
   ))
 }
 
-export function GridBoot({ tab }: { tab: TabId }) {
+export function GridBoot({ tab, variant }: { tab: TabId; variant: Variant }) {
+  const grid = GRIDS[variant]
   return (
     <div className="boot" aria-hidden="true">
-      {boxes(LAYOUTS[tab], DESKTOP_FLIGHT, "d")}
-      {boxes(MOBILE_LAYOUTS[tab], MOBILE_FLIGHT, "m")}
+      {boxes(grid.desktop[tab] ?? {}, DESKTOP_FLIGHT, "d")}
+      {boxes(grid.mobile[tab] ?? {}, MOBILE_FLIGHT, "m")}
     </div>
   )
 }

@@ -2,6 +2,9 @@
 import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react"
 import { EN, type Content } from "./content"
 import { AR } from "./content-ar"
+import { CV_EN, type CvContent } from "./content-cv"
+import { CV_AR } from "./content-cv-ar"
+import type { SharedContent, Variant } from "./content-types"
 import { LANG_KEY } from "./lang-boot"
 
 /**
@@ -23,7 +26,16 @@ import { LANG_KEY } from "./lang-boot"
 
 export type Lang = "en" | "ar"
 
-export const CONTENT: Record<Lang, Content> = { en: EN, ar: AR }
+/** Either variant's full set, told apart by `VARIANT`. */
+export type AnyContent = Content | CvContent
+
+/** Every set, by variant (picked by hostname, see proxy.ts) and language. */
+export const CONTENT: { business: Record<Lang, Content>; cv: Record<Lang, CvContent> } = {
+  business: { en: EN, ar: AR },
+  cv:       { en: CV_EN, ar: CV_AR },
+}
+
+export const contentFor = (variant: Variant, lang: Lang): AnyContent => CONTENT[variant][lang]
 
 
 const listeners = new Set<() => void>()
@@ -47,13 +59,30 @@ export function setLang(lang: Lang) {
   listeners.forEach((fn) => fn())
 }
 
-const Ctx = createContext<Content>(EN)
+const Ctx = createContext<AnyContent>(EN)
 
-export function LangProvider({ lang, children }: { lang: Lang; children: ReactNode }) {
-  return <Ctx.Provider value={CONTENT[lang]}>{children}</Ctx.Provider>
+export function LangProvider({ lang, variant, children }: { lang: Lang; variant: Variant; children: ReactNode }) {
+  return <Ctx.Provider value={contentFor(variant, lang)}>{children}</Ctx.Provider>
 }
 
-/** The active language's copy. */
-export function useContent(): Content {
+/**
+ * The active language's copy, as far as the shared components need it: the
+ * fields both variants have (lib/content-types.ts).
+ */
+export function useContent(): SharedContent {
   return useContext(Ctx)
+}
+
+/** The business set, for modules that only exist on mikelmrad.dev. */
+export function useBusiness(): Content {
+  const c = useContext(Ctx)
+  if (c.VARIANT !== "business") throw new Error("A business-only module rendered in the cv variant")
+  return c
+}
+
+/** The portfolio set, for modules that only exist on portfolio.mikelmrad.dev. */
+export function useCv(): CvContent {
+  const c = useContext(Ctx)
+  if (c.VARIANT !== "cv") throw new Error("A cv-only module rendered in the business variant")
+  return c
 }

@@ -18,6 +18,8 @@ export const CONTACT = {
   cv:       "/docs/Mikel-Mrad-CV.pdf",
   /** The production origin: metadataBase and the link preview use it. */
   site:     "https://mikelmrad.dev",
+  /** The engineering portfolio's origin: the same app, the "cv" variant (proxy.ts). */
+  portfolio: "https://portfolio.mikelmrad.dev",
 } as const
 
 /** A wa.me link that opens the chat with `text` already typed. */

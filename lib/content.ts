@@ -1,5 +1,7 @@
 /**
- * Single source of truth for every piece of copy on the site.
+ * The business variant (mikelmrad.dev): every piece of copy on that site. The
+ * portfolio variant (portfolio.mikelmrad.dev) has its own set, in
+ * lib/content-cv.ts; both share the types in lib/content-types.ts.
  * Modules read from here; never hardcode strings in components.
  *
  * Two languages. This file is English and defines the shape (`Content`);
@@ -14,6 +16,8 @@
  * Contact details (numbers, addresses, links) are not copy: see lib/config.ts.
  */
 export { CONTACT } from "./config"
+import type { Project, Role, SharedContent, StackCategory } from "./content-types"
+export type { Project, Role, StackCategory } from "./content-types"
 
 export const IDENTITY = {
   name:      "MIKEL MRAD",
@@ -220,18 +224,6 @@ export const MODULE_TITLES: Record<string, string> = {
 // Four roles, one employer. The progression is the story, so `level` drives the
 // height of each rung in the timeline module.
 
-export type Role = {
-  title:  string
-  type:   string
-  from:   string
-  to:     string
-  months: number
-  /** 0 = entry, 3 = current. Drives rung height in the timeline. */
-  level:  number
-  blurb:  string
-  skills: string[]
-}
-
 export const EMPLOYER = {
   name:     "YORK PRESS",
   location: "BEIRUT, LEBANON",
@@ -288,26 +280,14 @@ export const ROLES: Role[] = [
 
 // ── Work ──────────────────────────────────────────────────────────────────────
 
-export type Project = {
-  num:      string
-  title:    string
-  /** The outcome, in one line. */
-  headline: string
-  body:     string
-  role:     string
-  year:     string
-  url:      string | null
-  images:   string[]
-  stack:    string[]
-}
-
 export const PROJECTS: Project[] = [
   {
     num:      "01",
     title:    "VINYLIZED",
     headline: "A store where every order lands in WhatsApp.",
-    body:
+    body: [
       "Customers pick their records and tap one button. The site writes the full order into a WhatsApp message, ready for the owner to confirm. No card forms and no gateway fees, in a market that already orders by WhatsApp. Since launch, the owner says the site brings in far more customers.",
+    ],
     role:     "SOLO DEVELOPER",
     year:     "2026",
     url:      "https://vinylizedlb.com",
@@ -323,8 +303,9 @@ export const PROJECTS: Project[] = [
     num:      "02",
     title:    "BRAND\nATELIER",
     headline: "A bilingual agency site built for the Gulf.",
-    body:
+    body: [
       "English and Arabic with true right-to-left layout across every page. Privacy-first analytics for Google, Meta and LinkedIn, plus full SEO setup. Delivered on the agreed timeline and budget, through several rounds of changes.",
+    ],
     role:     "CUSTOM WEB PLATFORM",
     year:     "2026",
     url:      "https://brandatelierdigital.com",
@@ -340,8 +321,9 @@ export const PROJECTS: Project[] = [
     num:      "03",
     title:    "THE\nOUTLETS",
     headline: "I run my own store, so I build for sales, not just looks.",
-    body:
+    body: [
       "I co-founded The Outlets and built its custom Shopify storefront. I run it every day: products, ads, orders and delivery. Every client store gets what I learned there.",
+    ],
     role:     "CO-FOUNDER & DEVELOPER",
     year:     "SINCE 2022",
     url:      "https://theoutletslb.com",
@@ -357,8 +339,9 @@ export const PROJECTS: Project[] = [
     num:      "04",
     title:    "UNCLE J\nNUTRITION",
     headline: "A Shopify storefront for a Canadian supplement brand.",
-    body:
+    body: [
       "Custom product and collection templates, mobile-first design and performance tuning, delivered end to end for a client abroad.",
+    ],
     role:     "FREELANCE",
     year:     "2026",
     url:      null,
@@ -373,8 +356,6 @@ export const PROJECTS: Project[] = [
 ]
 
 // ── Stack ─────────────────────────────────────────────────────────────────────
-
-export type StackCategory = { id: string; label: string; skills: string[] }
 
 export const STACK: StackCategory[] = [
   {
@@ -480,7 +461,11 @@ export const UI = {
 
 /** Everything a language supplies. lib/content-ar.ts implements this. */
 export const EN = {
+  VARIANT: "business" as const,
   IDENTITY, HERO, PROOF, SERVICES, PROCESS, FAQ, TESTIMONIALS, MODULE_TITLES,
   EMPLOYER, ROLES, PROJECTS, STACK, TECH_COUNT, EDUCATION, UI,
 }
 export type Content = typeof EN
+
+// The business set must offer everything the shared components read.
+EN satisfies SharedContent

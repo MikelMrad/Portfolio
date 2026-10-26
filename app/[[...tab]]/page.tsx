@@ -2,13 +2,18 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { GridBoot } from "@/components/grid/grid-boot"
 import { Stage } from "@/components/grid/stage"
-import { StaticCv } from "@/components/static-cv"
-import { TABS, type TabId } from "@/lib/grid"
+import { NO_JS_CSS, StaticCv } from "@/components/static-cv"
+import { TABS, type BusinessTabId } from "@/lib/grid"
 import { OG_IMAGE, SITE_NAME, TAB_META, jsonLd, jsonLdScript } from "@/lib/seo"
 
 type Params = { params: Promise<{ tab?: string[] }> }
 
-/** Every tab is a real, statically-rendered URL — so links and hard reloads work. */
+/**
+ * The business site, mikelmrad.dev. The engineering portfolio is the same app
+ * under app/cv, served on portfolio.mikelmrad.dev (proxy.ts).
+ *
+ * Every tab is a real, statically-rendered URL, so links and hard reloads work.
+ */
 export function generateStaticParams() {
   return [{ tab: [] as string[] }, ...TABS.filter((t) => t.id !== "index").map((t) => ({ tab: [t.id] }))]
 }
@@ -19,10 +24,10 @@ export function generateStaticParams() {
  * Without the null the catch-all answers 200 for any path — including missing
  * static assets, which would then arrive as HTML instead of a 404.
  */
-function tabOf(tab: string[] | undefined): TabId | null {
+function tabOf(tab: string[] | undefined): BusinessTabId | null {
   if (!tab || tab.length === 0) return "index"
   if (tab.length > 1) return null
-  return TABS.find((t) => t.id === tab[0] && t.id !== "index")?.id ?? null
+  return (TABS.find((t) => t.id === tab[0] && t.id !== "index")?.id as BusinessTabId | undefined) ?? null
 }
 
 /**
@@ -74,16 +79,16 @@ export default async function Page({ params }: Params) {
       {/* With JavaScript off the canvas never comes, so the plain document is
           the page: shown, and the boot drawing (which would wait forever) hidden. */}
       <noscript>
-        <style>{".static-cv{position:static!important;width:auto!important;height:auto!important;clip:auto!important;overflow:auto!important;margin:0!important;white-space:normal!important}html,body{overflow:auto!important}.boot{display:none!important}"}</style>
+        <style>{NO_JS_CSS}</style>
       </noscript>
 
       {/* The site as text, for everything that reads HTML without running it. */}
-      <StaticCv />
+      <StaticCv variant="business" />
 
       {/* Server-rendered, so this tab's bento starts drawing on the first
           frame — long before the Stage below it has any JS to run. */}
-      <GridBoot tab={id} />
-      <Stage initialTab={id} />
+      <GridBoot tab={id} variant="business" />
+      <Stage initialTab={id} variant="business" />
     </>
   )
 }

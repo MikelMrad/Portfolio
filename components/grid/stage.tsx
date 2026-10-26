@@ -3,14 +3,15 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, type MotionValue } from "motion/react"
 
 import {
-  GRID_COLS, GRID_ROWS, LAYOUTS, MOBILE_COLS, MOBILE_LAYOUTS, MOBILE_ROWS, TABS,
+  GRID_COLS, GRID_ROWS, GRIDS, MOBILE_COLS, MOBILE_ROWS, type Tab,
   gridStyle, rectFor, type GridGeom, type ModuleId, type Placement, type TabId,
 } from "@/lib/grid"
 import {
   DESKTOP_FLIGHT, MOBILE_FLIGHT, MORPH_TRANSITION, flightVector, rankByRadius,
 } from "@/lib/scatter"
-import { PROJECTS, type Content } from "@/lib/content"
-import { CONTENT, LangProvider, setLang, useLangStore } from "@/lib/i18n"
+import { whatsappUrl } from "@/lib/config"
+import type { Variant } from "@/lib/content-types"
+import { LangProvider, contentFor, setLang, useLangStore, type AnyContent } from "@/lib/i18n"
 
 import { ModuleCard } from "./module-card"
 import { NavDock } from "./nav-dock"
@@ -25,6 +26,9 @@ import { DetailNav, ProjectCard, ProjectDetail, WorkMeta } from "@/components/mo
 import { Education, Stack } from "@/components/modules/stack-modules"
 import { Footer } from "@/components/modules/contact-modules"
 import { ContactCard, Faq, Hero, Process, ServiceCard, Testimonials } from "@/components/modules/sales-modules"
+import {
+  Category, CvCard, EmailCard, Headline, Latest, Location, Socials, Stats, StatsDetail, Status, TechCount,
+} from "@/components/modules/cv-modules"
 
 /**
  * An expanded project is just another layout. Opening one scatters the grid and
@@ -81,11 +85,19 @@ function isCramped(id: ModuleId, now: Placement, native: Placement | undefined) 
   return now.col[1] < native.col[1] * 0.8 || now.row[1] < native.row[1] * 0.8
 }
 
-function titleOf(id: ModuleId, t: Content): string {
+function titleOf(id: ModuleId, t: AnyContent): string {
   if (id.startsWith("project-0")) return t.PROJECTS.find((p) => p.num === id.slice(-2))?.title ?? id
-  if (id.startsWith("svc-")) return t.SERVICES.items.find((x) => x.id === id.slice(4))?.title ?? id
+  if (id.startsWith("svc-") && t.VARIANT === "business") {
+    return t.SERVICES.items.find((x) => x.id === id.slice(4))?.title ?? id
+  }
+  if (id.startsWith("cat-")) {
+    return t.STACK.find((c) => c.id === id.slice(4))?.label.replace(" & ", " &\n") ?? id
+  }
   return t.MODULE_TITLES[id] ?? id.toUpperCase()
 }
+
+/** A tab the variant doesn't have (never in practice): a stable empty map. */
+const NO_MODULES: Partial<Record<ModuleId, Placement>> = {}
 
 /** How long the scatter runs end to end. Used to park the WebGL loop. */
 const TRANSITION_MS = 950
@@ -174,14 +186,20 @@ function msOf(v: CSSNumberish | null | undefined): number {
   return 0
 }
 
-const pathFor  = (t: TabId) => (t === "index" ? "/" : `/${t}`)
-const tabOfPath = (p: string): TabId => {
+/**
+ * The public path of a tab. The same on both hosts: the portfolio's internal
+ * /cv prefix (proxy.ts) never reaches the address bar. The query string is
+ * kept, so the local ?variant=cv fallback and ?lang survive tab switches.
+ */
+const pathFor  = (t: TabId) => `${t === "index" ? "/" : `/${t}`}${window.location.search}`
+const tabOfPath = (p: string, TABS: Tab[]): TabId => {
   const seg = p.replace(/^\/+|\/+$/g, "")
   return TABS.find((t) => t.id === seg)?.id ?? "index"
 }
 
-export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
+export function Stage({ initialTab = "index", variant = "business" }: { initialTab?: TabId; variant?: Variant }) {
   const [tab, setTab]       = useState<TabId>(initialTab)
+  const TABS                = GRIDS[variant].tabs
   const [open, setOpen]     = useState<string | null>(null)
   const [busy, setBusy]     = useState(true) // true on first paint for the intro gather
   /**
@@ -226,7 +244,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
    */
   const lang = useLangStore()
   const rtl  = lang === "ar"
-  const t    = CONTENT[lang]
+  const t    = contentFor(variant, lang)
   const flight = useMemo(
     () => ({ ...(phoneGrid ? MOBILE_FLIGHT : DESKTOP_FLIGHT), rtl }),
     [phoneGrid, rtl],
@@ -377,10 +395,11 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
 
   const stepProject = useCallback((dir: 1 | -1) => {
     if (!open) return
+    const PROJECTS = t.PROJECTS
     const i = PROJECTS.findIndex((p) => p.num === open)
     beginTransition()
     setOpen(PROJECTS[(i + dir + PROJECTS.length) % PROJECTS.length].num)
-  }, [beginTransition, open])
+  }, [beginTransition, open, t.PROJECTS])
 
 
   /**
@@ -398,12 +417,12 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     const onPop = () => {
       setOpen(null)
       setZoom(null)
-      setTab(tabOfPath(window.location.pathname))
+      setTab(tabOfPath(window.location.pathname, TABS))
       beginTransition()
     }
     window.addEventListener("popstate", onPop)
     return () => window.removeEventListener("popstate", onPop)
-  }, [beginTransition])
+  }, [beginTransition, TABS])
 
   // Keyboard.
   useEffect(() => {
@@ -436,7 +455,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [tab, open, zoom, rtl, goTab, closeProject, closeZoom, stepProject])
+  }, [tab, open, zoom, rtl, goTab, closeProject, closeZoom, stepProject, TABS])
 
   const measure = useCallback((el: HTMLDivElement) => {
     const cs = getComputedStyle(el)
@@ -486,7 +505,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
    * and flies them with the same engine — only the proportions change.
    */
   const layoutKey = `${phoneGrid ? "m" : "d"}:${tab}`
-  const baseMap   = phoneGrid ? MOBILE_LAYOUTS[tab] : LAYOUTS[tab]
+  const baseMap   = (phoneGrid ? GRIDS[variant].mobile[tab] : GRIDS[variant].desktop[tab]) ?? NO_MODULES
 
   const activeMap: Partial<Record<ModuleId, Placement>> = useMemo(() => {
     if (open) return phoneGrid ? MOBILE_DETAIL_LAYOUT : DETAIL_LAYOUT
@@ -608,7 +627,11 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       const p = t.PROJECTS.find((x) => x.num === id.slice(-2))!
       return <ProjectCard project={p} onOpen={openProject} />
     }
-    if (id.startsWith("svc-")) {
+    if (id.startsWith("cat-")) {
+      const cat = t.STACK.find((c) => c.id === id.slice(4))!
+      return <Category cat={cat} />
+    }
+    if (id.startsWith("svc-") && t.VARIANT === "business") {
       const svc = t.SERVICES.items.find((x) => x.id === id.slice(4))!
       // Expanded, it drops the button shell and gains its WhatsApp link.
       return <ServiceCard svc={svc} onOpen={zoom === id ? undefined : () => openZoom(id)} />
@@ -627,6 +650,16 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       case "contact":        return <ContactCard />
       case "faq":            return <Faq />
       case "footer":         return <Footer />
+      // Portfolio variant
+      case "status":         return <Status />
+      case "stats":          return zoom === "stats" ? <StatsDetail /> : <Stats />
+      case "location":       return <Location />
+      case "latest":         return <Latest onGo={goTab} />
+      case "cv":             return <CvCard />
+      case "tech-count":     return <TechCount />
+      case "headline":       return <Headline />
+      case "email":          return <EmailCard />
+      case "socials":        return <Socials />
       case "project-detail": return <ProjectDetail num={open!} />
       case "detail-nav":     return <DetailNav num={open!} onClose={closeProject} onOpen={openProject} />
       case "zoom-nav":
@@ -733,7 +766,7 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
   )
 
   return (
-    <LangProvider lang={lang}>
+    <LangProvider lang={lang} variant={variant}>
     <main className="fixed inset-0 bg-bg grid-bg">
       <Cursor />
 
@@ -756,12 +789,16 @@ export function Stage({ initialTab = "index" }: { initialTab?: TabId }) {
       <ShakeDebug enabled={touch && canThrow} />
 
       <NavDock
+        tabs={TABS}
         tab={tab}
         onSelect={goTab}
         detailOpen={!!open || !!zoom}
         onReset={swaps[layoutKey] && !open && !zoom ? resetCards : undefined}
         onToggleLang={toggleLang}
         onDemo={resolved && booted && !open && !zoom && !reduced ? () => setDemoGen((n) => n + 1) : undefined}
+        whatsapp={t.VARIANT === "business"
+          ? { href: whatsappUrl(t.UI.whatsapp.message), aria: t.UI.whatsapp.aria, label: t.UI.contact.whatsapp }
+          : undefined}
       />
     </main>
     </LangProvider>

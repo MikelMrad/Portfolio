@@ -4,6 +4,8 @@ import {
   EDUCATION, EMPLOYER, FAQ, HERO, IDENTITY, PROCESS, PROJECTS, PROOF, ROLES, SERVICES, STACK,
   TESTIMONIALS as QUOTES, UI,
 } from "@/lib/content"
+import { CV_EN } from "@/lib/content-cv"
+import type { Variant } from "@/lib/content-types"
 import { APPROVED_TESTIMONIALS } from "@/lib/testimonials"
 
 /**
@@ -21,10 +23,25 @@ import { APPROVED_TESTIMONIALS } from "@/lib/testimonials"
  * stage sets `hidden` on it once the interactive grid mounts, so a screen
  * reader gets one copy of everything, never two.
  *
- * English only (see lib/seo.ts). Copy comes from lib/content.ts: never write
- * it here.
+ * One per variant: the business site's content on mikelmrad.dev, the
+ * engineering portfolio's on portfolio.mikelmrad.dev.
+ *
+ * English only (see lib/seo.ts). Copy comes from the content files: never
+ * write it here.
  */
-export function StaticCv() {
+export function StaticCv({ variant }: { variant: Variant }) {
+  return variant === "cv" ? <PortfolioCv /> : <BusinessCv />
+}
+
+/**
+ * Shown as the page when JavaScript is off (`<noscript>` in each page.tsx):
+ * the article becomes a normal document and the boot drawing, which would
+ * wait forever, goes.
+ */
+export const NO_JS_CSS =
+  ".static-cv{position:static!important;width:auto!important;height:auto!important;clip:auto!important;overflow:auto!important;margin:0!important;white-space:normal!important}html,body{overflow:auto!important}.boot{display:none!important}"
+
+function BusinessCv() {
   return (
     <article id="static-cv" className="static-cv" lang="en">
       <header>
@@ -59,7 +76,7 @@ export function StaticCv() {
           <section key={p.num}>
             <h3>{p.title.replace("\n", " ")}</h3>
             <p>{p.headline}</p>
-            <p>{p.body}</p>
+            {p.body.map((para) => <p key={para}>{para}</p>)}
             <p>{p.stack.join(" · ")}</p>
             {p.url && <p><a href={p.url}>{p.url.replace(/^https?:\/\//, "")}</a></p>}
           </section>
@@ -124,6 +141,78 @@ export function StaticCv() {
           <li><a href={whatsappUrl(UI.whatsapp.message)}>WhatsApp {CONTACT.phone}</a></li>
           {has(CONTACT.calcom) && <li><a href={CONTACT.calcom}>Book a free call</a></li>}
           <li><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></li>
+          <li><a href={CONTACT.github}>GitHub</a></li>
+          <li><a href={CONTACT.linkedin}>LinkedIn</a></li>
+          <li><a href={CONTACT.cv}>CV (PDF)</a></li>
+        </ul>
+      </section>
+    </article>
+  )
+}
+
+/** The engineering portfolio, as text. */
+function PortfolioCv() {
+  const { IDENTITY, STATS, EMPLOYER, ROLES, PROJECTS, STACK, EDUCATION, UI } = CV_EN
+  return (
+    <article id="static-cv" className="static-cv" lang="en">
+      <header>
+        <h1>{IDENTITY.name}</h1>
+        <p>{IDENTITY.role}</p>
+        <p>{IDENTITY.tagline}</p>
+        <p>{IDENTITY.location} · {IDENTITY.availability.long}</p>
+        <ul>
+          {STATS.map((s) => <li key={s.label}>{s.value}{s.suffix} {s.label}</li>)}
+        </ul>
+      </header>
+
+      <section>
+        <h2>Experience: {EMPLOYER.name}</h2>
+        <p>{EMPLOYER.location} · {EMPLOYER.span}. {EMPLOYER.summary}</p>
+        {ROLES.map((r) => (
+          <section key={r.title + r.from}>
+            <h3>{r.title}</h3>
+            <p>{r.type} · {UI.range(r.from, r.to)}</p>
+            <p>{r.blurb}</p>
+            <p>{r.skills.join(", ")}</p>
+          </section>
+        ))}
+      </section>
+
+      <section>
+        <h2>Work</h2>
+        {PROJECTS.map((p) => (
+          <section key={p.num}>
+            <h3>{p.title.replace("\n", " ")}</h3>
+            <p>{p.headline} · {p.role} · {p.year}</p>
+            {p.body.map((d) => <p key={d}>{d}</p>)}
+            <p>{p.stack.join(", ")}</p>
+            {p.url && <p><a href={p.url}>{p.url.replace(/^https?:\/\//, "")}</a></p>}
+          </section>
+        ))}
+      </section>
+
+      <section>
+        <h2>Stack</h2>
+        {STACK.map((c) => (
+          <section key={c.id}>
+            <h3>{c.label}</h3>
+            <p>{c.skills.join(", ")}</p>
+          </section>
+        ))}
+      </section>
+
+      <section>
+        <h2>Education</h2>
+        {EDUCATION.map((e) => (
+          <p key={e.short}>{e.school} ({e.short}), {e.place}. {e.award}, {e.years}</p>
+        ))}
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <ul>
+          <li><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></li>
+          <li>{CONTACT.phone}</li>
           <li><a href={CONTACT.github}>GitHub</a></li>
           <li><a href={CONTACT.linkedin}>LinkedIn</a></li>
           <li><a href={CONTACT.cv}>CV (PDF)</a></li>

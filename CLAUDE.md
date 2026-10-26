@@ -29,6 +29,10 @@ strip, four services), WORK (projects, testimonials once one is approved),
 ABOUT (how I work, experience, stack, education), CONTACT (contact card, FAQ).
 Keys 1-4 and ←/→ switch tabs. `/stack` redirects to `/about` (next.config.ts).
 
+**Two sites from one codebase**, picked by hostname — see **Two variants**
+below: this business site on mikelmrad.dev, and an engineering portfolio for
+companies and recruiters on portfolio.mikelmrad.dev.
+
 A phone gets the same site, not a reduced one: every module, its real content,
 the same scatter. It runs on a portrait grid instead of a landscape one — see
 **Two grids, one site** below.
@@ -427,9 +431,52 @@ mounts (so screen readers get one copy), and shown as the page itself when
 JavaScript is off (`<noscript>` in `page.tsx`). **New content in `content.ts`
 belongs in the static CV too** if it matters to a client or a crawler.
 
+### Two variants
+
+One Next.js app, one Vercel project, two sites. `Variant` is `"business" |
+"cv"` (`lib/content-types.ts`).
+
+| | business | cv |
+|---|---|---|
+| Host | mikelmrad.dev | portfolio.mikelmrad.dev |
+| Route | `app/[[...tab]]` | `app/cv/[[...tab]]` (internal) |
+| Tabs | INDEX WORK ABOUT CONTACT | INDEX WORK STACK CONTACT |
+| Copy | `content.ts`, `content-ar.ts` | `content-cv.ts`, `content-cv-ar.ts` |
+| Maps | `LAYOUTS`, `MOBILE_LAYOUTS` | `CV_LAYOUTS`, `CV_MOBILE_LAYOUTS` |
+| Search | indexed, sitemap, JSON-LD | **noindex**, not in sitemap |
+
+- **`proxy.ts`** (Next 16's renamed middleware) rewrites the subdomain's clean
+  paths to `/cv/...`, redirects `/cv` on the main domain (308) to the
+  subdomain, and redirects `/cv/...` typed on the subdomain to the clean path.
+  Locally `portfolio.localhost:3000` works, and `?variant=cv` is a fallback on
+  localhost and `*.vercel.app` previews only. The matcher skips `_next` and any
+  path with a file extension, so assets are shared.
+- **`next.config.ts` redirects run before the proxy**: anything host-specific
+  there needs a `has`/`missing` host condition (`/stack → /about` is business
+  only). It also sets `X-Robots-Tag: noindex, follow` on the portfolio host.
+  **Don't block the subdomain in robots.txt**: a crawler that can't fetch a page
+  never sees its noindex.
+- **Content:** shared components read `useContent()`, typed as `SharedContent`
+  (the fields both sets have). A module that exists in one variant reads
+  `useBusiness()` (sales-modules, the compact STACK card) or `useCv()`
+  (`cv-modules.tsx`: figures, status, location, latest, CV card, toolbox, stack
+  sheets, contact cards). Both content sets end with `satisfies SharedContent`.
+  `GRIDS[variant]` in `lib/grid.ts` holds a variant's tabs and two maps.
+- **Every URL the client writes is the public one.** `pathFor()` in the stage
+  pushes `/work`, never `/cv/work`, and keeps the query string (so `?lang` and
+  `?variant=cv` survive tab switches).
+- The portfolio has no services, prices, plans, FAQ, testimonials, WhatsApp
+  or link to the business site, and the business site doesn't link to it.
+  Its copy is the pre-rewrite site (commit `c7e5dc1`) with dashes removed; the
+  3D arrows card and the contact form were not restored.
+- Each variant has its own link preview (`app/opengraph-image.tsx`,
+  `app/cv/opengraph-image.tsx`), both drawn by `lib/og.tsx`, and its own static
+  article (`StaticCv variant=...`).
+
 ### Routing
 
-Tabs are real static routes (`/`, `/work`, `/about`, `/contact`) via an optional
+Tabs are real static routes (`/`, `/work`, `/about`, `/contact`; the portfolio's
+`/`, `/work`, `/stack`, `/contact` through the proxy) via an optional
 catch-all with `generateStaticParams`, so links and hard reloads work. Client-side
 switching uses `window.history.pushState`, so React never unmounts the grid and
 the identity morph survives. The catch-all calls `notFound()` on unknown

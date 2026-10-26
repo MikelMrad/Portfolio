@@ -1,14 +1,14 @@
 "use client"
-import { useContent } from "@/lib/i18n"
+import { useBusiness, useContent } from "@/lib/i18n"
 import { Label } from "@/components/ui/bits"
 
 /**
- * The whole toolbox in one card: each category with its count, and the
+ * Business variant. The whole toolbox in one card: each category with its count, and the
  * technologies themselves once the card is tall enough to list them. On a
  * phone it is a half-width block of four lines, and a tap expands it.
  */
 export function Stack({ onOpen }: { onOpen?: () => void }) {
-  const { STACK, TECH_COUNT, UI } = useContent()
+  const { STACK, TECH_COUNT, UI } = useBusiness()
   const Shell = onOpen ? "button" : "div"
   return (
     <Shell

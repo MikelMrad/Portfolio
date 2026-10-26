@@ -174,7 +174,11 @@ export function ProjectDetail({ num }: { num: string }) {
 
         <GlowRule />
 
-        <p className="font-mono text-[10px] leading-relaxed text-mid">{project.body}</p>
+        <div className="flex flex-col gap-3">
+          {project.body.map((para) => (
+            <p key={para} className="font-mono text-[10px] leading-relaxed text-mid">{para}</p>
+          ))}
+        </div>
 
         <div className="flex flex-wrap gap-1.5 @[700px]:mt-auto pt-2">
           {project.stack.map((s) => <Tag key={s}>{s}</Tag>)}

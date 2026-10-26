@@ -1,9 +1,8 @@
 "use client"
-import { TABS, type TabId } from "@/lib/grid"
+import type { Tab, TabId } from "@/lib/grid"
 import { Magnetic } from "@/components/ui/magnetic"
 import { useContent } from "@/lib/i18n"
 import { toggleTheme, useThemeStore } from "@/lib/theme"
-import { whatsappUrl } from "@/lib/config"
 import { WhatsAppIcon } from "@/components/ui/bits"
 
 /**
@@ -11,8 +10,10 @@ import { WhatsAppIcon } from "@/components/ui/bits"
  * the desktop view is being dragged around underneath it.
  */
 export function NavDock({
-  tab, onSelect, detailOpen, onReset, onToggleLang, onDemo,
+  tabs, tab, onSelect, detailOpen, onReset, onToggleLang, onDemo, whatsapp,
 }: {
+  /** The variant's four tabs (GRIDS in lib/grid.ts). */
+  tabs: Tab[]
   tab: TabId
   onSelect: (t: TabId) => void
   detailOpen: boolean
@@ -21,6 +22,8 @@ export function NavDock({
   onToggleLang: () => void
   /** Plays the guided tour. Absent while a card is expanded. */
   onDemo?: () => void
+  /** The WhatsApp button: business variant only, absent on the portfolio. */
+  whatsapp?: { href: string; aria: string; label: string }
 }) {
   const { UI } = useContent()
   const theme = useThemeStore()
@@ -62,19 +65,19 @@ export function NavDock({
    * English, bottom-left in Arabic (`end-*` mirrors it). In the dock rather
    * than floating above it, so it never sits on a card or the key hints.
    */
-  const whatsappButton = (className: string, withLabel: boolean) => (
+  const whatsappButton = (className: string, withLabel: boolean) => whatsapp && (
     <a
-      href={whatsappUrl(UI.whatsapp.message)}
+      href={whatsapp.href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={UI.whatsapp.aria}
+      aria-label={whatsapp.aria}
       className={`wa-dock items-center justify-center gap-2 h-8 md:h-9 border border-fg/60 text-fg bg-bg shadow-glow-sm hover:border-fg hover:shadow-glow hover:bg-fg hover:text-bg transition-[background-color,color,border-color,box-shadow] duration-300 ${
         withLabel ? "px-3" : "w-8 md:w-9 rounded-full"
       } ${className}`}
     >
       <WhatsAppIcon size={15} />
       {withLabel && (
-        <span className="font-mono text-[9px] uppercase tracking-[0.2em]">{UI.contact.whatsapp}</span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.2em]">{whatsapp?.label}</span>
       )}
     </a>
   )
@@ -104,7 +107,7 @@ export function NavDock({
       aria-label="Sections"
       className="fixed bottom-0 left-0 right-0 z-50 h-14 md:h-16 flex items-center justify-center gap-1 md:gap-2 px-4 bg-bg/85 backdrop-blur-sm border-t border-hairline"
     >
-      {TABS.map((t) => {
+      {tabs.map((t) => {
         const active = t.id === tab && !detailOpen
         return (
           <Magnetic key={t.id} strength={0.2}>

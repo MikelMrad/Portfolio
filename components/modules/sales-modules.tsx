@@ -3,7 +3,7 @@ import { useId, useState } from "react"
 import Image from "next/image"
 import { CONTACT, has, whatsappUrl } from "@/lib/config"
 import type { Service } from "@/lib/content"
-import { useContent } from "@/lib/i18n"
+import { useBusiness } from "@/lib/i18n"
 import { APPROVED_TESTIMONIALS } from "@/lib/testimonials"
 import { GlowRule, Label, WhatsAppIcon } from "@/components/ui/bits"
 
@@ -11,7 +11,7 @@ import { GlowRule, Label, WhatsAppIcon } from "@/components/ui/bits"
  * The modules that sell: hero (with the proof strip), services, how I work, testimonials, FAQ
  * and the contact card. Same rules as every other module: sized against the
  * card (`cqw`/`cqh`), optional lines dropped by the `.cq-h*` height gates
- * rather than clipped, and every string from useContent().
+ * rather than clipped, and every string from useBusiness().
  */
 
 /** The filled, inverted button: the one action a card wants taken. */
@@ -23,7 +23,7 @@ const SECONDARY =
 
 /** "Message me on WhatsApp", with the visitor's first line already typed. */
 function WhatsAppButton({ label, className = PRIMARY }: { label: string; className?: string }) {
-  const { UI } = useContent()
+  const { UI } = useBusiness()
   return (
     <a href={whatsappUrl(UI.whatsapp.message)} target="_blank" rel="noopener noreferrer" className={className}>
       <WhatsAppIcon size={13} /> {label}
@@ -46,7 +46,7 @@ const Arrow = ({ glyph = "→" }: { glyph?: string }) => (
  * The headline and the buttons always stay.
  */
 export function Hero({ onWork }: { onWork: () => void }) {
-  const { HERO, PROOF } = useContent()
+  const { HERO, PROOF } = useBusiness()
   return (
     <div className="h-full flex flex-col p-[clamp(0.75rem,4cqh,1.75rem)] gap-[clamp(0.5rem,2.5cqh,1.25rem)] min-h-0">
       <Label right={HERO.langs}>{HERO.label}</Label>
@@ -95,7 +95,7 @@ export function Hero({ onWork }: { onWork: () => void }) {
  * button can't contain. CARE PLANS expands into its plans side by side.
  */
 export function ServiceCard({ svc, onOpen }: { svc: Service; onOpen?: () => void }) {
-  const { SERVICES, UI } = useContent()
+  const { SERVICES, UI } = useBusiness()
   const Shell = onOpen ? "button" : "div"
   const plans = !onOpen && svc.plans
 
@@ -201,7 +201,7 @@ export function ServiceCard({ svc, onOpen }: { svc: Service; onOpen?: () => void
  * the card expands to show them on a phone.
  */
 export function Process({ onOpen }: { onOpen?: () => void }) {
-  const { PROCESS, UI } = useContent()
+  const { PROCESS, UI } = useBusiness()
   const Shell = onOpen ? "button" : "div"
   return (
     <Shell
@@ -266,7 +266,7 @@ export function Process({ onOpen }: { onOpen?: () => void }) {
  * is approved: the WORK layout has no cell for it otherwise.
  */
 export function Testimonials() {
-  const { TESTIMONIALS, UI } = useContent()
+  const { TESTIMONIALS, UI } = useBusiness()
   const [i, setI] = useState(0)
   const list = APPROVED_TESTIMONIALS
   if (list.length === 0) return null
@@ -318,7 +318,7 @@ export function Testimonials() {
  * scroll rather than the start of a card throw (ModuleCard).
  */
 export function Faq() {
-  const { FAQ, UI } = useContent()
+  const { FAQ, UI } = useBusiness()
   const [open, setOpen] = useState<number | null>(0)
   const base = useId()
   return (
@@ -372,7 +372,7 @@ export function Faq() {
  * filled in (lib/config.ts).
  */
 export function ContactCard() {
-  const { UI } = useContent()
+  const { UI } = useBusiness()
   const links = [
     { label: UI.contact.github,   href: CONTACT.github },
     { label: UI.contact.linkedin, href: CONTACT.linkedin },

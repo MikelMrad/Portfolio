@@ -13,7 +13,7 @@
  * English only: the server can't know the language, and the Arabic site is
  * reached with ?lang=ar, declared as an alternate. No em dashes in any of it.
  */
-import type { TabId } from "./grid"
+import type { BusinessTabId, CvTabId } from "./grid"
 import { CONTACT, FAQ, PROJECTS, SERVICES } from "./content"
 
 export const SITE_NAME = "Mikel Mrad"
@@ -32,7 +32,9 @@ export const OG_IMAGE = { url: "/opengraph-image", width: 1200, height: 630, alt
 const cap = (s: string) =>
   s.toLowerCase().replace(/(^|[\s/-])(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase())
 
-export const TAB_META: Record<TabId, { path: string; title: string; description: string }> = {
+type Meta = { path: string; title: string; description: string }
+
+export const TAB_META: Record<BusinessTabId, Meta> = {
   index: {
     path: "/",
     title: SITE_TITLE,
@@ -54,6 +56,29 @@ export const TAB_META: Record<TabId, { path: string; title: string; description:
     title: `Contact | ${SITE_NAME}`,
     description: `Tell me what you're building. Message me on WhatsApp or email ${CONTACT.email}. Stores from $600, websites from $900.`,
   },
+}
+
+// ── The portfolio variant (portfolio.mikelmrad.dev) ────────────────────────
+// Kept out of search on purpose: it must not compete with mikelmrad.dev. Every
+// page says noindex, follow, and next.config.ts adds an X-Robots-Tag header to
+// everything served on that host. robots.txt does NOT block it: a crawler that
+// can't fetch a page never sees its noindex, and can index the bare URL anyway.
+// It is not in the sitemap, and nothing on the business site links to it.
+
+export const CV_TITLE = "Mikel Mrad | Front-End / Full-Stack Developer"
+export const CV_DESCRIPTION =
+  "Front-end and full-stack developer in Beirut. Next.js, React, TypeScript and React Native: multi-tenant platforms, custom storefronts and mobile apps."
+
+/** Absolute: the root layout's metadataBase is the business origin. */
+export const CV_OG_IMAGE = {
+  url: `${CONTACT.portfolio}/opengraph-image`, width: 1200, height: 630, alt: CV_TITLE, type: "image/png",
+}
+
+export const CV_TAB_META: Record<CvTabId, Meta> = {
+  index:   { path: "/",        title: CV_TITLE,                 description: CV_DESCRIPTION },
+  work:    { path: "/work",    title: `Work | ${SITE_NAME}`,    description: CV_DESCRIPTION },
+  stack:   { path: "/stack",   title: `Stack | ${SITE_NAME}`,   description: CV_DESCRIPTION },
+  contact: { path: "/contact", title: `Contact | ${SITE_NAME}`, description: CV_DESCRIPTION },
 }
 
 /**
