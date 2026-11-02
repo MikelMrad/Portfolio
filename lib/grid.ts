@@ -66,7 +66,9 @@ export type ModuleId =
   // index
   | "hero" | "svc-stores" | "svc-websites" | "svc-apps" | "svc-care"
   // work
-  | "work-meta" | "testimonials" | "project-01" | "project-02" | "project-03" | "project-04"
+  | "work-meta" | "testimonials" | "projects"
+  // one card per project (the portfolio's WORK)
+  | "project-01" | "project-02" | "project-03" | "project-04"
   // about
   | "process" | "experience" | "stack" | "education"
   // contact
@@ -90,23 +92,22 @@ export type Map = Partial<Record<ModuleId, Placement>>
  * SELECTED counter) and without it. Which
  * one ships is decided by lib/testimonials.ts at build time, so the boot
  * drawing (server-rendered from these maps) always matches what mounts.
+ *
+ * The projects are one module, the shelf (ProjectShelf in work-modules.tsx):
+ * a two-column grid of project cards that scrolls inside itself once there
+ * are more than two rows, so WORK holds any number of projects without
+ * re-tiling the tab.
  */
 const WORK: Map = {
-  identity:     { col: [1, 3],  row: [1, 4] },
-  "work-meta":  { col: [1, 3],  row: [5, 4] },
-  "project-01": { col: [4, 5],  row: [1, 4] },
-  "project-02": { col: [9, 4],  row: [1, 4] },
-  "project-03": { col: [4, 5],  row: [5, 4] },
-  "project-04": { col: [9, 4],  row: [5, 4] },
+  identity:    { col: [1, 3], row: [1, 4] },
+  "work-meta": { col: [1, 3], row: [5, 4] },
+  projects:    { col: [4, 9], row: [1, 8] },
 }
 /** With quotes to show, they take the SELECTED counter's place. */
 const WORK_TESTIMONIALS: Map = {
-  identity:     { col: [1, 3],  row: [1, 3] },
-  testimonials: { col: [1, 3],  row: [4, 5] },
-  "project-01": WORK["project-01"],
-  "project-02": WORK["project-02"],
-  "project-03": WORK["project-03"],
-  "project-04": WORK["project-04"],
+  identity:     { col: [1, 3], row: [1, 3] },
+  testimonials: { col: [1, 3], row: [4, 5] },
+  projects:     WORK.projects,
 }
 
 /**
@@ -143,20 +144,14 @@ export const LAYOUTS: Record<BusinessTabId, Map> = {
 }
 
 const MOBILE_WORK: Map = {
-  identity:     { col: [1, 4], row: [1, 2] },
-  "work-meta":  { col: [1, 4], row: [3, 2] },
-  "project-01": { col: [1, 2], row: [5, 4] },
-  "project-02": { col: [3, 2], row: [5, 4] },
-  "project-03": { col: [1, 2], row: [9, 4] },
-  "project-04": { col: [3, 2], row: [9, 4] },
+  identity:    { col: [1, 4], row: [1, 2] },
+  "work-meta": { col: [1, 4], row: [3, 2] },
+  projects:    { col: [1, 4], row: [5, 8] },
 }
 const MOBILE_WORK_TESTIMONIALS: Map = {
   identity:     { col: [1, 4], row: [1, 2] },
   testimonials: { col: [1, 4], row: [3, 4] },
-  "project-01": { col: [1, 2], row: [7, 3] },
-  "project-02": { col: [3, 2], row: [7, 3] },
-  "project-03": { col: [1, 2], row: [10, 3] },
-  "project-04": { col: [3, 2], row: [10, 3] },
+  projects:     { col: [1, 4], row: [7, 6] },
 }
 
 /**

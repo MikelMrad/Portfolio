@@ -22,7 +22,7 @@ import { Cursor } from "@/components/ui/cursor"
 import { CompactCard, ZoomNav } from "@/components/ui/bits"
 import { Identity } from "@/components/modules/identity"
 import { Experience, ExperienceDetail } from "@/components/modules/experience"
-import { DetailNav, ProjectCard, ProjectDetail, WorkMeta } from "@/components/modules/work-modules"
+import { DetailNav, ProjectCard, ProjectDetail, ProjectShelf, WorkMeta } from "@/components/modules/work-modules"
 import { Education, Stack } from "@/components/modules/stack-modules"
 import { Footer } from "@/components/modules/contact-modules"
 import { ContactCard, Faq, Hero, Process, ServiceCard, Testimonials } from "@/components/modules/sales-modules"
@@ -646,6 +646,7 @@ export function Stage({ initialTab = "index", variant = "business" }: { initialT
       case "stack":          return <Stack onOpen={zoom === "stack" ? undefined : () => openZoom("stack")} />
       case "education":      return <Education />
       case "work-meta":      return <WorkMeta />
+      case "projects":       return <ProjectShelf onOpen={openProject} />
       case "testimonials":   return <Testimonials />
       case "contact":        return <ContactCard />
       case "faq":            return <Faq />
@@ -731,6 +732,8 @@ export function Stage({ initialTab = "index", variant = "business" }: { initialT
             key={`${id}:${phoneGrid ? "m" : "d"}:${open ? "o" : zoom ? "z" : "l"}:${shakeGen}:${lang}`}
             id={id}
             placement={placement}
+            // The shelf's cards draw their own boxes.
+            bare={id === "projects" && !isCramped(id, placement, baseMap[id])}
             throwable={{
               enabled: canThrow,
               target: dropTarget === id,

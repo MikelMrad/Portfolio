@@ -38,13 +38,15 @@ export type Throwable = {
  * four numbers rather than fighting over the transform.
  */
 export function ModuleCard({
-  id, placement, custom, children, padded = true, throwable,
+  id, placement, custom, children, padded = true, bare = false, throwable,
 }: {
   id: string
   placement: Placement
   custom: ScatterCustom
   children: ReactNode
   padded?: boolean
+  /** No box of its own: a module made of cards (the projects shelf). */
+  bare?: boolean
   throwable?: Throwable
 }) {
   const ref      = useRef<HTMLDivElement>(null)
@@ -326,9 +328,9 @@ export function ModuleCard({
         // pinch-zoom the page. "none" here blocked zoom over every card.
         touchAction: throwable?.enabled ? "pinch-zoom" : undefined,
       }}
-      className={`module @container [container-type:size] min-h-0 min-w-0 hover:border-fg/35 hover:shadow-glow ${
+      className={`${bare ? "relative" : "module hover:border-fg/35 hover:shadow-glow"} @container [container-type:size] min-h-0 min-w-0 ${
         lifted ? "!border-fg/60 shadow-glow-lg" : ""
-      } ${throwable?.target ? "!border-fg shadow-glow-lg" : ""} ${padded ? "" : "p-0"}`}
+      } ${throwable?.target ? (bare ? "outline outline-1 outline-fg" : "!border-fg shadow-glow-lg") : ""} ${padded ? "" : "p-0"}`}
     >
       {children}
     </motion.div>

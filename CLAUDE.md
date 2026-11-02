@@ -164,6 +164,20 @@ card's height. `Esc` closes either.
 `ExperienceDetail` is the expanded view — full role write-ups plus per-role
 stacks, which the card can only show as two clamped lines.
 
+### The projects shelf
+
+On the business site every project lives in **one module**, `projects`
+(`ProjectShelf` in `work-modules.tsx`): a two-column grid of `ProjectCard`s
+that scrolls inside itself, so adding a project is a `PROJECTS` entry plus
+four screenshots, never a re-tiling. Up to four it is a 2x2 that exactly fills
+the cell; past two rows the rows shrink so the next one peeks under a fade, and
+MORE marks it until the end. An odd count gives the first project the full
+width. The shelf is a **bare** `ModuleCard` (no box of its own: its cards draw
+theirs) and its scroller is `data-no-drag`, so it can't be thrown, though a
+card can be dropped onto it. `.shelf` in `globals.css` restates the stage's
+gap. The portfolio variant still uses one module per project
+(`project-01` to `project-04`).
+
 ### Two things that look like special cases but aren't
 
 - **An expanded project is just another layout** (`DETAIL_LAYOUT` in
@@ -307,8 +321,8 @@ Things worth knowing before changing it:
   horizontal centre and fly straight up or down, which is correct — they have no
   horizontal bias to derive.
 - A tapped project expands to `ProjectDetail`, not `ProjectCard`.
-- Long content inside an *expanded* section may scroll within that section. That
-  is the one permitted scroll; the grid itself never scrolls. In `ProjectDetail`
+- Long content inside an *expanded* section may scroll within that section, as
+  may the FAQ and the projects shelf. Those are the permitted scrolls; the grid itself never scrolls. In `ProjectDetail`
   the **outer** element is the scroller on narrow screens and the reel takes a
   definite `cqh` height — making the copy `shrink-0` with its own
   `overflow-y-auto` does nothing, because it then sizes to its content and the

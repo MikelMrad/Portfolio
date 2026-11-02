@@ -184,7 +184,7 @@ export const CV_AR: CvContent = {
       label: "السيرة الذاتية", top: "2026", bottom: "سيرة ذاتية",
       contents: "الخبرة · الأدوات · التعليم", download: "تحميل",
     },
-    project:   { label: "عمل", views: "لقطات", visit: "زيارة الموقع" },
+    project:   { label: "عمل", views: "لقطات", visit: "زيارة الموقع", more: "المزيد" },
     toolbox:   { label: "الأدوات", technologies: "تقنية", categories: (n) => `${n} فئات` },
     education: { label: "التعليم" },
     contact: {

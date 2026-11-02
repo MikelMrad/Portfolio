@@ -211,6 +211,7 @@ export const TESTIMONIALS: Record<string, { quote: string; role: string }> = {
 export const MODULE_TITLES: Record<string, string> = {
   hero:         "WHAT I\nBUILD",
   "work-meta":  "SELECTED\nWORK",
+  projects:     "PROJECTS",
   testimonials: "CLIENTS",
   process:      "HOW I\nWORK",
   experience:   "EXPERIENCE",
@@ -353,6 +354,24 @@ export const PROJECTS: Project[] = [
     ],
     stack:  ["SHOPIFY", "LIQUID"],
   },
+  {
+    num:      "05",
+    title:    "CYNTHIA\nNAHRA",
+    headline: "A portfolio that puts an architect's work in front of studios.",
+    body: [
+      "A site for a junior architect in Beirut. Each project opens into its renders, drawings and concept, laid out so the work leads and the site stays out of the way. Smooth scrolling, a contact form that lands in her inbox, and a layout that holds up on a phone.",
+    ],
+    role:     "DESIGN & DEVELOPMENT",
+    year:     "2026",
+    url:      "https://www.cynthianahra.com",
+    images: [
+      "/images/work/cynthianahra-01.webp",
+      "/images/work/cynthianahra-02.webp",
+      "/images/work/cynthianahra-03.webp",
+      "/images/work/cynthianahra-04.webp",
+    ],
+    stack:  ["NEXT.JS 16", "MUI", "FRAMER MOTION"],
+  },
 ]
 
 // ── Stack ─────────────────────────────────────────────────────────────────────
@@ -412,7 +431,7 @@ export const UI = {
   range: (from: string, to: string) => `${from} TO ${to}`,
   experience: { label: "EXPERIENCE", months: "MOS" },
   workMeta: { label: "SELECTED", line: "PROJECTS · 2022 TO 2026", tags: "SHOPIFY · NEXT.JS · E-COMMERCE" },
-  project: { label: "WORK", views: "VIEWS", visit: "VISIT SITE" },
+  project: { label: "WORK", views: "VIEWS", visit: "VISIT SITE", more: "MORE" },
   service: { label: "SERVICE", cta: "ASK ABOUT THIS", plansCta: "ASK ABOUT CARE PLANS", included: "WHAT'S INCLUDED" },
   stack:   { label: "STACK", technologies: (n: number) => `${n} TECHNOLOGIES` },
   education: { label: "EDUCATION" },

@@ -1,4 +1,5 @@
 "use client"
+import { useState } from "react"
 import Image from "next/image"
 import type { Project } from "@/lib/content"
 import { useContent } from "@/lib/i18n"
@@ -79,6 +80,66 @@ export function ProjectCard({ project, onOpen }: { project: Project; onOpen: (nu
         </div>
       </div>
     </button>
+  )
+}
+
+/**
+ * Every project, as one module: a two-column grid of project cards that
+ * scrolls inside itself, so WORK takes any number of projects without
+ * re-tiling the tab.
+ *
+ * Up to four it is the old 2x2, exactly filling the cell. Past two rows the
+ * rows shrink just enough that the next one peeks in under a fade, which is
+ * what says "scroll"; MORE in the corner says it in words until the end is
+ * reached. An odd count gives the first project the full width, so the grid
+ * never ends on a hole.
+ *
+ * The scroller is `data-no-drag`: a swipe on it scrolls rather than picking
+ * the shelf up. The cards are boxes of their own (the shelf is a bare
+ * ModuleCard), so it reads as cards in the bento, not a card of cards.
+ */
+export function ProjectShelf({ onOpen }: { onOpen: (num: string) => void }) {
+  const { PROJECTS, UI } = useContent()
+  const featured = PROJECTS.length % 2 === 1
+  const scrolls = Math.ceil(PROJECTS.length / 2) > 2
+  const [atEnd, setAtEnd] = useState(false)
+
+  return (
+    <div className="relative h-full">
+      <div
+        data-no-drag
+        data-end={atEnd || undefined}
+        onScroll={(e) => {
+          const el = e.currentTarget
+          setAtEnd(el.scrollTop + el.clientHeight >= el.scrollHeight - 8)
+        }}
+        className={`shelf h-full overflow-y-auto overscroll-contain [touch-action:pan-y] ${scrolls ? "shelf-scrolls" : ""}`}
+      >
+        <div className="shelf-grid grid grid-cols-2">
+          {PROJECTS.map((p, i) => (
+            <div
+              key={p.num}
+              className={`module @container [container-type:size] min-h-0 min-w-0 hover:border-fg/35 ${
+                featured && i === 0 ? "col-span-2" : ""
+              }`}
+            >
+              <ProjectCard project={p} onOpen={onOpen} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {scrolls && (
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute bottom-2 end-3 font-mono text-[8px] uppercase tracking-[0.24em] text-mid transition-opacity duration-300 ${
+            atEnd ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          {UI.project.more} ↓
+        </span>
+      )}
+    </div>
   )
 }
 

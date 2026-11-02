@@ -168,6 +168,7 @@ export const AR: Content = {
   MODULE_TITLES: {
     hero:         "ما\nأبنيه",
     "work-meta":  "أعمال\nمختارة",
+    projects:     "المشاريع",
     testimonials: "العملاء",
     process:      "كيف\nأعمل",
     experience:   "الخبرة",
@@ -257,6 +258,14 @@ export const AR: Content = {
       ],
       role: "عمل حر",
     },
+    {
+      ...EN.PROJECTS[4],
+      headline: "ملف أعمال يضع عمل مهندسة معمارية أمام المكاتب الهندسية.",
+      body: [
+        "موقع لمهندسة معمارية شابة في بيروت. يفتح كل مشروع على صوره ورسوماته وفكرته، بتصميم يترك العمل في الواجهة والموقع في الخلفية. تمرير سلس، ونموذج تواصل يصل مباشرة إلى بريدها، وتصميم يعمل جيداً على الهاتف.",
+      ],
+      role: "تصميم وتطوير",
+    },
   ],
 
   STACK: [
@@ -290,7 +299,7 @@ export const AR: Content = {
     range: (from, to) => `${from} حتى ${to}`,
     experience: { label: "الخبرة", months: "أشهر" },
     workMeta: { label: "مختارة", line: "مشاريع · 2022 حتى 2026", tags: "SHOPIFY · NEXT.JS · تجارة إلكترونية" },
-    project: { label: "عمل", views: "لقطات", visit: "زيارة الموقع" },
+    project: { label: "عمل", views: "لقطات", visit: "زيارة الموقع", more: "المزيد" },
     service: { label: "خدمة", cta: "اسألني عنها", plansCta: "اسألني عن باقات الصيانة", included: "ما تشمله" },
     stack:   { label: "الأدوات", technologies: (n) => `${n} تقنية` },
     education: { label: "التعليم" },

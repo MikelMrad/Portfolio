@@ -252,7 +252,7 @@ const UI = {
     label: "CURRICULUM VITAE", top: "2026", bottom: "CV",
     contents: "EXPERIENCE · STACK · EDUCATION", download: "DOWNLOAD",
   },
-  project:   { label: "WORK", views: "VIEWS", visit: "VISIT SITE" },
+  project:   { label: "WORK", views: "VIEWS", visit: "VISIT SITE", more: "MORE" },
   toolbox:   { label: "TOOLBOX", technologies: "TECHNOLOGIES", categories: (n: number) => `${n} CATEGORIES` },
   education: { label: "EDUCATION" },
   contact: {

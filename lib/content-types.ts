@@ -49,7 +49,7 @@ export type SharedUI = {
   range:      (from: string, to: string) => string
   experience: { label: string; months: string }
   workMeta:   { label: string; line: string; tags: string }
-  project:    { label: string; views: string; visit: string }
+  project:    { label: string; views: string; visit: string; more: string }
   education:  { label: string }
   contact:    { github: string; linkedin: string; cv: string; footer: string; colophon: string }
   expand: string; close: string; esc: string; step: string; expanded: string

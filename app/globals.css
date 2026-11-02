@@ -115,6 +115,34 @@
 .module[data-morphing] { z-index: 25; }
 
 /*
+  The projects shelf (ProjectShelf in work-modules.tsx). Its gap restates the
+  stage's (gap-2 / md:gap-2.5) so its cards sit in the bento like any other.
+  Rows are half the shelf, or, once it scrolls, a little under half, so a
+  sliver of the next row shows under the fade. The scrollbar is hidden: the
+  peek and MORE say there is more, and a bar down the bento's edge would be
+  the one scrollbar on the site.
+*/
+.shelf {
+  --g: 0.5rem;
+  scrollbar-width: none;
+}
+.shelf::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) {
+  .shelf { --g: 0.625rem; }
+}
+.shelf-grid {
+  gap: var(--g);
+  grid-auto-rows: calc((100cqh - var(--g)) / 2);
+}
+.shelf-scrolls .shelf-grid {
+  grid-auto-rows: calc((100cqh - 2 * var(--g)) / 2.2);
+}
+.shelf-scrolls {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 3.5rem), transparent);
+}
+.shelf-scrolls[data-end] { mask-image: none; }
+
+/*
   ── Arabic ───────────────────────────────────────────────────────────────────
   Letter-spacing pulls Arabic's joined letters apart — it is cursive, the
   tracking that makes a Latin label read as a label breaks every word. The
