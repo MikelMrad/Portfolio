@@ -27,7 +27,7 @@ const IDENTITY = {
 }
 
 const STATS: { value: number; suffix: string; label: string }[] = [
-  { value: 2,  suffix: "+", label: "YEARS SHIPPING" },
+  { value: 3,  suffix: "+", label: "YEARS SHIPPING" },
   { value: 10, suffix: "+", label: "PROJECTS BUILT" },
 ]
 

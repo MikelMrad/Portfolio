@@ -349,6 +349,26 @@
   50%      { box-shadow: 0 0 16px 3px rgb(var(--glow) / calc(0.65 * var(--glow-k))); }
 }
 
+/*
+  The showreel's clock (Reel in showcase-modules.tsx): the active bar fills,
+  and its animationend moves the reel on. Reduced motion: no autoplay, the
+  bars still pick a project.
+*/
+@keyframes reel-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.reel-run { animation: reel-fill 5s linear forwards; }
+@keyframes reel-copy-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.reel-copy { animation: reel-copy-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .reel-run { animation: none; transform: scaleX(1); }
+  .reel-copy { animation: none; }
+}
+
 /* The dock's WhatsApp button arrives a beat after the page, so the eye finds
    it once. Reduced motion: no entrance. */
 @keyframes wa-in {

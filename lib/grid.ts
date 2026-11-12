@@ -64,6 +64,8 @@ export type ModuleId =
   // shared
   | "identity"
   // index
+  | "reel" | "numbers" | "services" | "cta"
+  // a service, opened from WHAT I BUILD (and the old hero, unused)
   | "hero" | "svc-stores" | "svc-websites" | "svc-apps" | "svc-care"
   // work
   | "work-meta" | "testimonials" | "projects"
@@ -115,15 +117,15 @@ const WORK_TESTIMONIALS: Map = {
  * Order within an object is irrelevant: placement is absolute.
  */
 export const LAYOUTS: Record<BusinessTabId, Map> = {
-  // The hero (pitch, buttons, proof strip) beside the name; the four
-  // services share the bottom band as equal columns.
+  // Work first: the showreel is the biggest thing on the page, beside the
+  // name. Under it the figures and the way in (START A PROJECT); under the
+  // name, what I build, each line opening its service.
   index: {
-    identity:       { col: [1, 4],  row: [1, 4] },
-    hero:           { col: [5, 8],  row: [1, 4] },
-    "svc-stores":   { col: [1, 3],  row: [5, 4] },
-    "svc-websites": { col: [4, 3],  row: [5, 4] },
-    "svc-apps":     { col: [7, 3],  row: [5, 4] },
-    "svc-care":     { col: [10, 3], row: [5, 4] },
+    identity: { col: [1, 4],  row: [1, 4] },
+    reel:     { col: [5, 8],  row: [1, 5] },
+    services: { col: [1, 4],  row: [5, 4] },
+    numbers:  { col: [5, 5],  row: [6, 3] },
+    cta:      { col: [10, 3], row: [6, 3] },
   },
   work: HAS_TESTIMONIALS ? WORK_TESTIMONIALS : WORK,
   // How I work runs across the top as four steps; the CV material sits under
@@ -171,12 +173,11 @@ const MOBILE_WORK_TESTIMONIALS: Map = {
  */
 export const MOBILE_LAYOUTS: Record<BusinessTabId, Map> = {
   index: {
-    identity:       { col: [1, 4], row: [1, 2] },
-    hero:           { col: [1, 4], row: [3, 6] },
-    "svc-stores":   { col: [1, 2], row: [9, 2] },
-    "svc-websites": { col: [3, 2], row: [9, 2] },
-    "svc-apps":     { col: [1, 2], row: [11, 2] },
-    "svc-care":     { col: [3, 2], row: [11, 2] },
+    identity: { col: [1, 4], row: [1, 2] },
+    reel:     { col: [1, 4], row: [3, 5] },
+    numbers:  { col: [1, 4], row: [8, 2] },
+    services: { col: [1, 2], row: [10, 3] },
+    cta:      { col: [3, 2], row: [10, 3] },
   },
   work: HAS_TESTIMONIALS ? MOBILE_WORK_TESTIMONIALS : MOBILE_WORK,
   about: {

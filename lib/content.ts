@@ -58,6 +58,17 @@ export const PROOF = {
   ],
 }
 
+/** The figures under the showreel, counted up on arrival. */
+export const NUMBERS = {
+  label: "BY THE NUMBERS",
+  items: [
+    { value: 10, suffix: "+", label: "PROJECTS BUILT" },
+    { value: 3,  suffix: "+", label: "YEARS SHIPPING" },
+    { value: 5,  suffix: "",  label: "COUNTRIES, ONE CODEBASE" },
+    { value: 2,  suffix: "",  label: "LANGUAGES · EN AR" },
+  ],
+}
+
 // ── Services ──────────────────────────────────────────────────────────────────
 
 /** A care plan, shown side by side when the CARE PLANS card is opened. */
@@ -212,6 +223,10 @@ export const MODULE_TITLES: Record<string, string> = {
   hero:         "WHAT I\nBUILD",
   "work-meta":  "SELECTED\nWORK",
   projects:     "PROJECTS",
+  reel:         "SELECTED\nWORK",
+  services:     "WHAT I\nBUILD",
+  cta:          "START A\nPROJECT",
+  numbers:      "BY THE\nNUMBERS",
   testimonials: "CLIENTS",
   process:      "HOW I\nWORK",
   experience:   "EXPERIENCE",
@@ -284,24 +299,6 @@ export const ROLES: Role[] = [
 export const PROJECTS: Project[] = [
   {
     num:      "01",
-    title:    "VINYLIZED",
-    headline: "A store where every order lands in WhatsApp.",
-    body: [
-      "Customers pick their records and tap one button. The site writes the full order into a WhatsApp message, ready for the owner to confirm. No card forms and no gateway fees, in a market that already orders by WhatsApp. Since launch, the owner says the site brings in far more customers.",
-    ],
-    role:     "SOLO DEVELOPER",
-    year:     "2026",
-    url:      "https://vinylizedlb.com",
-    images: [
-      "/images/work/vinylized-01.webp",
-      "/images/work/vinylized-02.webp",
-      "/images/work/vinylized-03.webp",
-      "/images/work/vinylized-04.webp",
-    ],
-    stack:  ["NEXT.JS", "SUPABASE", "CLOUDFLARE"],
-  },
-  {
-    num:      "02",
     title:    "BRAND\nATELIER",
     headline: "A bilingual agency site built for the Gulf.",
     body: [
@@ -317,6 +314,24 @@ export const PROJECTS: Project[] = [
       "/images/work/brandatelier-04.webp",
     ],
     stack:  ["NEXT.JS 16", "MUI", "NEXT-INTL"],
+  },
+  {
+    num:      "02",
+    title:    "VINYLIZED",
+    headline: "A store where every order lands in WhatsApp.",
+    body: [
+      "Customers pick their records and tap one button. The site writes the full order into a WhatsApp message, ready for the owner to confirm. No card forms and no gateway fees, in a market that already orders by WhatsApp. Since launch, the owner says the site brings in far more customers.",
+    ],
+    role:     "SOLO DEVELOPER",
+    year:     "2026",
+    url:      "https://vinylizedlb.com",
+    images: [
+      "/images/work/vinylized-01.webp",
+      "/images/work/vinylized-02.webp",
+      "/images/work/vinylized-03.webp",
+      "/images/work/vinylized-04.webp",
+    ],
+    stack:  ["NEXT.JS", "SUPABASE", "CLOUDFLARE"],
   },
   {
     num:      "03",
@@ -436,14 +451,28 @@ export const UI = {
   stack:   { label: "STACK", technologies: (n: number) => `${n} TECHNOLOGIES` },
   education: { label: "EDUCATION" },
   testimonials: { label: "WHAT CLIENTS SAY", next: "NEXT", nextAria: "Show the next testimonial", open: "“", close: "”" },
-  faq: { count: (n: number) => `${n} QUESTIONS` },
+  faq: { count: (n: number) => `${n} QUESTIONS`, all: "ALL QUESTIONS", next: "NEXT" },
   contact: {
     label: "CONTACT",
     headline: "Tell me what you're building.",
+    /** The big two-line close; the second line is drawn outlined. */
+    big: ["LET'S", "BUILD."] as [string, string],
     line: "I usually reply within a few hours.",
     whatsapp: "WHATSAPP", book: "BOOK A FREE CALL", email: "EMAIL",
     github: "GITHUB", linkedin: "LINKEDIN", cv: "CV",
     footer: "© 2026 MikelMrad", colophon: "· NEXT.JS",
+  },
+  reel: { label: "SELECTED WORK", open: "VIEW PROJECT", pick: (n: string) => `Show project ${n}` },
+  cta: {
+    label: "AVAILABILITY", status: "TAKING NEW PROJECTS",
+    headline: ["START A", "PROJECT."] as [string, string],
+    line: "Tell me what you're building. I usually reply within a few hours.",
+    email: "EMAIL",
+  },
+  /** Under an opened project: the visitor asks for one like it, by name. */
+  projectCta: {
+    label: "WANT ONE LIKE THIS?",
+    message: (title: string) => `Hi Mikel, I saw ${title} on your site and I'd like something like it.`,
   },
   whatsapp: {
     /** Typed into the chat for the visitor; wa.me receives it URL-encoded. */
@@ -481,7 +510,7 @@ export const UI = {
 /** Everything a language supplies. lib/content-ar.ts implements this. */
 export const EN = {
   VARIANT: "business" as const,
-  IDENTITY, HERO, PROOF, SERVICES, PROCESS, FAQ, TESTIMONIALS, MODULE_TITLES,
+  IDENTITY, HERO, PROOF, NUMBERS, SERVICES, PROCESS, FAQ, TESTIMONIALS, MODULE_TITLES,
   EMPLOYER, ROLES, PROJECTS, STACK, TECH_COUNT, EDUCATION, UI,
 }
 export type Content = typeof EN

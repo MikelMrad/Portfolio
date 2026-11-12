@@ -17,15 +17,17 @@ No test suite. Verification is visual — drive the app and look at it.
 
 ## What this is
 
-Portfolio v2 for Mikel Mrad, written to **sell freelance work** (online stores,
+Portfolio v2 for Mikel Mrad, written to **win freelance work by showing it**
+(a showcase with calls to action beside the work, not a sales funnel) (online stores,
 websites and apps for businesses in Lebanon and the Gulf), not to read as a CV.
 A **single, never-scrolling page**: one `100dvh`
 bento grid where clicking a tab makes the current modules fly off to the four
 edges while the next tab's modules fly in from the directions their new cells
 imply. Inspired by alahmad.dev's modularity, but non-scrollable.
 
-Eight sections across four tabs, in reading order: INDEX (hero with the proof
-strip, four services), WORK (projects, testimonials once one is approved),
+Four tabs, in reading order: INDEX (work first: the showreel, the figures,
+WHAT I BUILD as a list whose rows open each service, and START A PROJECT;
+`showcase-modules.tsx`), WORK (projects, testimonials once one is approved),
 ABOUT (how I work, experience, stack, education), CONTACT (contact card, FAQ).
 Keys 1-4 and ←/→ switch tabs. `/stack` redirects to `/about` (next.config.ts).
 
@@ -322,7 +324,8 @@ Things worth knowing before changing it:
   horizontal bias to derive.
 - A tapped project expands to `ProjectDetail`, not `ProjectCard`.
 - Long content inside an *expanded* section may scroll within that section, as
-  may the FAQ and the projects shelf. Those are the permitted scrolls; the grid itself never scrolls. In `ProjectDetail`
+  may the projects shelf. Those are the permitted scrolls (the FAQ does not
+  scroll: it shows one answer at a time instead); the grid itself never scrolls. In `ProjectDetail`
   the **outer** element is the scroller on narrow screens and the reel takes a
   definite `cqh` height — making the copy `shrink-0` with its own
   `overflow-y-auto` does nothing, because it then sizes to its content and the

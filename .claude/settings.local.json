@@ -4,5 +4,10 @@
       "Bash(node:*)",
       "Bash(npm run:*)"
     ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
   }
 }

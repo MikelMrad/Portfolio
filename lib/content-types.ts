@@ -67,6 +67,7 @@ export type SharedUI = {
 }
 
 export type SharedContent = {
+  VARIANT: Variant
   IDENTITY: {
     name: string; role: string; tagline: string; location: string
     availability: { short: string; long: string }

@@ -15,14 +15,14 @@ import { GlowRule, Label, WhatsAppIcon } from "@/components/ui/bits"
  */
 
 /** The filled, inverted button: the one action a card wants taken. */
-const PRIMARY =
+export const PRIMARY =
   "inline-flex items-center gap-2 font-mono text-[9px] @[420px]:text-[10px] uppercase tracking-[0.1em] @[420px]:tracking-[0.16em] px-3 @[420px]:px-3.5 py-2.5 bg-fg text-bg border border-fg shadow-glow-sm hover:shadow-glow transition-shadow duration-300 whitespace-nowrap"
 /** The outlined one beside it. */
-const SECONDARY =
+export const SECONDARY =
   "inline-flex items-center gap-2 font-mono text-[9px] @[420px]:text-[10px] uppercase tracking-[0.1em] @[420px]:tracking-[0.16em] px-3 @[420px]:px-3.5 py-2.5 border border-fg/40 text-fg hover:border-fg hover:bg-fg hover:text-bg transition-colors duration-150 whitespace-nowrap"
 
 /** "Message me on WhatsApp", with the visitor's first line already typed. */
-function WhatsAppButton({ label, className = PRIMARY }: { label: string; className?: string }) {
+export function WhatsAppButton({ label, className = PRIMARY }: { label: string; className?: string }) {
   const { UI } = useBusiness()
   return (
     <a href={whatsappUrl(UI.whatsapp.message)} target="_blank" rel="noopener noreferrer" className={className}>
@@ -309,59 +309,72 @@ export function Testimonials() {
 // ── CONTACT ───────────────────────────────────────────────────────────────────
 
 /**
- * Questions before the first message. An accordion of real buttons: each has
- * aria-expanded and aria-controls, Enter and Space toggle it, one answer is
- * open at a time so the card's height stays bounded.
+ * Questions before the first message, sized to fit: nothing in this card
+ * scrolls, on any screen.
  *
- * The list may scroll inside the card on a short phone, the one scroll this
- * site allows outside an expanded view. `data-no-drag` keeps a swipe on it a
- * scroll rather than the start of a card throw (ModuleCard).
+ * Two faces in the same box. The list: one row per question, the rows sharing
+ * the card's height like the STACK spec sheets. A question: it replaces the
+ * list, with its answer under it and ALL QUESTIONS / NEXT beside each other at
+ * the foot. One answer at a time is what keeps the height bounded, and the
+ * answers are a sentence or two by design; keep them that way.
  */
 export function Faq() {
   const { FAQ, UI } = useBusiness()
-  const [open, setOpen] = useState<number | null>(0)
+  const [open, setOpen] = useState<number | null>(null)
   const base = useId()
+  const item = open === null ? null : FAQ.items[open]
+
   return (
-    <div className="h-full flex flex-col p-4 @[480px]:p-6 gap-3 min-h-0">
-      <Label right={UI.faq.count(FAQ.items.length)}>{FAQ.label}</Label>
-      <div data-no-drag className="flex-1 min-h-0 overflow-y-auto overscroll-contain [touch-action:pan-y]">
-        <ul className="flex flex-col">
-          {FAQ.items.map((item, n) => {
-            const isOpen = open === n
-            const q = `${base}-q${n}`
-            const a = `${base}-a${n}`
-            return (
-              <li key={item.q} className="border-b border-hairline last:border-0">
-                <h3>
-                  <button
-                    type="button"
-                    id={q}
-                    aria-expanded={isOpen}
-                    aria-controls={a}
-                    onClick={() => setOpen(isOpen ? null : n)}
-                    className="group w-full flex items-center justify-between gap-4 py-2.5 @[600px]:py-3.5 text-start"
-                  >
-                    <span className={`font-mono text-[10px] @[600px]:text-xs uppercase tracking-[0.1em] leading-snug transition-colors ${isOpen ? "text-fg" : "text-mid group-hover:text-fg"}`}>
-                      {item.q}
-                    </span>
-                    <span
-                      aria-hidden
-                      className={`font-mono text-sm text-dim shrink-0 transition-transform duration-200 motion-reduce:transition-none ${isOpen ? "rotate-45 text-fg" : ""}`}
-                    >
-                      +
-                    </span>
-                  </button>
-                </h3>
-                <div id={a} role="region" aria-labelledby={q} hidden={!isOpen}>
-                  <p className="pb-3 @[600px]:pb-4 font-mono text-[10px] @[600px]:text-[11px] leading-relaxed text-mid max-w-[70ch]">
-                    {item.a}
-                  </p>
-                </div>
-              </li>
-            )
-          })}
+    <div className="h-full flex flex-col p-4 @[480px]:p-6 gap-3 min-h-0 overflow-hidden">
+      <Label right={item ? `${String(open! + 1).padStart(2, "0")} / ${String(FAQ.items.length).padStart(2, "0")}` : UI.faq.count(FAQ.items.length)}>
+        {FAQ.label}
+      </Label>
+
+      {item ? (
+        <div key={open} role="region" aria-labelledby={`${base}-q`} className="reel-copy flex-1 min-h-0 flex flex-col gap-3">
+          <div className="flex-1 min-h-0 flex flex-col [justify-content:safe_center] gap-3">
+            <h3 id={`${base}-q`} className="font-display uppercase text-fg leading-[0.92] tracking-tight text-balance text-[clamp(1.1rem,min(6.5cqw,9cqh),3.5rem)]">
+              {item.q}
+            </h3>
+            <p className="font-mono text-[10px] @[480px]:text-[11px] @[700px]:text-xs leading-relaxed text-mid max-w-[60ch]">
+              {item.a}
+            </p>
+          </div>
+          <div className="flex items-center justify-between gap-3 shrink-0 border-t border-hairline pt-2.5">
+            <button
+              type="button"
+              onClick={() => setOpen(null)}
+              className="font-mono text-[9px] uppercase tracking-[0.22em] text-mid hover:text-fg transition-colors"
+            >
+              <Arrow glyph="←" /> {UI.faq.all}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen((open! + 1) % FAQ.items.length)}
+              className="font-mono text-[9px] uppercase tracking-[0.22em] text-mid hover:text-fg transition-colors"
+            >
+              {UI.faq.next} <Arrow />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <ul className="flex-1 min-h-0 flex flex-col">
+          {FAQ.items.map((it, n) => (
+            <li key={it.q} className="flex-1 min-h-0 border-t border-hairline">
+              <button
+                type="button"
+                onClick={() => setOpen(n)}
+                className="group w-full h-full flex items-center justify-between gap-3 text-start min-w-0"
+              >
+                <span className="font-mono text-[clamp(9px,min(2.8cqw,3.6cqh),13px)] uppercase tracking-[0.08em] leading-snug text-mid group-hover:text-fg transition-colors line-clamp-2">
+                  {it.q}
+                </span>
+                <span aria-hidden className="font-mono text-sm text-dim group-hover:text-fg transition-colors shrink-0">+</span>
+              </button>
+            </li>
+          ))}
         </ul>
-      </div>
+      )}
     </div>
   )
 }
@@ -383,11 +396,16 @@ export function ContactCard() {
       <Label>{UI.contact.label}</Label>
 
       <div className="flex-1 min-h-0 flex flex-col [justify-content:safe_center] gap-2">
-        <h2 className="font-display uppercase text-fg leading-[0.88] tracking-tight text-balance text-[clamp(1.4rem,min(11cqw,13cqh),5rem)]">
-          {UI.contact.headline}
+        {/* The portfolio's close: two lines, the second outlined. */}
+        <h2 className="font-display uppercase text-fg leading-[0.82] tracking-tight text-[clamp(1.5rem,min(20cqw,15cqh),8rem)]">
+          {UI.contact.big[0]}
+          <br />
+          <span className="text-transparent [-webkit-text-stroke:1.5px_var(--color-fg)]">{UI.contact.big[1]}</span>
         </h2>
-        <div className="cq-h160">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim leading-relaxed">{UI.contact.line}</p>
+        <div className="cq-h240">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim leading-relaxed">
+            {UI.contact.headline} {UI.contact.line}
+          </p>
         </div>
       </div>
 
@@ -403,7 +421,8 @@ export function ContactCard() {
         </a>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 shrink-0 border-t border-hairline pt-2.5">
+      <div className="cq-h220 shrink-0">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-hairline pt-2.5">
         {links.map((l) => (
           <a
             key={l.label}
@@ -415,6 +434,7 @@ export function ContactCard() {
             {l.label}{l.glyph && <> <span aria-hidden>{l.glyph}</span></>}
           </a>
         ))}
+      </div>
       </div>
     </div>
   )

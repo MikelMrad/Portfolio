@@ -5,6 +5,7 @@ import type { Project } from "@/lib/content"
 import { useContent } from "@/lib/i18n"
 import { GlowRule, Label, Tag } from "@/components/ui/bits"
 import { Magnetic } from "@/components/ui/magnetic"
+import { ProjectCta } from "./showcase-modules"
 
 export function WorkMeta() {
   const { PROJECTS, UI } = useContent()
@@ -196,7 +197,7 @@ function VerticalReel({ images, alt }: { images: string[]; alt: string }) {
 }
 
 export function ProjectDetail({ num }: { num: string }) {
-  const { PROJECTS, UI } = useContent()
+  const { PROJECTS, UI, VARIANT } = useContent()
   const project = PROJECTS.find((p) => p.num === num)!
   const title = project.title.replace("\n", " ")
 
@@ -244,6 +245,9 @@ export function ProjectDetail({ num }: { num: string }) {
         <div className="flex flex-wrap gap-1.5 @[700px]:mt-auto pt-2">
           {project.stack.map((s) => <Tag key={s}>{s}</Tag>)}
         </div>
+
+        {/* The business site asks for one like it, by name. */}
+        {VARIANT === "business" && <div><ProjectCta title={title} /></div>}
 
         {project.url && (
           <Magnetic strength={0.3}>

@@ -22,6 +22,7 @@ import { Cursor } from "@/components/ui/cursor"
 import { CompactCard, ZoomNav } from "@/components/ui/bits"
 import { Identity } from "@/components/modules/identity"
 import { Experience, ExperienceDetail } from "@/components/modules/experience"
+import { Numbers, Reel, ServiceList, StartCta } from "@/components/modules/showcase-modules"
 import { DetailNav, ProjectCard, ProjectDetail, ProjectShelf, WorkMeta } from "@/components/modules/work-modules"
 import { Education, Stack } from "@/components/modules/stack-modules"
 import { Footer } from "@/components/modules/contact-modules"
@@ -638,6 +639,10 @@ export function Stage({ initialTab = "index", variant = "business" }: { initialT
     }
     switch (id) {
       case "hero":           return <Hero onWork={() => goTab("work")} />
+      case "reel":           return <Reel onOpen={openProject} />
+      case "numbers":        return <Numbers />
+      case "services":       return <ServiceList onOpen={(svc) => openZoom(`svc-${svc}` as ModuleId)} />
+      case "cta":            return <StartCta />
       case "process":        return <Process onOpen={zoom === "process" ? undefined : () => openZoom("process")} />
       case "experience":
         return zoom === "experience"
