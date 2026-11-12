@@ -21,21 +21,21 @@ export function Stack({ onOpen }: { onOpen?: () => void }) {
         {UI.stack.label}
       </Label>
 
-      <ul className="flex-1 min-h-0 flex flex-col [justify-content:safe_center] gap-2.5 @[420px]:gap-4">
+      <ul className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {STACK.map((c) => (
-          <li key={c.id} className="border-b border-hairline pb-2 last:border-0 last:pb-0 min-w-0">
+          <li key={c.id} className="flex-[1_1_auto] min-h-0 min-w-0 flex flex-col justify-center border-b border-hairline py-2 first:pt-0 last:border-0 last:pb-0">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-mono text-[9px] @[420px]:text-[10px] uppercase tracking-[0.14em] text-fg truncate">
+              <span className="font-mono text-[clamp(9px,min(2.4cqw,2cqh),16px)] uppercase tracking-[0.14em] text-fg truncate">
                 {c.label}
               </span>
-              <span className="font-mono text-[8px] tracking-[0.16em] text-dim tabular-nums shrink-0">
+              <span className="font-mono text-[clamp(8px,min(1.8cqw,1.6cqh),12px)] tracking-[0.16em] text-dim tabular-nums shrink-0">
                 {String(c.skills.length).padStart(2, "0")}
               </span>
             </div>
             <div className="cq-h320">
               {/* Technology names are Latin in both languages; each is
                   isolated, or an RTL line turns "C++" into "++C". */}
-              <p className="font-mono text-[9px] @[420px]:text-[10px] uppercase tracking-[0.08em] text-mid leading-relaxed mt-1">
+              <p className="font-mono text-[clamp(9px,min(2.1cqw,1.8cqh),14px)] uppercase tracking-[0.08em] text-mid leading-relaxed mt-[clamp(4px,1cqh,10px)]">
                 {c.skills.map((sk, i) => (
                   <span key={sk}>
                     {i > 0 && <span className="text-dim"> · </span>}

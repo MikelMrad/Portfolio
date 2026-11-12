@@ -552,10 +552,13 @@ with opposite jobs:
   to-card`: darkest at top and bottom where the label, title and chips sit.
   Hover sharpens to `blur-[1px]` / 45%.
 - **The expanded detail** uses them as *the content*. `VerticalReel` shows each
-  shot at full column width and natural aspect — never cropped — and scrolls the
-  strip upward continuously via `@keyframes marquee-y`. The list renders twice so
-  the -50% translate lands exactly one set on, making the loop seamless. Hover
-  pauses; `motion-reduce` stops it. Speed is `--reel-speed` (~47px/s).
+  shot at full column width and natural aspect — never cropped — and drifts the
+  strip upward continuously. It is a real (bar-less) scroller driven by rAF, not
+  a CSS animation, so a wheel or swipe can run through it faster; the drift
+  holds for 1.2s after the visitor's last scroll, then resumes from there. The
+  list renders twice and the position wraps by one set either way, so it never
+  ends. `motion-reduce` stops the drift but keeps the scroll. Speed is one set
+  per `--reel-speed`.
 
 Never use `object-cover` on a screenshot in the detail view — that was the
 original "half-cut image" problem.

@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import type { Project } from "@/lib/content"
 import { useContent } from "@/lib/i18n"
@@ -150,26 +150,83 @@ export function ProjectShelf({ onOpen }: { onOpen: (num: string) => void }) {
  * Vertical filmstrip of the project's screenshots.
  *
  * Each shot is shown at full width and its natural aspect ratio — nothing is
- * cropped — and the strip scrolls upward continuously. The list is rendered
- * twice so the -50% translate in @keyframes marquee-y loops seamlessly.
+ * cropped — and the strip drifts upward continuously. It is a real scroller,
+ * not a CSS animation, so a wheel or a swipe can run through it faster; the
+ * drift steps aside while the visitor scrolls and picks up again from where
+ * they left it. The list is rendered twice and the position wraps by one set
+ * in either direction, so it never reaches an end.
  */
 function VerticalReel({ images, alt }: { images: string[]; alt: string }) {
   const { UI } = useContent()
   const loop = [...images, ...images]
+  const scroller = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = scroller.current
+    if (!el) return
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    // One set per --reel-speed, the pace the CSS marquee used to run at.
+    const secs = () => parseFloat(getComputedStyle(el).getPropertyValue("--reel-speed")) || 48
+    let pos = el.scrollTop
+    let set = Math.round(pos)
+    let idleUntil = 0
+    let last = performance.now()
+    let raf = 0
+
+    const wrap = () => {
+      const half = el.scrollHeight / 2
+      if (half <= el.clientHeight) return
+      if (pos >= half) pos -= half
+      else if (pos <= 0) pos += half
+      else return
+      set = Math.round(pos)
+      el.scrollTop = pos
+    }
+
+    // Any scroll we didn't write ourselves is the visitor: follow them and
+    // hold the drift until they've been still for a moment.
+    const onScroll = () => {
+      if (Math.abs(el.scrollTop - set) <= 1) return
+      pos = el.scrollTop
+      set = Math.round(pos)
+      idleUntil = performance.now() + 1200
+      wrap()
+    }
+    const hold = () => { idleUntil = performance.now() + 1200 }
+
+    const tick = (now: number) => {
+      const dt = Math.min(now - last, 64) / 1000
+      last = now
+      if (!still && now > idleUntil) {
+        pos += (el.scrollHeight / 2 / secs()) * dt
+        wrap()
+        // scrollTop rounds to whole pixels; `pos` keeps the fraction.
+        const next = Math.round(pos)
+        if (next !== set) { set = next; el.scrollTop = next }
+      }
+      raf = requestAnimationFrame(tick)
+    }
+
+    el.addEventListener("scroll", onScroll, { passive: true })
+    el.addEventListener("touchstart", hold, { passive: true })
+    el.addEventListener("wheel", hold, { passive: true })
+    raf = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(raf)
+      el.removeEventListener("scroll", onScroll)
+      el.removeEventListener("touchstart", hold)
+      el.removeEventListener("wheel", hold)
+    }
+  }, [])
 
   return (
     <div className="group/reel relative h-full w-full overflow-hidden bg-bg [--reel-speed:48s] @[900px]:[--reel-speed:40s]">
       <div
-        /* Runs continuously — no hover pause. (motion-reduce still wins: that's
-           an OS accessibility preference, not an interaction.) */
-        className="flex flex-col w-full motion-reduce:animate-none"
-        style={{
-          animationName: "marquee-y",
-          animationDuration: "var(--reel-speed)",
-          animationTimingFunction: "linear",
-          animationIterationCount: "infinite",
-        }}
+        ref={scroller}
+        data-no-drag
+        className="reel h-full w-full overflow-y-auto overscroll-contain [touch-action:pan-y]"
       >
+      <div className="flex flex-col w-full">
         {loop.map((src, i) => (
           <div key={`${src}-${i}`} className="w-full shrink-0 border-b border-hairline">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -183,6 +240,7 @@ function VerticalReel({ images, alt }: { images: string[]; alt: string }) {
             />
           </div>
         ))}
+      </div>
       </div>
 
       {/* Soft top/bottom falloff so the strip bleeds rather than hard-cutting. */}

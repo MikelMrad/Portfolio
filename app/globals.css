@@ -177,11 +177,10 @@
 .static-cv p, .static-cv li { color: var(--color-mid); }
 .static-cv a { text-decoration: underline; }
 
-/* Vertical filmstrip. The track holds the images twice, so -50% is exactly
-   one full set and the loop is seamless. */
-@keyframes marquee-y {
-  to { transform: translateY(-50%); }
-}
+/* Vertical filmstrip (VerticalReel). It scrolls under the visitor's wheel
+   or finger, but like the shelf it shows no bar. */
+.reel { scrollbar-width: none; }
+.reel::-webkit-scrollbar { display: none; }
 
 /* Role blurbs collide with the next role when the card is short, so they're
    gated on HEIGHT. The width term is only a sanity floor: gating on 420px wide
