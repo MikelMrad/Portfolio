@@ -6,7 +6,8 @@
  * for that, all derived from lib/content.ts so they can't drift from the site:
  *
  * - per-route titles and descriptions (TAB_META, used by generateMetadata);
- * - structured data: a Person and an FAQPage (jsonLd);
+ * - structured data: a Person, an FAQPage and a WebSite, plus a breadcrumb on
+ *   sub-pages (jsonLd);
  * - the static CV text in components/static-cv.tsx, server-rendered into the
  *   page and set aside once the grid mounts.
  *
@@ -82,10 +83,31 @@ export const CV_TAB_META: Record<CvTabId, Meta> = {
 }
 
 /**
- * schema.org structured data: the Person behind the site, and the FAQ as an
- * FAQPage. One @graph, so both sit in a single <script> tag.
+ * schema.org structured data: the Person behind the site, the FAQ as an
+ * FAQPage, and the WebSite (its name, for search results). Sub-pages also get
+ * a BreadcrumbList (Home > page), URLs matching the sitemap. One @graph, so
+ * everything sits in a single <script> tag.
  */
-export function jsonLd() {
+export function jsonLd(tab: BusinessTabId) {
+  const home = new URL("/", CONTACT.site).toString()
+  const breadcrumb =
+    tab === "index"
+      ? []
+      : [
+          {
+            "@type": "BreadcrumbList",
+            "@id": `${new URL(TAB_META[tab].path, CONTACT.site).toString()}#breadcrumb`,
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: home },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: TAB_META[tab].title.split(" | ")[0],
+                item: new URL(TAB_META[tab].path, CONTACT.site).toString(),
+              },
+            ],
+          },
+        ]
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -117,6 +139,16 @@ export function jsonLd() {
           acceptedAnswer: { "@type": "Answer", text: f.a },
         })),
       },
+      {
+        "@type": "WebSite",
+        "@id": `${CONTACT.site}/#website`,
+        name: SITE_NAME,
+        alternateName: ["mikelmrad.dev"],
+        url: home,
+        publisher: { "@id": `${CONTACT.site}/#person` },
+        inLanguage: ["en", "ar"],
+      },
+      ...breadcrumb,
     ],
   }
 }

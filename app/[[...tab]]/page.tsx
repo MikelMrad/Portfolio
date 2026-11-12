@@ -70,10 +70,10 @@ export default async function Page({ params }: Params) {
 
   return (
     <>
-      {/* Structured data: the Person and the FAQ. See lib/seo.ts. */}
+      {/* Structured data: the Person, FAQ, WebSite and (sub-pages) breadcrumb. See lib/seo.ts. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd()) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd(id)) }}
       />
 
       {/* With JavaScript off the canvas never comes, so the plain document is
